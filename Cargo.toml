@@ -1,0 +1,36 @@
+[package]
+name = "jam_ready"
+description = "JamReady - Accelerate your GameJam, focus on creation! Escape the hassle of asset management!"
+authors = [
+    "Weicao-CatilGrass (Github)"
+]
+version = "0.1.0"
+edition = "2024"
+
+homepage = "https://github.com/CatilGrass/JamReady"
+repository = "https://github.com/CatilGrass/JamReady"
+readme = "README.md"
+license = "MIT"
+
+[dependencies]
+chrono = "0.4"
+
+# 序列化
+serde = { version = "1.0.219", features = ["derive"] }
+serde_yaml = "0.9.34"
+toml = "0.9.0"
+
+# 网络、异步
+tokio = { version = "1.46.1", features = ["full"] }
+
+# 日志
+log = "0.4.27"
+env_logger = "0.10.2"
+
+[workspace]
+members = [
+    "jam-ready-cmd"
+]
+
+[workspace.package]
+version = "0.1.0"

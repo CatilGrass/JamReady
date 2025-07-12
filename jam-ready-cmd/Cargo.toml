@@ -1,0 +1,39 @@
+[package]
+name = "jam_ready_cmd"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+jam_ready = { path = "../../JamReady" }
+
+colored = "3.0.0"
+
+# 命令行
+clap = { version = "4.5.38", features = ["derive"] }
+
+# Logger
+log = "0.4.27"
+
+# 序列化
+serde = { version = "1.0.219", features = ["derive"] }
+serde_yaml = "0.9.34"
+bincode = { version = "2.0.1", features = ["serde"]}
+
+# 网络、异步
+tokio = { version = "1.46.1", features = ["full"] }
+local_ipaddress = "0.1.3"
+async-trait = "0.1.88"
+
+# 进度条
+indicatif = "0.18.0"
+
+# Uuid
+uuid = { version = "1.17.0", features = ["serde", "v4"] }
+
+# 枚举相关
+strum = "0.27.1"
+strum_macros = "0.27.1"
+
+# 随机
+rand = "0.9.1"
+serde_json = "1.0.140"

@@ -1,0 +1,42 @@
+[build]
+target-dir = "./.cargo/shared/target"
+
+[alias]
+
+# 构建相关
+dev_build = ["build", "--workspace", "--profile", "dev"]
+release_build = ["build", "--workspace", "--profile", "release"]
+
+# 打包相关
+dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_porject", "dev" ]
+make = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_porject" ]
+
+[env]
+# ------ 项目设置 ------
+
+# 项目版本
+PROJECT_VERSION = { value = "0.1.0" }
+
+# ----- 服务器设置 -----
+
+# 默认端口
+DEFAULT_SERVER_PORT = { value = "5011" }
+
+# ------ 路径设置 ------
+
+# 路径
+PATH_WORKSPACE_ROOT = { value = ".jam/" }
+PATH_PARAMETERS = { value = ".jam/param/" }
+PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/database_histories/" }
+PATH_DATABASE = { value = "" }
+
+# 文件
+FILE_DATABASE = { value = ".jam/database.yaml" }
+FILE_LOCAL_FILE_MAP = { value = ".jam/local.yaml" }
+FILE_WORKSPACE_SERVER_DATA = { value = ".jam/workspace.yaml" }
+FILE_WORKSPACE_USER_DATA = { value = ".jam/user.yaml" }
+
+# ----- 工作区设置 -----
+
+# 工作区回收站
+WORKSPACE_RECYCLEBIN = { value = "Removed/" }

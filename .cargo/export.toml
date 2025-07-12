@@ -1,0 +1,16 @@
+# 从 “项目文件夹” 导出到 “打包文件夹”
+[release.root]
+
+# 从 “编译文件夹” 导出到 “打包文件夹”
+[release.deps]
+
+# 可执行文件 (Windows)
+win_exes = { raw = "./", target = "./bin", files = [
+    "jam.exe"
+] }
+
+# 从 “项目文件夹” 部署到 “项目文件夹” (复制)
+[release.deploy_root]
+
+# 从 “编译文件夹” 部署到 “项目文件夹” (复制)
+[release.deploy_deps]
