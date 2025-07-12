@@ -1,4 +1,5 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use log::info;
 use log::LevelFilter::Debug;
 use tokio::net::{TcpStream, UdpSocket};
 use jam_ready::connect_once;
@@ -10,7 +11,7 @@ use crate::service::jam_command::execute_local_command;
 use crate::service::messages::ServerMessage;
 use crate::service::messages::ClientMessage::{Command, Verify};
 use crate::service::messages::ServerMessage::Uuid;
-use crate::service::service_utils::{read_msg, send_msg};
+use crate::service::service_utils::{get_self_address, get_self_address_with_port_str, read_msg, send_msg};
 
 /// 执行命令
 pub async fn execute(command_input: Vec<&str>) {

@@ -19,7 +19,7 @@ use crate::service::jam_command::{execute_remote_command, CommandRegistry};
 use crate::service::messages::ClientMessage;
 use crate::service::messages::ClientMessage::Verify;
 use crate::service::messages::ServerMessage::{Deny, Pass, Uuid};
-use crate::service::service_utils::{read_msg, send_msg};
+use crate::service::service_utils::{get_self_address_with_port_str, read_msg, send_msg};
 
 const DISCOVERY_PORT: u16 = 54000;
 const MAX_BUFFER_SIZE: usize = 1024;
@@ -64,19 +64,12 @@ pub async fn jam_server_entry() {
     let (write_tx, mut write_rx) : (UnboundedSender<bool>, UnboundedReceiver<bool>) = unbounded_channel();
 
     // 获得本机 ip
-    let port_str = env!("DEFAULT_SERVER_PORT");
-    let mut address: String = format!("127.0.0.1:{}", &port_str);
-    if let Some(ip) = local_ipaddress::get() {
-        address = format!("{}:{}", ip, &port_str);
-        info!("Bind address: {}", &address);
-    } else {
-        info!("Bind address: 127.0.0.1:{}", &port_str);
-    }
+    let address_tcp = get_self_address_with_port_str(env!("DEFAULT_SERVER_PORT"));
 
     // 绑定 TCP 监听器
-    let listener_bind = TcpListener::bind(&address).await;
+    let listener_bind = TcpListener::bind(&address_tcp).await;
     if listener_bind.is_err() {
-        error!("Failed to bind to {}", address.to_string());
+        error!("Failed to bind to {}", address_tcp.to_string());
         return;
     }
 
@@ -84,7 +77,7 @@ pub async fn jam_server_entry() {
     if let Ok(result) = listener_bind {
         listener = result;
     } else {
-        error!("Failed to bind to {}", address.to_string());
+        error!("Failed to bind to {}", address_tcp.to_string());
         return;
     }
 
@@ -126,7 +119,7 @@ pub async fn jam_server_entry() {
             Ok((len, addr)) = socket.recv_from(&mut buf) => {
                 if let Ok(received) = from_utf8(&buf[..len]) {
                     if received == workspace_name {
-                        let _ = socket.send_to(address.as_bytes(), addr).await;
+                        let _ = socket.send_to(address_tcp.as_bytes(), addr).await;
                     }
                 }
             }
