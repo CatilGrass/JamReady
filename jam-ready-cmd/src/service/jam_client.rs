@@ -1,5 +1,4 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use log::info;
 use log::LevelFilter::Debug;
 use tokio::net::{TcpStream, UdpSocket};
 use jam_ready::connect_once;
@@ -11,10 +10,10 @@ use crate::service::jam_command::execute_local_command;
 use crate::service::messages::ServerMessage;
 use crate::service::messages::ClientMessage::{Command, Verify};
 use crate::service::messages::ServerMessage::Uuid;
-use crate::service::service_utils::{get_self_address, get_self_address_with_port_str, read_msg, send_msg};
+use crate::service::service_utils::{read_msg, send_msg};
 
 /// 执行命令
-pub async fn execute(command_input: Vec<&str>) {
+pub async fn execute(command_input: Vec<String>) {
     let mut workspace = Workspace::read();
 
     if let Some(client) = &mut workspace.client {
@@ -30,20 +29,19 @@ pub async fn execute(command_input: Vec<&str>) {
         // 连接、验证并取得流
         let stream = try_verify_connection(addr, client).await;
 
+        let mut args_input = Vec::new();
+        for arg in command_input.iter() {
+            args_input.push(arg.as_str());
+        }
+
         // 若成功取得流，进入正式操作
         if let Some(mut stream) = stream {
 
-            // 转换命令类型
-            let mut command_args = Vec::new();
-            for arg in command_input.clone() {
-                command_args.push(arg.to_string());
-            }
-
             // 发送命令
-            send_msg(&mut stream, &Command(command_args)).await;
+            send_msg(&mut stream, &Command(command_input.clone())).await;
 
             // 进入命令
-            execute_local_command(&registry(), &mut stream, command_input).await;
+            execute_local_command(&registry(), &mut stream, args_input).await;
         }
     }
 

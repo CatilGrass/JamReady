@@ -1,9 +1,7 @@
-use bincode::{config, Decode, Encode};
 use crate::data::database::Database;
-use bincode::config::Configuration;
-use std::fmt::Debug;
-use bincode::error::EncodeError;
+use bincode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
 // --------------------------------------------------------------------------- //
 
@@ -58,34 +56,3 @@ pub enum ServerMessage {
     /// Uuid
     Uuid(String)
 }
-
-// --------------------------------------------------------------------------- //
-
-pub const BINCODE_CONFIG : Configuration = config::standard();
-
-pub trait MessageEncoder<M: Encode + Decode<()> + Default + Debug> {
-
-    fn en(&self) -> Result<Vec<u8>, EncodeError> where Self : Encode {
-         bincode::encode_to_vec(self, BINCODE_CONFIG)
-    }
-
-    fn de(encoded : Vec<u8>) -> Result<M, bincode::error::DecodeError> {
-        match bincode::decode_from_slice(&encoded[..], BINCODE_CONFIG) {
-            Ok((decoded, _)) => Ok(decoded),
-            Err(err) => Err(err)
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! encoder {
-    ($($msg:ident),+) => {
-        $(
-            impl MessageEncoder<$msg> for $msg {}
-        )+
-    };
-}
-
-encoder!(
-    ServerMessage, ClientMessage, Database
-);

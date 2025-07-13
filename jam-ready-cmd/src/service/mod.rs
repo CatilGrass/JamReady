@@ -3,4 +3,6 @@ pub mod jam_client;
 pub mod jam_command;
 pub mod commands;
 mod messages;
+
+#[allow(dead_code)]
 mod service_utils;

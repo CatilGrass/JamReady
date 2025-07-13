@@ -192,6 +192,16 @@ impl Database {
         None
     }
 
+    /// 搜索文件 (可变)
+    pub fn search_file_mut(&mut self, search: String) -> Option<&mut VirtualFile> {
+        if let Some(_) = self.file_with_uuid(search.trim().to_string()) {
+            return self.file_mut_with_uuid(search);
+        } else if let Some(_) = self.file(process_path_text(search.clone())) {
+            return self.file_mut(search);
+        }
+        None
+    }
+
     /// 通过 Uuid 获得虚拟文件 (可变)
     pub fn file_mut_with_uuid(&mut self, uuid: String) -> Option<&mut VirtualFile> {
         self.virtual_files.get_mut(&uuid)
@@ -209,7 +219,7 @@ impl Database {
 
     /// 修改文件路径
     pub fn move_file(&mut self, old_path: String, new_path: String) -> Result<(), ()> {
-        let uuid = self.virtual_uuids.get(old_path.as_str());
+        let uuid = self.virtual_uuids.get(&process_path_text(old_path));
         if let Some(uuid) = uuid {
             self.move_file_with_uuid(uuid.clone(), new_path)
         } else {
@@ -225,23 +235,18 @@ impl Database {
         // 新目录不存在时执行
         if ! self.contains_path(new_path.as_str()) {
 
-            // 获得原始文件
+            // 获得文件
             let file = self.virtual_files.get_mut(&uuid);
             if let Some(file) = file {
 
-                // 此处：注意，如果一个文件不存在目录映射
-                // 那么该文件便无法使用目录来访问，只能使用 Uuid 访问
-                // 也就是说，文件的删除，只是拿走了该文件的 Uuid 映射，让其只能被 Uuid 所访问
                 // 移除目录映射
-                let uuid = self.virtual_uuids.remove(file.path.as_str());
-                if let Some(uuid) = uuid {
+                self.virtual_uuids.remove(file.path.as_str());
 
-                    // 修改自身目录
-                    file.path = new_path.clone();
+                // 修改自身目录
+                file.path = new_path.clone();
 
-                    // 重建目录映射
-                    self.virtual_uuids.insert(new_path, uuid);
-                }
+                // 重建目录映射
+                self.virtual_uuids.insert(new_path, uuid);
 
                 return Ok(())
             }

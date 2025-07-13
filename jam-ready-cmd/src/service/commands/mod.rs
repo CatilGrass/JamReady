@@ -2,14 +2,14 @@ mod database_sync;
 mod duty_verifier;
 mod file_transmitter;
 
-mod command_clean;
+mod command_archive;
 mod command_commit;
 mod command_file;
 mod command_show_struct;
 mod command_sync;
 mod command_view;
 
-use crate::service::commands::command_clean::CleanCommand;
+use crate::service::commands::command_archive::ArchiveCommand;
 use crate::service::commands::command_commit::CommitCommand;
 use crate::service::commands::command_file::FileOperationCommand;
 use crate::service::commands::command_sync::SyncCommand;
@@ -31,7 +31,7 @@ pub fn registry() -> CommandRegistry {
     registry.insert("struct", Arc::new(ShowFileStructCommand));
 
     // 调试指令
-    registry.insert("clean", Arc::new(CleanCommand));
+    registry.insert("archive", Arc::new(ArchiveCommand));
 
     registry
 }

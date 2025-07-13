@@ -4,7 +4,6 @@ use log::{error, info};
 use log::LevelFilter::{Info, Trace};
 use tokio::net::{TcpListener, TcpStream, UdpSocket};
 use tokio::{select, spawn};
-use tokio::net::windows::named_pipe::PipeMode::Message;
 use tokio::signal::ctrl_c;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tokio::sync::Mutex;
@@ -18,7 +17,7 @@ use crate::service::commands::registry;
 use crate::service::jam_command::{execute_remote_command, CommandRegistry};
 use crate::service::messages::ClientMessage;
 use crate::service::messages::ClientMessage::Verify;
-use crate::service::messages::ServerMessage::{Deny, Pass, Uuid};
+use crate::service::messages::ServerMessage::{Deny, Uuid};
 use crate::service::service_utils::{get_self_address_with_port_str, read_msg, send_msg};
 
 const DISCOVERY_PORT: u16 = 54000;
@@ -82,7 +81,6 @@ pub async fn jam_server_entry() {
     }
 
     // 网络发现初始化
-    let port = env!("DEFAULT_SERVER_PORT");
     info!("Network discovery is enabled, listening on port: {}", DISCOVERY_PORT);
     let socket = UdpSocket::bind(format!("0.0.0.0:{}", DISCOVERY_PORT)).await.unwrap();
     let mut buf = [0u8; MAX_BUFFER_SIZE];

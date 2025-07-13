@@ -41,12 +41,13 @@ impl Command for FileOperationCommand {
         (uuid, _member): (String, &Member), database: &mut Database) -> bool {
 
         // 检查参数数量
-        if args.len() < 3 { return false; } // <操作符> <地址> <地址2: 可选>
+        if args.len() < 3 { return false; } // <操作符> <搜索/地址> <地址2: 可选>
 
         let operation_str = args[1];
-        let virtual_file_str = args[2];
+        let input = args[2];
 
-        let virtual_file = database.file_mut(virtual_file_str.to_string());
+        // 搜索得到虚拟文件
+        let virtual_file = database.search_file_mut(input.to_string());
 
         match operation_str.to_lowercase().trim() {
 
@@ -56,7 +57,7 @@ impl Command for FileOperationCommand {
                 // 文件未存在时
                 if let None = virtual_file {
                     if let Ok(success) = database.insert_virtual_file(
-                        VirtualFile::new(virtual_file_str.to_string())) {
+                        VirtualFile::new(input.to_string())) {
                         if success {
 
                             // 成功
@@ -105,7 +106,7 @@ impl Command for FileOperationCommand {
                 }
             }
 
-            // 移动文件
+            // 移动文件 (重建映射)
             "move" => {
 
                 // 再次检查参数，若缺少第三个参数，则失败
@@ -125,7 +126,19 @@ impl Command for FileOperationCommand {
                         return false;
                     }
 
-                    if let Ok(()) = database.move_file(process_path_text(args[2].to_string()), move_to_path) {
+                    // 尝试以目录移动
+                    if let Ok(()) = database.move_file(args[2].to_string(), move_to_path.clone()) {
+
+                        // 成功
+                        send_msg(stream, &Pass).await;
+
+                        // 发送同步
+                        sync_remote(stream, database).await;
+                        return true;
+                    }
+
+                    // 尝试以 Uuid 移动
+                    if let Ok(()) = database.move_file_with_uuid(args[2].to_string(), move_to_path) {
 
                         // 成功
                         send_msg(stream, &Pass).await;

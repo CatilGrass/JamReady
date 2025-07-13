@@ -12,7 +12,6 @@ use jam_ready_cmd::service::jam_server::jam_server_entry;
 use rand::Rng;
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::str::Split;
 use strum::IntoEnumIterator;
 
 // --------------------------------------------------------------------------- //
@@ -186,17 +185,93 @@ enum ClientCommands {
     #[command(about = "Get workspace type")]
     Type,
 
-    /// 从目标机器同步数据
-    #[command(about = "Execute commands")]
-    Exe(ExecuteCommandArgs),
-
     /// 重新连接至工作区
-    #[command(about = "Reconnect to workspace")]
-    Reconnect,
+    #[command(about = "Redirect to workspace")]
+    Redirect,
 
-    /// 开关 Logger
-    #[command(subcommand, about = "Switch logger")]
-    Logger(LoggerCommands)
+    /// 同步数据库内容
+    #[command(about = "Synchronize database content")]
+    Sync,
+
+    /// 下载并查看文件
+    #[command(about = "Download and view file")]
+    View(SearchArgs),
+
+    /// 提交取得锁的本地文件
+    #[command(about = "Commit locked local files")]
+    Commit(CommitArgs),
+
+    /// 列出文件结构
+    #[command(about = "List file structure")]
+    Struct,
+
+    /// 归档数据库版本 (仅 Leader)
+    #[command(about = "Archive database version (Leader only)")]
+    Archive,
+
+    /// 文件操作
+    #[command(subcommand, about = "File operations")]
+    File(FileOperationCommands),
+}
+
+
+/// 文件操作命令
+#[derive(Subcommand, Debug)]
+enum FileOperationCommands {
+
+    /// 添加文件
+    #[command(about = "Add new visual file")]
+    Add(PathArgs),
+
+    /// 移除文件
+    #[command(about = "Remove existing visual file")]
+    Remove(SearchArgs),
+
+    /// 移动、重命名、或为文件重建映射
+    #[command(about = "Move/Rename/Remap visual file")]
+    Move(MoveArgs),
+
+    /// 拿到文件的锁
+    #[command(about = "Get file lock")]
+    Get(SearchArgs),
+
+    /// 丢掉文件的锁
+    #[command(about = "Throw file lock")]
+    Throw(SearchArgs),
+}
+
+/// 目录参数
+#[derive(Args, Debug)]
+struct PathArgs {
+
+    /// 目录
+    path: String
+}
+
+/// 搜索 (Path or Uuid) 参数
+#[derive(Args, Debug)]
+struct SearchArgs {
+
+    /// 搜索
+    search: String
+}
+
+/// 搜索 (Path or Uuid) 参数
+#[derive(Args, Debug)]
+struct MoveArgs {
+
+    /// 搜索
+    from_search: String,
+
+    /// 移动到
+    to_path: String
+}
+
+#[derive(Args, Debug)]
+struct CommitArgs {
+
+    /// 日志
+    log: Option<String>
 }
 
 /// 运行命令参数
@@ -229,11 +304,8 @@ async fn client_workspace_main() {
         // 检查工作区类型
         ClientCommands::Type => print!("client"),
 
-        // 运行命令
-        ClientCommands::Exe(args) => client_execute_command(args.command.split(" ")).await,
-
         // 重新连接至工作区
-        ClientCommands::Reconnect => {
+        ClientCommands::Redirect => {
             let mut workspace = Workspace::read();
             if let Some(client) = &mut workspace.client {
                 if let Ok(addr) = search_workspace_lan(client.workspace_name.clone()).await {
@@ -243,31 +315,33 @@ async fn client_workspace_main() {
             Workspace::update(&workspace);
         }
 
-        // Logger 管理
-        ClientCommands::Logger(args) => {
-            let mut workspace = Workspace::read();
-            if let Some(client) = &mut workspace.client {
-                match args {
-                    LoggerCommands::Enable => client.enable_debug_logger = true,
-                    LoggerCommands::Disable => client.enable_debug_logger = false,
-                }
+        ClientCommands::Sync => client_execute_command(vec!["sync".to_string()]).await,
+        ClientCommands::View(args) => client_execute_command(vec!["view".to_string(), args.search]).await,
+        ClientCommands::Commit(args) => {
+            if let Some(log) = args.log {
+                client_execute_command(vec!["commit".to_string(), log]).await
+            } else {
+                client_execute_command(vec!["commit".to_string()]).await
             }
-            Workspace::update(&workspace);
+        }
+        ClientCommands::Struct => client_execute_command(vec!["struct".to_string()]).await,
+        ClientCommands::Archive => client_execute_command(vec!["archive".to_string()]).await,
+        ClientCommands::File(commands) => {
+            match commands {
+                FileOperationCommands::Add(args) => client_execute_command(vec!["file".to_string(), "add".to_string(), args.path]).await,
+                FileOperationCommands::Remove(args) => client_execute_command(vec!["file".to_string(), "remove".to_string(), args.search]).await,
+                FileOperationCommands::Move(args) => client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await,
+                FileOperationCommands::Get(args) => client_execute_command(vec!["file".to_string(), "get".to_string(), args.search]).await,
+                FileOperationCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
+            }
         }
     }
 }
 
 /// 客户端运行命令
-async fn client_execute_command(args: Split<'_, &str>) {
-    let mut command_args = Vec::new();
-    for arg in args {
-        if !arg.is_empty() {
-            command_args.push(arg);
-        }
-    }
-
+async fn client_execute_command(args: Vec<String>) {
     // 运行命令
-    execute(command_args).await;
+    execute(args).await;
 }
 
 // --------------------------------------------------------------------------- //

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Windows;
-using JamReadyGui.AppConfigure;
-using JamReadyGui.Utils;
+using JamReadyGui.Data;
+using JamReadyGui.Windows;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace JamReadyGui
@@ -14,29 +14,24 @@ namespace JamReadyGui
             var preference = AppPreference.LoadPreference();
             if (preference == null) return;
 
-            // 判断工作区目录是否存在
             var workspaceDirectory = new DirectoryInfo(preference.Workspace.CurrentWorkspace);
             if (!workspaceDirectory.Exists)
             {
                 var openDirectoryDialog = new CommonOpenFileDialog
                 {
                     IsFolderPicker = true,
-                    Title = "选择工作区目录",
+                    Title = "Select workspace directory",
                     InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Personal)
                 };
                 
-                // 打开文件夹
                 if (openDirectoryDialog.ShowDialog() == CommonFileDialogResult.Ok)
                 {
                     if (new DirectoryInfo(openDirectoryDialog.FileName).Exists)
                     {
-                        // 修改首选项设置
                         preference.Workspace.CurrentWorkspace = openDirectoryDialog.FileName;
-                        
-                        // 保存首选项
                         AppPreference.WritePreference(preference);
                         
-                        EntryApp();
+                        OpenWorkspace();
                     }
                 }
                 else
@@ -46,30 +41,27 @@ namespace JamReadyGui
             }
             else
             {
-                // 存在则直接进入入口
-                EntryApp();
+                OpenWorkspace();
             }
         }
 
-        private void EntryApp()
+        private void OpenWorkspace()
         {
-            var workspaceTypeResult = JamExecute.Execute("type");
+            var workspaceTypeResult = AppCoreInvoker.Execute("type");
             if (workspaceTypeResult != null)
             {
                 var resultType = workspaceTypeResult.Value.Output;
                 switch (resultType)
                 {
-                    // 未初始化的工作区
                     case "null": 
-                        
+                        AppSetupWorkspaceWindow window = new AppSetupWorkspaceWindow();
+                        window.Show();
                         break;
                     
-                    // 客户端工作区
                     case "client": 
                         
                         break;
                     
-                    // 服务端工作区
                     case "server": 
                         
                         break;

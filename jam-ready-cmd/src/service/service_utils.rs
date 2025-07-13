@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 use std::io::ErrorKind;
-use bincode::{Decode, Encode};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
@@ -9,7 +8,6 @@ use tokio::io;
 use tokio::net::TcpStream;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
-use crate::service::messages::MessageEncoder;
 
 /// 发送消息 - 使用 JSON 序列化
 pub async fn send_msg<Message>(
