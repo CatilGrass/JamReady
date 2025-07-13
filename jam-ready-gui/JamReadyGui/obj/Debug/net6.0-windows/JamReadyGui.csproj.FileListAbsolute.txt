@@ -18,3 +18,7 @@ D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\refint\JamRe
 D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\JamReadyGui.pdb
 D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\JamReadyGui.genruntimeconfig.cache
 D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\ref\JamReadyGui.dll
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\bin\Debug\net6.0-windows\Newtonsoft.Json.dll
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\JamReadyGui.csproj.CopyComplete
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\bin\Debug\net6.0-windows\Microsoft.WindowsAPICodePack.dll
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\bin\Debug\net6.0-windows\Microsoft.WindowsAPICodePack.Shell.dll

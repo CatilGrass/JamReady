@@ -34,6 +34,10 @@ struct WorkspaceSetup {
 #[derive(Subcommand, Debug)]
 enum WorkspaceSetupCommands {
 
+    /// 检查当前工作区类型
+    #[command(about = "Get workspace type")]
+    Type,
+
     /// 建立客户端环境
     #[command(about = "Setup as client")]
     Client(ClientSetupArgs),
@@ -75,6 +79,9 @@ struct ServerSetupArgs {
 async fn setup_workspace_main(workspace: Workspace) {
     let cmd = WorkspaceSetup::parse();
     match cmd.command {
+
+        // 检查工作区类型
+        WorkspaceSetupCommands::Type => print!("null"),
 
         // 建立客户端工作区
         WorkspaceSetupCommands::Client(args) => setup_client_workspace(args, workspace).await,
@@ -175,6 +182,10 @@ struct ClientWorkspaceEntry {
 #[derive(Subcommand, Debug)]
 enum ClientCommands {
 
+    /// 检查当前工作区类型
+    #[command(about = "Get workspace type")]
+    Type,
+
     /// 从目标机器同步数据
     #[command(about = "Execute commands")]
     Exe(ExecuteCommandArgs),
@@ -214,7 +225,14 @@ async fn client_workspace_main() {
     let cmd = ClientWorkspaceEntry::parse();
 
     match cmd.command {
+
+        // 检查工作区类型
+        ClientCommands::Type => print!("client"),
+
+        // 运行命令
         ClientCommands::Exe(args) => client_execute_command(args.command.split(" ")).await,
+
+        // 重新连接至工作区
         ClientCommands::Reconnect => {
             let mut workspace = Workspace::read();
             if let Some(client) = &mut workspace.client {
@@ -224,6 +242,8 @@ async fn client_workspace_main() {
             }
             Workspace::update(&workspace);
         }
+
+        // Logger 管理
         ClientCommands::Logger(args) => {
             let mut workspace = Workspace::read();
             if let Some(client) = &mut workspace.client {
@@ -268,6 +288,10 @@ struct ServerWorkspaceEntry {
 /// 服务端操作类命令
 #[derive(Subcommand, Debug)]
 enum ServerOperationCommands {
+
+    /// 检查当前工作区类型
+    #[command(about = "Get workspace type")]
+    Type,
 
     /// 启动服务器，并监听客户端消息
     #[command(about = "Run server")]
@@ -382,6 +406,10 @@ async fn server_workspace_main() {
     let cmd = ServerWorkspaceEntry::parse();
 
     match cmd.command {
+
+        // 检查工作区类型
+        ServerOperationCommands::Type => print!("server"),
+
         ServerOperationCommands::Run => jam_server_entry().await,
 
         ServerOperationCommands::Add(op) => {
