@@ -14,7 +14,10 @@ namespace JamReadyGui
             var preference = AppPreference.LoadPreference();
             if (preference == null) return;
 
-            var workspaceDirectory = new DirectoryInfo(preference.Workspace.CurrentWorkspace);
+            var path = preference.Workspace.CurrentWorkspace;
+            path = string.IsNullOrWhiteSpace(path)? "Empty" : path;
+            
+            var workspaceDirectory = new DirectoryInfo(path);
             if (!workspaceDirectory.Exists)
             {
                 var openDirectoryDialog = new CommonOpenFileDialog
@@ -47,6 +50,9 @@ namespace JamReadyGui
 
         private void OpenWorkspace()
         {
+            var preference = AppPreference.LoadPreference();
+            if (preference == null) return;
+            
             var workspaceTypeResult = AppCoreInvoker.Execute("type");
             if (workspaceTypeResult != null)
             {
@@ -54,16 +60,18 @@ namespace JamReadyGui
                 switch (resultType)
                 {
                     case "null": 
-                        AppSetupWorkspaceWindow window = new AppSetupWorkspaceWindow();
+                        AppSetupWorkspaceWindow window = new AppSetupWorkspaceWindow(preference.Workspace.CurrentWorkspace);
                         window.Show();
                         break;
                     
                     case "client": 
-                        
+                        AppClientWorkspace clientWorkspaceWindow = new AppClientWorkspace();
+                        clientWorkspaceWindow.Show();
                         break;
                     
                     case "server": 
-                        
+                        AppServerWorkspace serverWorkspaceWindow = new AppServerWorkspace(preference.Workspace.CurrentWorkspace);
+                        serverWorkspaceWindow.Show();
                         break;
                 }
             }

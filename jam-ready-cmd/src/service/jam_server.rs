@@ -24,7 +24,9 @@ const DISCOVERY_PORT: u16 = 54000;
 const MAX_BUFFER_SIZE: usize = 1024;
 
 /// 服务器入口
-pub async fn jam_server_entry() {
+pub async fn jam_server_entry(
+    short_logger: bool
+) {
 
     // 构建日志，尝试获得工作区名称
     let workspace = Workspace::read();
@@ -37,12 +39,12 @@ pub async fn jam_server_entry() {
 
         // 设置 Logger
         if server.enable_debug_logger {
-            logger_build(Trace);
+            logger_build(Trace, short_logger);
         } else {
-            logger_build(Info);
+            logger_build(Info, short_logger);
         }
     } else {
-        logger_build(Info);
+        logger_build(Info, short_logger);
     }
 
     info!("/// Jam Ready! ///");

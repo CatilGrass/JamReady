@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET6_0;NETCOREAPP
 D:\Rust\JamReady\jam-ready-gui\JamReadyGui\App.xaml
-1-1085048540
+32145414387
 
-6-481123250
+8-2141726727
 2061853732146
-Windows\AppSetupWorkspaceWindow.xaml;
+Windows\AppClientWorkspace.xaml;Windows\AppServerWorkspace.xaml;Windows\AppSetupWorkspaceWindow.xaml;
 
 False
 

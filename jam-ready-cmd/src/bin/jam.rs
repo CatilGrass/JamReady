@@ -13,7 +13,7 @@ use rand::Rng;
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use strum::IntoEnumIterator;
-
+use jam_ready_cmd::service::service_utils::get_self_address;
 // --------------------------------------------------------------------------- //
 
 /// 建立工作区入口
@@ -131,8 +131,7 @@ async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace)
         // 登录口令
         login_code: args.login_code.trim().to_string(),
 
-        uuid: "".to_string(),
-        enable_debug_logger: false,
+        uuid: "".to_string()
     };
     workspace.client = Some(client);
 
@@ -369,7 +368,7 @@ enum ServerOperationCommands {
 
     /// 启动服务器，并监听客户端消息
     #[command(about = "Run server")]
-    Run,
+    Run(RunArgs),
 
     /// 添加
     #[command(subcommand, about = "Add something")]
@@ -386,6 +385,19 @@ enum ServerOperationCommands {
     /// 查询
     #[command(subcommand, about = "Query something")]
     Query(ServerQueryCommands),
+
+    /// 设置
+    #[command(subcommand, about = "Set something")]
+    Set(ServerSetCommands),
+}
+
+/// 服务器运行参数
+#[derive(Args, Debug)]
+struct RunArgs {
+
+    /// 简短的 Logger
+    #[arg(short = 'S', long = "short-logger")]
+    short_logger: bool
 }
 
 /// 服务端操作指向
@@ -436,7 +448,37 @@ enum ServerQueryCommands {
 
     /// 查询参数
     #[command(about = "Query param")]
-    Param(ParamQueryArgs)
+    Param(ParamQueryArgs),
+
+    /// 查询工作区名称
+    #[command(about = "Query workspace name")]
+    Workspace,
+
+    /// 查询本地地址
+    #[command(about = "Query lan address")]
+    LocalAddress
+}
+
+/// 服务器设置命令
+#[derive(Subcommand, Debug)]
+enum ServerSetCommands {
+
+    /// 设置成员
+    #[command(subcommand, about = "Set member")]
+    Member(ServerSetMemberCommands),
+}
+
+/// 服务器设置命令
+#[derive(Subcommand, Debug)]
+enum ServerSetMemberCommands {
+
+    /// 设置成员的职责
+    #[command(about = "Set duties of the member")]
+    Duties(DutiesSetArgs),
+
+    /// 设置成员名称
+    #[command(about = "Set member")]
+    Name(MemberRenameArgs),
 }
 
 /// 成员操作参数
@@ -447,15 +489,37 @@ struct MemberArgs {
     member: String
 }
 
+/// 成员操作参数
+#[derive(Args, Debug)]
+struct MemberRenameArgs {
+
+    /// 成员名称
+    old_name: String,
+
+    /// 新名称
+    new_name: String
+}
+
 /// 职责操作参数
 #[derive(Args, Debug)]
 struct DutyOperationArgs {
 
     /// 职责
-    duty: String,
+    duties: String,
 
     /// 成员名称
     member: String
+}
+
+/// 职责操作参数
+#[derive(Args, Debug)]
+struct DutiesSetArgs {
+
+    /// 成员名称
+    member: String,
+
+    /// 职责
+    duties: String
 }
 
 /// 参数操作
@@ -484,12 +548,12 @@ async fn server_workspace_main() {
         // 检查工作区类型
         ServerOperationCommands::Type => print!("server"),
 
-        ServerOperationCommands::Run => jam_server_entry().await,
+        ServerOperationCommands::Run(args) => server_run(args).await,
 
         ServerOperationCommands::Add(op) => {
             match op {
                 ServerOperationTargetCommands::Member(args) => server_add_member(args.member),
-                ServerOperationTargetCommands::Duty(args) => server_add_duty_to_member(args.duty, args.member),
+                ServerOperationTargetCommands::Duty(args) => server_add_duty_to_member(args.duties, args.member),
                 ServerOperationTargetCommands::Param(args) => server_add_param(args.key, args.value),
                 ServerOperationTargetCommands::Debug => {
                     let mut workspace = Workspace::read();
@@ -503,7 +567,7 @@ async fn server_workspace_main() {
         ServerOperationCommands::Remove(op) => {
             match op {
                 ServerOperationTargetCommands::Member(args) => server_remove_member(args.member),
-                ServerOperationTargetCommands::Duty(args) => server_remove_duty_from_member(args.duty, args.member),
+                ServerOperationTargetCommands::Duty(args) => server_remove_duty_from_member(args.duties, args.member),
                 ServerOperationTargetCommands::Param(args) => server_remove_param(args.key, args.value),
                 ServerOperationTargetCommands::Debug => {
                     let mut workspace = Workspace::read();
@@ -524,10 +588,26 @@ async fn server_workspace_main() {
                 ServerQueryCommands::Duty(args) => server_query_duties_of_member(args.member),
                 ServerQueryCommands::Uuid(args) => server_query_uuid_of_member(args.member),
                 ServerQueryCommands::Param(args) => server_query_param(args.key),
-                ServerQueryCommands::LoginCode(args) => server_query_login_code(args.member)
+                ServerQueryCommands::LoginCode(args) => server_query_login_code(args.member),
+                ServerQueryCommands::Workspace => server_query_workspace(),
+                ServerQueryCommands::LocalAddress => print!("{}", get_self_address())
+            }
+        }
+        ServerOperationCommands::Set(op) => {
+            match op {
+                ServerSetCommands::Member(op) => {
+                    match op {
+                        ServerSetMemberCommands::Duties(args) => server_set_duties_to_member(args.member, args.duties),
+                        ServerSetMemberCommands::Name(args) => server_set_member_name(args)
+                    }
+                }
             }
         }
     }
+}
+
+async fn server_run(args: RunArgs) {
+    jam_server_entry(args.short_logger).await
 }
 
 /// 添加成员
@@ -587,12 +667,17 @@ fn server_remove_member(member_name: String) {
     if let Some(server) = &mut workspace.server {
         let mut found = false;
         let mut uuid_to_remove = None;
+        let mut login_code_to_remove = None;
         for (uuid, member) in &server.members {
             if member.member_name.trim() == member_name {
                 uuid_to_remove = Some(uuid.clone());
+                login_code_to_remove = server.login_code_map.get(uuid);
                 found = true;
                 break;
             }
+        }
+        if let Some(login_code) = login_code_to_remove {
+            let _ = server.login_code_map.remove(&login_code.clone());
         }
         if let Some(uuid) = uuid_to_remove {
             let _ = server.member_uuids.remove(&member_name);
@@ -632,6 +717,65 @@ fn server_add_duty_to_member (duty_name: String, member_name: String) {
                 }
             }
         }
+    }
+}
+
+/// 设置成员的职责
+fn server_set_duties_to_member (member_name: String, duties_str: String) {
+    let mut workspace = Workspace::read();
+    if let Some(server) = &mut workspace.server {
+
+        // 清除成员职责
+        if let Some(member_uuid) = server.member_uuids.get(member_name.as_str()) {
+            if let Some(member) = server.members.get_mut(member_uuid) {
+                member.member_duties.clear();
+            }
+        }
+        Workspace::update(&mut workspace);
+    }
+
+    // 遍历添加
+    for duty_str in duties_str.split(",") {
+        let duty_str = duty_str.trim();
+        server_add_duty_to_member(duty_str.to_string(), member_name.clone());
+    }
+}
+
+/// 设置成员的名称
+fn server_set_member_name(args: MemberRenameArgs) {
+    let old_name = process_id_text(args.old_name);
+    let new_name = process_id_text(args.new_name);
+    if new_name.is_empty() {
+        return;
+    }
+
+    let mut workspace = Workspace::read();
+    let mut found_uuid = None;
+    if let Some(server) = &mut workspace.server {
+
+        // 新名称不存在
+        if let None = server.member_uuids.get(new_name.trim()) {
+
+            // 拿出旧的 Uuid，并尝试拿到原来的成员
+            if let Some(uuid) = server.member_uuids.remove(old_name.trim()) {
+                if let Some(member) = server.members.get_mut(uuid.as_str()) {
+
+                    // 设置新的名称
+                    member.member_name = new_name.clone();
+
+                    // 记录旧的 Uuid
+                    found_uuid = Some(uuid);
+                }
+            }
+        }
+    }
+
+    // 若找到旧的 Uuid，说明设置名称成功，此时开始重建映射，并保存工作区
+    if let Some(server) = &mut workspace.server {
+        if let Some(uuid) = found_uuid {
+            server.member_uuids.insert(new_name, uuid);
+        }
+        Workspace::update(&mut workspace);
     }
 }
 
@@ -770,6 +914,14 @@ fn server_query_login_code(member_name: String) {
                 }
             }
         }
+    }
+}
+
+/// 查询工作区名称
+fn server_query_workspace() {
+    let workspace = Workspace::read();
+    if let Some(server) = workspace.server {
+        print!("{}", server.workspace_name);
     }
 }
 

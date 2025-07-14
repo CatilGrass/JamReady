@@ -5,4 +5,4 @@ pub mod commands;
 mod messages;
 
 #[allow(dead_code)]
-mod service_utils;
+pub mod service_utils;

@@ -50,9 +50,6 @@ pub struct ClientWorkspace {
 
     /// 成员自身的 Uuid
     pub uuid: String,
-
-    /// 是否启用 Logger
-    pub enable_debug_logger: bool,
 }
 
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]

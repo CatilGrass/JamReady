@@ -17,6 +17,7 @@ impl Command for ArchiveCommand {
 
         // 验证 Leader 身份通过
         if ! verify(stream).await { return; }
+        println!("Ok");
     }
 
     async fn remote(

@@ -22,3 +22,7 @@ D:\Rust\JamReady\jam-ready-gui\JamReadyGui\bin\Debug\net6.0-windows\Microsoft.Wi
 D:\Rust\JamReady\jam-ready-gui\JamReadyGui\bin\Debug\net6.0-windows\Microsoft.WindowsAPICodePack.Shell.dll
 D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\Windows\AppSetupWorkspaceWindow.baml
 D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\Windows\AppSetupWorkspaceWindow.g.cs
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\Windows\AppClientWorkspace.baml
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\Windows\AppServerWorkspace.baml
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\Windows\AppClientWorkspace.g.cs
+D:\Rust\JamReady\jam-ready-gui\JamReadyGui\obj\Debug\net6.0-windows\Windows\AppServerWorkspace.g.cs

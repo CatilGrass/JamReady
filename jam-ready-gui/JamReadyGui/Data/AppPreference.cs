@@ -27,6 +27,15 @@ public class AppPreference
     {
         // 当前打开的工作区
         public string CurrentWorkspace = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "\\JamReady\\";
+
+        // 退出工作区
+        public static void ExitWorkspace()
+        {
+            var preference = LoadPreference();
+            if (preference == null) return;
+            preference.Workspace.CurrentWorkspace = "";
+            WritePreference(preference);
+        }
     }
     
     // 从本地加载 App 首选项

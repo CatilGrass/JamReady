@@ -1,0 +1,271 @@
+<Window x:Class="JamReadyGui.Windows.AppServerWorkspace"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Width="800"
+        Height="550"
+        MinHeight="550"
+        MinWidth="800"
+        ResizeMode="CanMinimize"
+        Title="Server Workspace"
+        mc:Ignorable="d">
+  <Grid Margin="8,8,8,8">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="0.5*" />
+      <ColumnDefinition Width="0.3*" />
+      <ColumnDefinition Width="0.2*" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="0.76*" />
+      <RowDefinition Height="0.16*" />
+      <RowDefinition Height="0.08*" />
+    </Grid.RowDefinitions>
+    <Grid x:Name="MemberManager"
+          Margin="4,4,4,4"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Grid.Column="0"
+          Grid.Row="0">
+      <Label Margin="0,0,0,0"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             BorderBrush="#FFE0E0E0"
+             BorderThickness="1,1,1,1"
+             Grid.Column="0"
+             Grid.ColumnSpan="2"
+             Grid.Row="0"
+             Grid.RowSpan="2" />
+      <Label x:Name="MemberManagerTitle"
+             Content="Members"
+             Margin="0,0,0,0"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             FontSize="16"
+             FontWeight="Bold"
+             Grid.Column="0"
+             Grid.Row="0" />
+      <ListBox x:Name="MemberList"
+               Margin="4,4,4,4"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch"
+               Grid.Column="0"
+               Grid.Row="1" />
+      <Button x:Name="AddMemberButton"
+              Content="+"
+              Width="25"
+              Height="25"
+              Margin="0,4,34,0"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Center"
+              Cursor="Hand"
+              FontSize="16"
+              FontWeight="Bold"
+              Grid.Column="0"
+              Grid.Row="0" />
+      <Button x:Name="RemoveMemberButton"
+              Content="-"
+              Width="25"
+              Height="25"
+              Margin="0,4,4,0"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Center"
+              Cursor="Hand"
+              FontSize="16"
+              FontWeight="Bold"
+              Grid.Column="0"
+              Grid.Row="0" />
+      <StackPanel Margin="4,4,4,4"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Grid.Column="1"
+                  Grid.Row="1">
+        <StackPanel Height="30" Orientation="Horizontal">
+          <Label Content="Name: "
+                 Width="60"
+                 VerticalContentAlignment="Center"
+                 FontSize="14"
+                 FontWeight="Bold" />
+          <TextBox x:Name="MemberNameInput"
+                   Height="27"
+                   HorizontalAlignment="Stretch"
+                   VerticalContentAlignment="Center"
+                   BorderThickness="0,0,0,0"
+                   FontSize="14"
+                   FontWeight="Thin"
+                   MinWidth="50"
+                   Text="Member Name"
+                   TextAlignment="Left" />
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal">
+          <Label Content="Duties: "
+                 Width="60"
+                 VerticalContentAlignment="Center"
+                 FontSize="14"
+                 FontWeight="Bold" />
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal">
+          <CheckBox x:Name="MemberSelectedDebugger"
+                    Content="Debugger"
+                    Width="80"
+                    Height="22"
+                    Margin="8,0,8,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    VerticalContentAlignment="Center" />
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal">
+          <CheckBox x:Name="MemberSelectedLeader"
+                    Content="Leader"
+                    Width="80"
+                    Height="22"
+                    Margin="8,0,8,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    VerticalContentAlignment="Center" />
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal">
+          <CheckBox x:Name="MemberSelectedDeveloper"
+                    Content="Developer"
+                    Width="80"
+                    Height="22"
+                    Margin="8,0,8,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    VerticalContentAlignment="Center" />
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal">
+          <CheckBox x:Name="MemberSelectedCreator"
+                    Content="Creator"
+                    Width="80"
+                    Height="22"
+                    Margin="8,0,8,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    VerticalContentAlignment="Center" />
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal">
+          <CheckBox x:Name="MemberSelectedProducer"
+                    Content="Producer"
+                    Width="80"
+                    Height="22"
+                    Margin="8,0,8,0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    VerticalContentAlignment="Center" />
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal">
+          <Label Content="LoginCode:"
+                 Width="90"
+                 VerticalContentAlignment="Center"
+                 FontSize="14"
+                 FontWeight="Normal" />
+          <Label x:Name="MemberLoginCode"
+                 Content="XXXX-XXXX"
+                 Height="27"
+                 HorizontalAlignment="Stretch"
+                 VerticalContentAlignment="Center"
+                 BorderThickness="0,0,0,0"
+                 Cursor="Hand"
+                 FontSize="14"
+                 FontWeight="Thin" />
+        </StackPanel>
+        <Button x:Name="SaveMemberButton"
+                Content="Save Profile"
+                Margin="16,0,16,4"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Grid.Column="1"
+                Grid.Row="1" />
+        <Button x:Name="CopyMemberLoginCodeButton"
+                Content="Copy Login Code"
+                Margin="16,0,16,4"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Grid.Column="1"
+                Grid.Row="1" />
+        <Button x:Name="OpenClientButton"
+                Content="Open Client As Member"
+                Margin="16,0,16,4"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Grid.Column="1"
+                Grid.Row="1" />
+      </StackPanel>
+      <Label x:Name="MemberUuid"
+             Content="member-uuid"
+             Margin="2,0,2,0"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Bottom"
+             HorizontalContentAlignment="Center"
+             VerticalContentAlignment="Center"
+             BorderThickness="0,0,0,0"
+             FontSize="10"
+             FontWeight="Thin"
+             Grid.Column="1"
+             Grid.Row="0" />
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="0.5*" />
+        <ColumnDefinition Width="0.5*" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="30" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+    </Grid>
+    <Grid x:Name="Monitor"
+          Margin="4,4,4,4"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Grid.Column="1"
+          Grid.ColumnSpan="2"
+          Grid.Row="0"
+          Grid.RowSpan="2">
+      <ScrollViewer Margin="0,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    VerticalScrollBarVisibility="Auto"
+                    Grid.Column="0"
+                    Grid.Row="0">
+        <RichTextBox x:Name="CommandOutput" Background="#FFEFEFEF" />
+      </ScrollViewer>
+    </Grid>
+    <Grid x:Name="Tools"
+          Margin="4,4,4,4"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Background="#FFF0F0F0"
+          Grid.Column="0"
+          Grid.Row="1" />
+    <Button x:Name="RunOrCloseServerButton"
+            Content="Run/Stop"
+            Margin="4,4,4,4"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Cursor="Hand"
+            FontSize="16"
+            FontWeight="Bold"
+            Grid.Column="2"
+            Grid.Row="2" />
+    <Button x:Name="ExitWorkspaceButton"
+            Content="Exit Current Workspace"
+            Margin="4,4,4,4"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Cursor="Hand"
+            FontSize="16"
+            FontWeight="Bold"
+            Grid.Column="0"
+            Grid.Row="2" />
+    <Button x:Name="CopyAddressButton"
+            Content="Copy LAN Ipv4 Address"
+            Margin="4,4,4,4"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Cursor="Hand"
+            FontSize="16"
+            FontWeight="Bold"
+            Grid.Column="1"
+            Grid.Row="2" />
+  </Grid>
+</Window>

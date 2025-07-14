@@ -105,7 +105,6 @@ impl Command for CommitCommand {
                 }
             }
         }
-
         changed
     }
 }

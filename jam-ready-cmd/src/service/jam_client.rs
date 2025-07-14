@@ -1,9 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use log::LevelFilter::Debug;
 use tokio::net::{TcpStream, UdpSocket};
 use jam_ready::connect_once;
 use jam_ready::utils::local_archive::LocalArchive;
-use jam_ready::utils::logger_build::logger_build;
 use crate::data::workspace::{ClientWorkspace, Workspace};
 use crate::service::commands::registry;
 use crate::service::jam_command::execute_local_command;
@@ -17,11 +15,6 @@ pub async fn execute(command_input: Vec<String>) {
     let mut workspace = Workspace::read();
 
     if let Some(client) = &mut workspace.client {
-
-        // 检查是否启用 Logger
-        if client.enable_debug_logger {
-            logger_build(Debug);
-        }
 
         // 尝试使用目标地址连接
         let addr = client.target_addr;
