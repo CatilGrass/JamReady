@@ -143,6 +143,11 @@ async fn process_remote_receive(
                                 file.update(real_file_uuid, description.clone());
                                 info!("Update file {}: \"{}\"", file.path(), description);
 
+                                // 若不是长期锁，则直接丢弃
+                                if !file.is_longer_lock_unchecked() {
+                                    file.throw_locker();
+                                }
+
                                 return true;
                             }
                             Err(err) => {

@@ -232,7 +232,7 @@ enum FileOperationCommands {
 
     /// 拿到文件的锁
     #[command(about = "Get file lock")]
-    Get(SearchArgs),
+    Get(GetArgs),
 
     /// 丢掉文件的锁
     #[command(about = "Throw file lock")]
@@ -253,6 +253,17 @@ struct SearchArgs {
 
     /// 搜索
     search: String
+}
+
+#[derive(Args, Debug)]
+struct GetArgs {
+
+    /// 搜索
+    search: String,
+
+    /// 是否为长期锁
+    #[arg(short = 'l', long = "longer")]
+    longer: bool
 }
 
 /// 搜索 (Path or Uuid) 参数
@@ -330,7 +341,7 @@ async fn client_workspace_main() {
                 FileOperationCommands::Add(args) => client_execute_command(vec!["file".to_string(), "add".to_string(), args.path]).await,
                 FileOperationCommands::Remove(args) => client_execute_command(vec!["file".to_string(), "remove".to_string(), args.search]).await,
                 FileOperationCommands::Move(args) => client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await,
-                FileOperationCommands::Get(args) => client_execute_command(vec!["file".to_string(), "get".to_string(), args.search]).await,
+                FileOperationCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
                 FileOperationCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
             }
         }

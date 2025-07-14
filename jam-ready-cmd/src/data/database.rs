@@ -43,7 +43,10 @@ pub struct VirtualFile {
     real_histories: HashMap<u32, String>,
 
     /// 文件状态
-    state: VirtualFileState
+    state: VirtualFileState,
+
+    /// 锁是否长期持有
+    longer_lock: bool
 }
 
 /// 虚拟文件状态
@@ -248,6 +251,11 @@ impl Database {
                 // 重建目录映射
                 self.virtual_uuids.insert(new_path, uuid);
 
+                // 若不是长期锁，则直接丢弃
+                if !file.is_longer_lock_unchecked() {
+                    file.throw_locker();
+                }
+
                 return Ok(())
             }
             Err(())
@@ -283,7 +291,8 @@ impl VirtualFile {
             version: 0,
             change_histories: Default::default(),
             real_histories: Default::default(),
-            state: Available
+            state: Available,
+            longer_lock: false
         };
 
         // 添加第零版本数据
@@ -364,7 +373,7 @@ impl VirtualFile {
     }
 
     /// 尝试给成员获得锁 (通过 Uuid)
-    pub fn give_uuid_locker(&mut self, member_uuid: String) -> bool {
+    pub fn give_uuid_locker(&mut self, member_uuid: String, longer: bool) -> bool {
         let workspace = Workspace::read();
         if let Some(server) = workspace.server {
 
@@ -376,6 +385,7 @@ impl VirtualFile {
 
                     // 锁定
                     self.state = Lock(member_uuid);
+                    self.longer_lock = longer;
                     return true;
                 }
             } else if let Lock(guid) = &self.state {
@@ -390,7 +400,7 @@ impl VirtualFile {
     }
 
     /// 尝试给成员获得锁 (通过 Uuid)
-    pub fn give_locker(&mut self, member: &Member) -> bool {
+    pub fn give_locker(&mut self, member: &Member, longer: bool) -> bool {
         let workspace = Workspace::read();
         if let Some(server) = workspace.server {
 
@@ -402,6 +412,7 @@ impl VirtualFile {
                 if let Some(uuid) = uuid {
                     // 锁定
                     self.state = Lock(uuid.clone());
+                    self.longer_lock = longer;
                     return true;
                 }
 
@@ -424,6 +435,7 @@ impl VirtualFile {
     /// 丢掉自身的锁
     pub fn throw_locker(&mut self) {
         self.state = Available;
+        self.longer_lock = false;
     }
 
     /// 获得锁的主人
@@ -445,5 +457,18 @@ impl VirtualFile {
             return Some(uuid.clone());
         }
         None
+    }
+
+    /// 判断锁是否为长期锁
+    pub fn is_longer_lock(&self) -> Option<bool> {
+        if let Lock(_) = &self.state {
+            return Some(self.longer_lock);
+        }
+        None
+    }
+
+    /// 判断锁是否为长期锁
+    pub fn is_longer_lock_unchecked(&self) -> bool {
+        self.longer_lock
     }
 }

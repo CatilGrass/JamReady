@@ -37,11 +37,20 @@ impl Command for ShowFileStructCommand {
 
                 // 锁定状态
                 if let Some(uuid) = file.get_locker_owner_uuid() {
+                    let longer_lock = file.is_longer_lock_unchecked();
                     // 自己锁定
                     if uuid == client.uuid.trim() {
-                        info = format!("{}{}", info, "[Owned]".bright_green());
+                        if longer_lock {
+                            info = format!("{}{}", info, "[Longer Owned]".bright_green());
+                        } else {
+                            info = format!("{}{}", info, "[Owned]".green());
+                        }
                     } else {
-                        info = format!("{}{}", info, "[Locked]".bright_red());
+                        if longer_lock {
+                            info = format!("{}{}", info, "[Longer Locked]".bright_red());
+                        } else {
+                            info = format!("{}{}", info, "[Locked]".bright_yellow());
+                        }
                     }
                 }
                 paths.push(info)

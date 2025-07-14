@@ -161,7 +161,7 @@ impl Command for FileOperationCommand {
                 if let Some(file) = virtual_file {
 
                     // 尝试拿锁
-                    return if file.give_uuid_locker(uuid) {
+                    return if file.give_uuid_locker(uuid, false) {
 
                         // 成功
                         send_msg(stream, &Pass).await;
@@ -176,6 +176,31 @@ impl Command for FileOperationCommand {
                 }
 
                 send_msg(stream, &Deny("Get locker failed!".to_string())).await;
+                false
+            }
+
+            // 拿到文件的锁 (长期)
+            "get_longer" => {
+
+                // 文件存在
+                if let Some(file) = virtual_file {
+
+                    // 尝试拿锁
+                    return if file.give_uuid_locker(uuid, true) {
+
+                        // 成功
+                        send_msg(stream, &Pass).await;
+
+                        // 发送同步
+                        sync_remote(stream, database).await;
+                        true
+                    } else {
+                        send_msg(stream, &Deny("Get longer locker failed!".to_string())).await;
+                        false
+                    }
+                }
+
+                send_msg(stream, &Deny("Get longer locker failed!".to_string())).await;
                 false
             }
 
