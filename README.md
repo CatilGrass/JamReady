@@ -1,37 +1,31 @@
-# JamReady - 提速你的 GameJam !
+1. # JamReady - Boost Your GameJam!
 
-## 写在前面
+   ## Introduction
 
-​	JamReady 是我和我的朋友们参加完 GameJam 后，对于团队合作中大大小小和游戏创作无关的事情感到抓狂后开始着手制作的项目。我们想打造一个开箱即用的 GameJam 版本控制系统和工具箱。
+   ​	JamReady was born after my friends and I participated in a GameJam  and grew frustrated with countless non-creative teamwork hurdles. We  decided to build an out-of-the-box version control system and toolkit  specifically for GameJam development.
 
+   ## Version Control
 
+   JamReady’s version control can be thought of as a radically simplified evolution of SVN:
 
-## 版本控制部分
+   1. **Partial Local Storage:** Only files you need are stored locally, not the entire repository.
+   2. **Intelligent Locking:** All files are readable. You can acquire a file's "lock" to gain exclusive write access.
+   3. **Move via Metadata:** The "Move" command only updates file mapping metadata, preventing conflicts with other collaborators.
+   4. **Safe Removal:** The "Remove" command only deletes the mapping. Original files can be restored via their UUID.
+   5. **File Watching (In Development):** Members can "watch" files to receive notifications on changes.
+   6. **Auto-Sync Binding (In Development):** Members can "bind" files to auto-sync changes to a local directory.
 
-​	JamReady 的版本控制可以理解成 Svn 的终极简化版本：
+   ## Development Phase Management
 
-1. 本地只存储自己需要的文件，而非整个版本库。
-2. 所有文件可读，自身可以获得该文件的 “锁” 以转换为 “仅自己可写”
-3. “移动” 命令仅修改映射，不会干扰到其他成员的编辑。
-4. “移除” 命令仅移除映射，可通过文件原来的 Uuid 重建映射还原。
-5. 成员可以 “关注” 文件，在文件修改时会收到消息。（开发中）
-6. 成员可以 “绑定” 文件，在文件修改时会自动同步到本地的指定目录。（开发中）
+   JamReady provides powerful tools for managing GameJam workflows:
 
+   ### Phase Tools & Task Tracking
 
+   1. **Phase Timer (In Development):** Set time limits for each development phase.
+   2. **Flex Time (In Development:** Allocate buffer time when phases overrun.
+   3. **Task/Request System (In Development):** Leads create phase tasks; members can submit cross-team requests during phases.
 
-## 开发阶段管理（开发中）
+   ### Game Demo Updates
 
-​	JamReady 提供了丰富的 GameJam 开发阶段工具：
-
-### 阶段工具以及任务表
-
-1. 阶段工具：为项目指定每个阶段的限时，方便成员管理自己的进度。
-2. 弹性时间：为项目分配弹性时间，若阶段结束还有成员没完成阶段，则进入弹性时间。
-3. 任务表、需求表：策划或队长需要在每个阶段建立任务表，阶段期间成员可以互相建立需求表。
-
-
-
-### 游戏 Demo 更新
-
-1. 程序可以指定游戏的打包目录，打包后通过软件可以自动压缩上传至服务器。
-2. 其他成员可以一键下载并运行游戏，开始测试。
+   1. **One-Click Distribution:** Designate a build directory. JamReady auto-compresses and uploads builds to the server.
+   2. **Instant Playtesting:** Team members download and run the latest demo with a single click.
