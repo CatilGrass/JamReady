@@ -39,3 +39,19 @@ pub fn read_parameter(parameter: String) -> Option<String> {
         None
     }
 }
+
+/// 列出所有参数
+pub fn parameters() -> Vec<String> {
+    let mut result = Vec::new();
+    let dir = fs::read_dir(current_dir().unwrap().join(env!("PATH_PARAMETERS")));
+    if let Ok(dir) = dir {
+        for d in dir {
+            if let Ok(d) = d {
+                if let Some(p) = d.path().to_str() {
+                    result.push(p.replace(".txt", ""));
+                }
+            }
+        }
+    }
+    result
+}

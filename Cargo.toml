@@ -2,7 +2,8 @@
 name = "jam_ready"
 description = "JamReady - Accelerate your GameJam, focus on creation! Escape the hassle of asset management!"
 authors = [
-    "Weicao-CatilGrass (Github)"
+    "Weicao-CatilGrass (Github)",
+    "overlord48677 (Github)"
 ]
 version = "0.1.0"
 edition = "2024"

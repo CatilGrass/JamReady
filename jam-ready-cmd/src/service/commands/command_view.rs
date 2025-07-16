@@ -7,6 +7,7 @@ use crate::service::jam_command::Command;
 use async_trait::async_trait;
 use jam_ready::utils::local_archive::LocalArchive;
 use tokio::net::TcpStream;
+use jam_ready::utils::text_process::process_path_text;
 use crate::service::messages::{ClientMessage, ServerMessage};
 use crate::service::service_utils::{read_msg, send_msg};
 
@@ -27,21 +28,29 @@ impl Command for ViewCommand {
         // 检查参数数量
         if args.len() < 2 { return; } // <搜索>
 
+        // 成功状态
+        let mut success = false;
+        let mut print_msg = "".to_string();
+
         // 文件目录
         let file_path_str = args[1].to_string();
         let file = database.search_file(file_path_str.clone());
         if let Some(file) = file {
-            if let Some(client_path) = file.client_path() {
 
+            // 尝试寻找本地映射，找不到用默认映射
+            if let Some(client_path) = local.file_to_path(&database, file) {
+                // 是否准备就绪
                 let mut ready = true;
 
                 // 如果文件存在且版本大于或等于服务端的版本，则不下载
-                if let Some(local_uuid) = local.file_uuids.get(&file.path()) {
-                    if let Some(local_file) = local.file_paths.get(local_uuid) {
+                if let Some(local_uuid) = database.uuid_of_path(file.path()) {
+                    if let Some(local_file) = local.file_paths.get(&local_uuid) {
                         if local_file.local_version >= file.version() && client_path.exists() {
                             // 发送 "未就绪"
                             send_msg(stream, &ClientMessage::NotReady).await;
                             ready = false;
+
+                            print_msg = "The file is already the latest version, no need to download".to_string();
                         }
                     }
                 }
@@ -51,25 +60,45 @@ impl Command for ViewCommand {
                     send_msg(stream, &ClientMessage::Ready).await;
 
                     // 读取文件
-                    match read_file(stream, client_path).await {
+                    match read_file(stream, client_path.clone()).await {
                         Ok(_) => {
                             // 写入本地文件映射
-                            if let Some(uuid) = database.uuid_of_path(file.path()) {
-                                local.file_paths.insert(uuid.clone(), LocalFile {
-                                    local_path: file.path(),
-                                    local_version: file.version(),
-                                });
-                                local.file_uuids.insert(file.path(), uuid.clone());
+                            if let Some(local_path_buf) = local.search_to_path_relative(&database, file.path()) {
+                                let local_path_str = process_path_text(local_path_buf.display().to_string());
+                                if let Some(uuid) = database.uuid_of_path(file.path()) {
+                                    local.file_paths.insert(uuid.clone(), LocalFile {
+                                        local_path: local_path_str.clone(),
+                                        local_version: file.version(),
+                                    });
+                                    local.file_uuids.insert(local_path_str, uuid.clone());
+                                }
+                                print_msg = "File download completed".to_string();
+                                success = true;
                             }
                         }
-                        Err(_) => { }
+                        Err(_) => {
+                            print_msg = "File download failed".to_string();
+                        }
                     }
                 }
             }
         }
 
         // 读取结束消息
-        let _ = read_msg::<ServerMessage>(stream).await;
+        match read_msg::<ServerMessage>(stream).await {
+            ServerMessage::Deny(err) => {
+                print_msg = format!("{}: {}", print_msg, err);
+            }
+            ServerMessage::Done => {}
+            _ => {}
+        }
+
+        if success {
+            println!("Ok: {}", print_msg);
+        } else {
+            eprintln!("Err: {}", print_msg);
+        }
+
         LocalFileMap::update(&local);
     }
 
@@ -83,6 +112,11 @@ impl Command for ViewCommand {
 
         // 确认客户端的准备状态
         let read_message: ClientMessage = read_msg(stream).await;
+
+        // 成功状态
+        let mut success = false;
+        let mut return_message = "".to_string();
+
         match read_message {
             ClientMessage::Ready => {
                 // 文件路径
@@ -90,9 +124,14 @@ impl Command for ViewCommand {
                 let file = database.search_file(file_path_str.clone());
                 if let Some(file) = file {
                     if let Some(server_path) = file.server_path() {
-                        match send_file(stream,server_path).await {
-                            Ok(_) => { }
-                            Err(_) => { }
+                        match send_file(stream, server_path).await {
+                            Ok(_) => {
+                                success = true;
+                            }
+                            Err(err) => {
+                                let err_string = format!("{}", err);
+                                return_message = err_string;
+                            }
                         }
                     }
                 }
@@ -100,8 +139,11 @@ impl Command for ViewCommand {
             _ => { }
         }
 
-        // 完成信号
-        send_msg(stream, &ServerMessage::Done).await;
+        if success {
+            send_msg(stream, &ServerMessage::Done).await;
+        } else {
+            send_msg(stream, &ServerMessage::Deny(return_message.to_string())).await;
+        }
         false
     }
 }

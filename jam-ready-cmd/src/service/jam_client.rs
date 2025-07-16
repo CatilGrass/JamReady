@@ -2,6 +2,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tokio::net::{TcpStream, UdpSocket};
 use jam_ready::connect_once;
 use jam_ready::utils::local_archive::LocalArchive;
+use crate::data::parameters::{read_parameter};
 use crate::data::workspace::{ClientWorkspace, Workspace};
 use crate::service::commands::registry;
 use crate::service::jam_command::execute_local_command;
@@ -24,17 +25,26 @@ pub async fn execute(command_input: Vec<String>) {
 
         let mut args_input = Vec::new();
         for arg in command_input.iter() {
-            args_input.push(arg.as_str());
+            // 若命令文本中存在 ? 说明有参数
+            if arg.ends_with("?") {
+                let param = arg.to_lowercase().replace("?", "");
+                if let Some(content) = read_parameter(param) {
+                    args_input.push(content.trim().to_string());
+                }
+            } else {
+                args_input.push(arg.clone());
+            }
         }
+        let args = args_input.iter().map(String::as_str).collect::<Vec<&str>>();
 
         // 若成功取得流，进入正式操作
         if let Some(mut stream) = stream {
 
             // 发送命令
-            send_msg(&mut stream, &Command(command_input.clone())).await;
+            send_msg(&mut stream, &Command(args_input.clone())).await;
 
             // 进入命令
-            execute_local_command(&registry(), &mut stream, args_input).await;
+            execute_local_command(&registry(), &mut stream, args).await;
         }
     }
 

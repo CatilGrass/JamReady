@@ -25,11 +25,10 @@ impl Command for FileOperationCommand {
             Pass => {
                 // 成功后，从服务端接收最新的同步
                 sync_local(stream).await;
-
-                println!("Ok");
+                println!("Ok")
             }
             Deny(msg) => {
-                eprintln!("{}", msg)
+                eprintln!("Err: {}", msg)
             }
             _ => {}
         }

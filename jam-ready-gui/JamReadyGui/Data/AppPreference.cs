@@ -11,10 +11,10 @@ namespace JamReadyGui.Data;
 public class AppPreference
 {
     // 首选项 Json 路径
-    public static string PreferenceJsonFile = AppDomain.CurrentDomain.BaseDirectory + "\\config\\preferences.json";
+    public static string PreferenceJsonFile = Directory.GetCurrentDirectory() + "\\config\\preferences.json";
     
     // 核心路径
-    public static string JamReadyExeFile = AppDomain.CurrentDomain.BaseDirectory + "\\bin\\jam.exe";
+    public static string JamReadyExeFile = Directory.GetCurrentDirectory() + "\\bin\\jam.exe";
     
     // 工作区首选项
     public WorkspacePreference Workspace = new();

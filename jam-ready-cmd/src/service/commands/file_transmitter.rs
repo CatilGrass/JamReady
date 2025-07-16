@@ -16,10 +16,10 @@ pub async fn send_file(
 
     // 文件检查
     if !file_path.exists() {
-        return Err(format!("File not found: {}", file_path.display()).into());
+        return Err(format!("File not found \"{}\"", file_path.display()).into());
     }
     if file_path.is_dir() {
-        return Err(format!("Path is directory: {}", file_path.display()).into());
+        return Err(format!("Path is directory \"{}\"", file_path.display()).into());
     }
 
     // 打开文件
@@ -123,7 +123,7 @@ pub async fn read_file(
         .truncate(true)
         .open(save_path)
         .await
-        .map_err(|e| format!("Failed to create file: {}", e))?;
+        .map_err(|e| format!("Failed to create file \"{}\"", e))?;
     let mut writer = BufWriter::with_capacity(CHUNK_SIZE, file);
 
     // 进度条初始化

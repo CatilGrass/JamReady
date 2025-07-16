@@ -183,20 +183,29 @@ enum ClientCommands {
     #[command(about = "Get workspace type")]
     Type,
 
-    /// 重新连接至工作区
+    /// 重新定向至工作区
     #[command(about = "Redirect to workspace")]
     Redirect,
 
     /// 同步数据库内容
-    #[command(about = "Synchronize database content")]
+    #[command(
+        visible_alias = "update",
+        about = "Synchronize database content")]
     Sync,
 
     /// 提交取得锁的本地文件
-    #[command(about = "Commit locked local files")]
+    #[command(
+        visible_alias = "save",
+        visible_alias = "sv",
+        about = "Commit locked local files")]
     Commit(CommitArgs),
 
     /// 列出文件结构
-    #[command(about = "List file structure")]
+    #[command(
+        visible_alias = "tree",
+        visible_alias = "list",
+        visible_alias = "ls",
+        about = "List file structure")]
     Struct,
 
     /// 归档数据库版本 (仅 Leader)
@@ -204,46 +213,88 @@ enum ClientCommands {
     Archive,
 
     /// 文件操作
-    #[command(subcommand, about = "File operations")]
+    #[command(
+        visible_alias = "fo",
+        subcommand,
+        about = "File operations")]
     File(FileOperationCommands),
-}
 
+    /// 操作参数
+    #[command(
+        visible_alias = "set",
+        about = "Operate params")]
+    Param(ParamArgs),
+}
 
 /// 文件操作命令
 #[derive(Subcommand, Debug)]
 enum FileOperationCommands {
 
     /// 添加文件
-    #[command(about = "Add new visual file")]
-    Add(PathArgs),
+    #[command(
+        visible_alias = "new",
+        visible_alias = "create",
+        about = "Add new virtual file")]
+    Add(NewArgs),
 
     /// 移除文件
-    #[command(about = "Remove existing visual file")]
-    Remove(SearchArgs),
+    #[command(
+        visible_alias = "rm",
+        visible_alias = "delete",
+        visible_alias = "del",
+        about = "Remove existing virtual file")]
+    Remove(RemoveArgs),
 
     /// 移动、重命名、或为文件重建映射
-    #[command(about = "Move/Rename/Remap visual file")]
+    #[command(
+        visible_alias = "mv",
+        about = "Move/Rename/Remap virtual file")]
     Move(MoveArgs),
 
     /// 拿到文件的锁
-    #[command(about = "Get file lock")]
+    #[command(
+        visible_alias = "lock",
+        about = "Get file lock")]
     Get(GetArgs),
 
     /// 丢掉文件的锁
-    #[command(about = "Throw file lock")]
+    #[command(
+        visible_alias = "unlock",
+        visible_alias = "release",
+        about = "Throw file lock")]
     Throw(SearchArgs),
 
     /// 下载并查看文件
-    #[command(about = "Download and view file")]
+    #[command(
+        visible_alias = "v",
+        visible_alias = "download",
+        visible_alias = "dl",
+        about = "Download and view file")]
     View(SearchArgs),
 }
 
-/// 目录参数
+/// 新建目录
 #[derive(Args, Debug)]
-struct PathArgs {
+struct NewArgs {
 
     /// 目录
-    path: String
+    path: String,
+
+    /// 尝试拿到锁定
+    #[arg(long, short = 'g', alias = "lock", alias = "l")]
+    get: bool
+}
+
+/// 移除参数
+#[derive(Args, Debug)]
+struct RemoveArgs {
+
+    /// 搜索
+    search: String,
+
+    /// 尝试拿到锁定
+    #[arg(long, short = 'g', alias = "lock", alias = "l")]
+    get: bool
 }
 
 /// 搜索 (Path or Uuid) 参数
@@ -273,7 +324,11 @@ struct MoveArgs {
     from_search: String,
 
     /// 移动到
-    to_path: String
+    to_path: String,
+
+    /// 尝试拿到锁定
+    #[arg(long, short = 'g', alias = "lock", alias = "l")]
+    get: bool
 }
 
 #[derive(Args, Debug)]
@@ -281,6 +336,16 @@ struct CommitArgs {
 
     /// 日志
     log: Option<String>
+}
+
+#[derive(Args, Debug)]
+struct ParamArgs {
+
+    /// 键
+    key: String,
+
+    /// 值
+    value: Option<String>
 }
 
 /// 运行命令参数
@@ -336,12 +401,43 @@ async fn client_workspace_main() {
         ClientCommands::Archive => client_execute_command(vec!["archive".to_string()]).await,
         ClientCommands::File(commands) => {
             match commands {
-                FileOperationCommands::Add(args) => client_execute_command(vec!["file".to_string(), "add".to_string(), args.path]).await,
-                FileOperationCommands::Remove(args) => client_execute_command(vec!["file".to_string(), "remove".to_string(), args.search]).await,
-                FileOperationCommands::Move(args) => client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await,
+                FileOperationCommands::Add(args) => {
+                    // 添加文件
+                    client_execute_command(vec!["file".to_string(), "add".to_string(), args.path.clone()]).await;
+                    if args.get {
+                        // 获得文件的锁
+                        client_execute_command(vec!["file".to_string(), "get".to_string(), args.path]).await;
+                    }
+                },
+                FileOperationCommands::Remove(args) => {
+                    if args.get {
+                        // 获得文件的锁
+                        client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
+                    }
+                    // 移除文件
+                    client_execute_command(vec!["file".to_string(), "remove".to_string(), args.search]).await;
+                },
+                FileOperationCommands::Move(args) => {
+                    if args.get {
+                        // 获得文件的锁
+                        client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.from_search).clone()]).await;
+                    }
+                    // 移动文件
+                    client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await
+                },
                 FileOperationCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
                 FileOperationCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
                 FileOperationCommands::View(args) => client_execute_command(vec!["view".to_string(), args.search]).await,
+            }
+        }
+        ClientCommands::Param(args) => {
+            match args.value {
+                None => client_query_param(args.key),
+                Some(content) => if content.is_empty() {
+                    erase_parameter(args.key)
+                } else {
+                    write_parameter(args.key, content)
+                }
             }
         }
     }
@@ -351,6 +447,11 @@ async fn client_workspace_main() {
 async fn client_execute_command(args: Vec<String>) {
     // 运行命令
     execute(args).await;
+}
+
+/// 查询参数
+fn client_query_param(param_name: String) {
+    print!("{}", read_parameter(param_name.clone()).unwrap_or("".to_string()));
 }
 
 // --------------------------------------------------------------------------- //
@@ -421,10 +522,6 @@ enum ServerOperationTargetCommands {
     #[command(about = "Operate duties")]
     Duty(DutyOperationArgs),
 
-    /// 操作参数
-    #[command(about = "Operate params")]
-    Param(ParamArgs),
-
     /// 调试等级的 Logger
     #[command(about = "Operate debug")]
     Debug
@@ -454,10 +551,6 @@ enum ServerQueryCommands {
     /// 查询成员的 登录代码
     #[command(about = "Query login code of the member")]
     LoginCode(MemberArgs),
-
-    /// 查询参数
-    #[command(about = "Query param")]
-    Param(ParamQueryArgs),
 
     /// 查询工作区名称
     #[command(about = "Query workspace name")]
@@ -531,24 +624,6 @@ struct DutiesSetArgs {
     duties: String
 }
 
-/// 参数操作
-#[derive(Args, Debug)]
-struct ParamArgs {
-
-    /// 键
-    key: String,
-
-    /// 值
-    value: Option<String>
-}
-
-#[derive(Args, Debug)]
-struct ParamQueryArgs {
-
-    /// 键
-    key: String,
-}
-
 async fn server_workspace_main() {
     let cmd = ServerWorkspaceEntry::parse();
 
@@ -563,7 +638,6 @@ async fn server_workspace_main() {
             match op {
                 ServerOperationTargetCommands::Member(args) => server_add_member(args.member),
                 ServerOperationTargetCommands::Duty(args) => server_add_duty_to_member(args.duties, args.member),
-                ServerOperationTargetCommands::Param(args) => server_add_param(args.key, args.value),
                 ServerOperationTargetCommands::Debug => {
                     let mut workspace = Workspace::read();
                     if let Some(server) = &mut workspace.server {
@@ -577,7 +651,6 @@ async fn server_workspace_main() {
             match op {
                 ServerOperationTargetCommands::Member(args) => server_remove_member(args.member),
                 ServerOperationTargetCommands::Duty(args) => server_remove_duty_from_member(args.duties, args.member),
-                ServerOperationTargetCommands::Param(args) => server_remove_param(args.key, args.value),
                 ServerOperationTargetCommands::Debug => {
                     let mut workspace = Workspace::read();
                     if let Some(server) = &mut workspace.server {
@@ -596,7 +669,6 @@ async fn server_workspace_main() {
             match op {
                 ServerQueryCommands::Duty(args) => server_query_duties_of_member(args.member),
                 ServerQueryCommands::Uuid(args) => server_query_uuid_of_member(args.member),
-                ServerQueryCommands::Param(args) => server_query_param(args.key),
                 ServerQueryCommands::LoginCode(args) => server_query_login_code(args.member),
                 ServerQueryCommands::Workspace => server_query_workspace(),
                 ServerQueryCommands::LocalAddress => print!("{}", get_self_address())
@@ -821,17 +893,6 @@ fn server_remove_duty_from_member (duty_name: String, member_name: String) {
     }
 }
 
-/// 添加参数
-fn server_add_param(param_name: String, value: Option<String>) {
-    let value = value.unwrap_or("".to_string());
-    write_parameter(param_name, value);
-}
-
-/// 擦除参数
-fn server_remove_param(param_name: String, _value: Option<String>) {
-    erase_parameter(param_name);
-}
-
 fn print_maybe(maybe: Option<MemberDuty>, duty_name: String) {
     match maybe {
         None => {
@@ -910,11 +971,6 @@ fn server_query_uuid_of_member (member_name: String) {
             }
         }
     }
-}
-
-/// 查询参数
-fn server_query_param(param_name: String) {
-    print!("{}", read_parameter(param_name.clone()).unwrap_or("".to_string()));
 }
 
 /// 查询成员的 登录代码

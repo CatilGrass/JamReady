@@ -11,7 +11,8 @@ use tokio::net::TcpStream;
 use tokio::select;
 use tokio::time::sleep;
 use uuid::Uuid;
-use crate::data::local_file_map::LocalFileMap;
+use jam_ready::utils::text_process::process_path_text;
+use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::service::commands::file_transmitter::{read_file, send_file};
 use crate::service::messages::ClientMessage::{Done, Text, Unknown};
 use crate::service::messages::{ClientMessage, ServerMessage};
@@ -28,6 +29,15 @@ impl Command for CommitCommand {
         // 同步数据库
         sync_local(stream).await;
         let database = Database::read();
+        let mut local = LocalFileMap::read();
+
+        // 计数器
+        let mut all_count = 0;
+        let mut success_count = 0;
+
+        // 文件表
+        let mut success_files = Vec::new();
+        let mut failed_files = Vec::new();
 
         // 加载工作区
         let workspace = Workspace::read();
@@ -40,9 +50,17 @@ impl Command for CommitCommand {
                     // 若所有者的 Uid 和自己相同
                     if owner_uuid.trim() != client.uuid.trim() { continue; }
 
+                    // 尝试寻找本地映射，找不到用默认映射
+
                     // 若此文件对应的本地位置存在
-                    if let Some(client_path) = file.client_path() {
+                    if let Some(client_path) = local.file_to_path(&database, file) {
                         if !client_path.exists() { continue; }
+
+                        // 确认要上传，加入计数器
+                        all_count += 1;
+
+                        // 记录该文件目录
+                        let record_file_path = process_path_text(client_path.clone().display().to_string());
 
                         // 告知服务器要开始上传，并征求同意
                         send_msg(stream, &Text(file.path())).await;
@@ -52,33 +70,84 @@ impl Command for CommitCommand {
                                 let result = send_file(stream, client_path.clone()).await;
                                 match result {
                                     Ok(_) => {
-                                        print!("Commit \"{}\" SUCCESS", client_path.display());
+
+                                        // 成功，增加成功计数
+                                        success_count += 1;
+
+                                        // 记录文件到成功表
+                                        success_files.push(record_file_path);
 
                                         // 更新本地映射
-                                        let mut file_map = LocalFileMap::read();
-                                        if let Some(local_file_uuid) = file_map.file_uuids.get(&file.path()) {
-                                            if let Some(local_file) = file_map.file_paths.get_mut(local_file_uuid) {
+                                        if let Some(local_file_uuid) = local.file_uuids.get(&file.path()) {
+                                            if let Some(local_file) = local.file_paths.get_mut(local_file_uuid) {
 
                                                 // 提交成功后版本 +1
                                                 local_file.local_version += 1;
                                             }
+                                        } else {
+                                            // 没有映射就创建
+                                            if let Some(uuid) = database.uuid_of_path(file.path()) {
+                                                local.file_paths.insert(uuid.clone(), LocalFile {
+                                                    local_path: file.path(),
+                                                    local_version: file.version(),
+                                                });
+                                                local.file_uuids.insert(file.path(), uuid);
+                                            }
                                         }
-                                        LocalFileMap::update(&file_map);
+                                        LocalFileMap::update(&local);
                                     }
                                     Err(_) => {
-                                        eprint!("Commit \"{}\" FAILED", client_path.display());
+
+                                        // 记录文件到失败表
+                                        failed_files.push(record_file_path);
                                     }
                                 }
                             }
                             Deny(_) => {
-                                eprintln!("Commit \"{}\" FAILED", file.path());
+
+                                // 记录文件到失败表
+                                failed_files.push(record_file_path);
                                 continue;
                             }
-                            _ => {}
+                            _ => {
+
+                                // 记录文件到失败表
+                                failed_files.push(record_file_path);
+                            }
                         }
                     }
                 }
             }
+
+            // 打印计数器
+            if all_count > 0 {
+                if success_count >= all_count {
+                    println!("Ok: Commited {} files, Success {} files.", all_count, success_count);
+                } else {
+                    eprintln!("Err: Commited {} files, Success {} files.", all_count, success_count);
+                }
+
+                // 打印成功的文件
+                if success_files.len() > 0 {
+                    println!("Success: ");
+                    for success_file in success_files {
+                        println!("{}", success_file);
+                    }
+                }
+
+                // 打印失败的文件
+                if failed_files.len() > 0 {
+                    eprintln!("Failed: ");
+                    for failed_file in failed_files {
+                        eprintln!("{}", failed_file);
+                    }
+                }
+            } else {
+
+                // 无文件
+                eprintln!("Err: No files committed.");
+            }
+
             // 所有操作完成后，发送一个结束消息
             send_msg(stream, &Done).await
         }

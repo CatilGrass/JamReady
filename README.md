@@ -1,31 +1,73 @@
-1. # JamReady - Boost Your GameJam!
+# JamReady - 提速你的 GameJam 开发！
 
-   ## Introduction
+> ​	`JamReady` 是一个诞生于 GameJam 复盘阶段的项目，我们团队成员经历了地狱般的 **版本冲突**、**文件混乱** 以及其他与游戏创作无关的琐事，感到了极度抓狂后，决心打造的项目。
+>
+> ​	它是一个为 GameJam 量身定做的 **版本控制系统** 和 **工具箱**。
 
-   ​	JamReady was born after my friends and I participated in a GameJam  and grew frustrated with countless non-creative teamwork hurdles. We  decided to build an out-of-the-box version control system and toolkit  specifically for GameJam development.
 
-   ## Version Control
 
-   JamReady’s version control can be thought of as a radically simplified evolution of SVN:
+# Jam Ready VCS - 版本控制系统
 
-   1. **Partial Local Storage:** Only files you need are stored locally, not the entire repository.
-   2. **Intelligent Locking:** All files are readable. You can acquire a file's "lock" to gain exclusive write access.
-   3. **Move via Metadata:** The "Move" command only updates file mapping metadata, preventing conflicts with other collaborators.
-   4. **Safe Removal:** The "Remove" command only deletes the mapping. Original files can be restored via their UUID.
-   5. **File Watching (In Development):** Members can "watch" files to receive notifications on changes.
-   6. **Auto-Sync Binding (In Development):** Members can "bind" files to auto-sync changes to a local directory.
+​	`JamReady` 的核心是一套极简的 `版本控制系统`，相较于其他的 VCS 
 
-   ## Development Phase Management
+（如 Unity Plastic SCM、Apache Subversion、Git）来说，它更加地注重简单和快速。
 
-   JamReady provides powerful tools for managing GameJam workflows:
+## 1. 无文件夹：文件即目录
 
-   ### Phase Tools & Task Tracking
+​	`JamReady` 的文件系统中不存在文件夹的概念，所有文件存在于单一级别。
 
-   1. **Phase Timer (In Development):** Set time limits for each development phase.
-   2. **Flex Time (In Development:** Allocate buffer time when phases overrun.
-   3. **Task/Request System (In Development):** Leads create phase tasks; members can submit cross-team requests during phases.
+​	文件以 *"目录/子目录/文件名"* 的形式表示（如 "美术/主要角色.aseprite"），
 
-   ### Game Demo Updates
+因此，工作区内永远不会产生无效目录结构。
 
-   1. **One-Click Distribution:** Designate a build directory. JamReady auto-compresses and uploads builds to the server.
-   2. **Instant Playtesting:** Team members download and run the latest demo with a single click.
+## 2. 独立 Uuid：安全移动和移除
+
+​	每个文件拥有 Uuid，移动操作只修改 Uuid 指向的路径，而原始文件内容保持不变。
+
+​	移除操作仅解除 Uuid 与路径的关联，若需要还原该文件，随时可以通过 Uuid 恢复文件。
+
+​	所有成员的本地文件都与 Uuid 映射而非目录，所以文件的移动不影响其他成员的编辑状态。
+
+## 3. 锁定系统：为编辑的文件加“锁”
+
+​	若涉及到修改工作区内指定文件的操作，都需要为待修改的文件 **加锁**。
+
+成员执行 **加锁** 操作后，该文件将从 `只读` (R) 变为 `该成员可读写` (R/W)。
+
+​	锁定操作分为 `单次锁` 和 `长期锁`。默认为单次锁，在单次编辑后将会丢掉。
+
+而长期锁则会一直被该成员持有，直到被该成员 **主动丢弃** (Throw)
+
+*(P.S. 能力越大，责任越大。持有长期锁的成员需要为自己编辑的文件负责)*
+
+​	若成员长期持有该锁定而未编辑，身份为 `队长` (Leader) 的成员可以强制夺取该成员持有的锁。
+
+## 4. 按需存储：无需全部克隆
+
+​	GameJam 特别是 48 小时的 GameJam，给成员们管理项目的时间是极其短暂的，所以工作区
+
+的构建应当极为简单，该 VCS 系统与其说是 版本控制系统，它更像一个共同编辑的秩序的网盘。
+
+​	每个成员的本地工作区，仅存储自己所需的文件、而非工作区中的所有文件。如果产生大文件的
+
+更新，若不是必须同步的，成员可以选择不同步。这样可以避免因为大文件的修改导致的集体性停滞。
+
+## 5. 关注或关联：更新提醒 (开发中)
+
+​	成员可以指定 `关注` 或 `关联` 某个文件，当该文件在工作区中的版本更新时，`同步` 操作会
+
+根据程度做出以下行为：
+
+​	关注文件： 在同步信息结束后，无论是 GUI 还是 CMD，都会收到该文件更新的消息。
+
+​	关联文件： 在同步信息后，会自动下载最新的版本，并尝试覆盖掉本地关联的文件。
+
+​	`关注文件` 操作可以让成员及时地知道该文件被更新了，而 `关联文件` 可以让正在调用或者使用 (非编辑)
+
+该文件的成员及时地收到新版本。 
+
+
+
+​	
+
+​	
