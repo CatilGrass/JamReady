@@ -11,6 +11,7 @@ use tokio::net::TcpStream;
 use tokio::select;
 use tokio::time::sleep;
 use uuid::Uuid;
+use crate::data::local_file_map::LocalFileMap;
 use crate::service::commands::file_transmitter::{read_file, send_file};
 use crate::service::messages::ClientMessage::{Done, Text, Unknown};
 use crate::service::messages::{ClientMessage, ServerMessage};
@@ -52,6 +53,17 @@ impl Command for CommitCommand {
                                 match result {
                                     Ok(_) => {
                                         print!("Commit \"{}\" SUCCESS", client_path.display());
+
+                                        // 更新本地映射
+                                        let mut file_map = LocalFileMap::read();
+                                        if let Some(local_file_uuid) = file_map.file_uuids.get(&file.path()) {
+                                            if let Some(local_file) = file_map.file_paths.get_mut(local_file_uuid) {
+
+                                                // 提交成功后版本 +1
+                                                local_file.local_version += 1;
+                                            }
+                                        }
+                                        LocalFileMap::update(&file_map);
                                     }
                                     Err(_) => {
                                         eprint!("Commit \"{}\" FAILED", client_path.display());
