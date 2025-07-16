@@ -682,14 +682,20 @@ fn server_remove_member(member_name: String) {
         for (uuid, member) in &server.members {
             if member.member_name.trim() == member_name {
                 uuid_to_remove = Some(uuid.clone());
-                login_code_to_remove = server.login_code_map.get(uuid);
+                for (login_code, mapped_uuid) in &server.login_code_map {
+                    if mapped_uuid == uuid {
+                        login_code_to_remove = Some(login_code.clone());
+                    }
+                }
                 found = true;
                 break;
             }
         }
+        // 移除 Login Code 的绑定
         if let Some(login_code) = login_code_to_remove {
             let _ = server.login_code_map.remove(&login_code.clone());
         }
+        // 移除用户数据
         if let Some(uuid) = uuid_to_remove {
             let _ = server.member_uuids.remove(&member_name);
             if server.members.remove(&uuid).is_some() {
