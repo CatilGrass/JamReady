@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use strum::IntoEnumIterator;
 use jam_ready_cmd::service::service_utils::get_self_address;
+
 // --------------------------------------------------------------------------- //
 
 /// 建立工作区入口
@@ -21,7 +22,6 @@ use jam_ready_cmd::service::service_utils::get_self_address;
 #[command(
     disable_help_flag = true,
     disable_version_flag = true,
-    disable_help_subcommand = true,
     help_template = "{all-args}"
 )]
 struct WorkspaceSetup {
@@ -96,7 +96,7 @@ async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace)
     // 如果 目标地址 不存在，且 工作区 也没有指定，则无法创建工作区
     if args.target.is_none() && args.workspace.is_none() {
         eprintln!("You need to specify a target or workspace");
-        eprintln!("\"--workspace\" or \"--target\"");
+        eprintln!("\"--workspace <NAME>\" or \"--target <ADDRESS>\"");
         return;
     }
 
@@ -168,7 +168,6 @@ async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace)
 #[command(
     disable_help_flag = true,
     disable_version_flag = true,
-    disable_help_subcommand = true,
     help_template = "{all-args}"
 )]
 struct ClientWorkspaceEntry {
@@ -361,7 +360,6 @@ async fn client_execute_command(args: Vec<String>) {
 #[command(
     disable_help_flag = true,
     disable_version_flag = true,
-    disable_help_subcommand = true,
     help_template = "{all-args}"
 )]
 struct ServerWorkspaceEntry {
