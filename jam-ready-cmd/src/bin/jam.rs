@@ -192,10 +192,6 @@ enum ClientCommands {
     #[command(about = "Synchronize database content")]
     Sync,
 
-    /// 下载并查看文件
-    #[command(about = "Download and view file")]
-    View(SearchArgs),
-
     /// 提交取得锁的本地文件
     #[command(about = "Commit locked local files")]
     Commit(CommitArgs),
@@ -237,6 +233,10 @@ enum FileOperationCommands {
     /// 丢掉文件的锁
     #[command(about = "Throw file lock")]
     Throw(SearchArgs),
+
+    /// 下载并查看文件
+    #[command(about = "Download and view file")]
+    View(SearchArgs),
 }
 
 /// 目录参数
@@ -326,7 +326,6 @@ async fn client_workspace_main() {
         }
 
         ClientCommands::Sync => client_execute_command(vec!["sync".to_string()]).await,
-        ClientCommands::View(args) => client_execute_command(vec!["view".to_string(), args.search]).await,
         ClientCommands::Commit(args) => {
             if let Some(log) = args.log {
                 client_execute_command(vec!["commit".to_string(), log]).await
@@ -343,6 +342,7 @@ async fn client_workspace_main() {
                 FileOperationCommands::Move(args) => client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await,
                 FileOperationCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
                 FileOperationCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
+                FileOperationCommands::View(args) => client_execute_command(vec!["view".to_string(), args.search]).await,
             }
         }
     }
