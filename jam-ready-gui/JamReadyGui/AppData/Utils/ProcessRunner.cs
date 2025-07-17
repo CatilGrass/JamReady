@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace JamReadyGui.Data.Utils;
+namespace JamReadyGui.AppData.Utils;
 
 public static class ProcessRunner
 {
@@ -46,9 +46,9 @@ public static class ProcessRunner
     
 public struct ProcessRunnerResult
 {
-    public string Output;
-    public string Error;
-    public int ExitCode;
+    public readonly string Output;
+    public readonly string Error;
+    public readonly int ExitCode;
 
     public ProcessRunnerResult(string output, string error, int exitCode)
     {

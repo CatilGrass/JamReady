@@ -1,7 +1,7 @@
 using System.IO;
-using JamReadyGui.Data.Utils;
+using JamReadyGui.AppData.Utils;
 
-namespace JamReadyGui.Data;
+namespace JamReadyGui.AppData;
 
 public static class AppCoreInvoker
 {
@@ -13,11 +13,11 @@ public static class AppCoreInvoker
     public static ProcessRunnerResult? Execute(string[] commands)
     {
         var preference = AppPreference.LoadPreference();
-        if (preference != null)
+        if (preference != null && AppRuntimeData.CurrentDirectory != null)
         {
             return ProcessRunner.Run(
-                new DirectoryInfo(preference.Workspace.CurrentWorkspace),
-                new FileInfo(AppPreference.JamReadyExeFile), 
+                AppRuntimeData.CurrentDirectory,
+                new FileInfo(AppConstants.CoreExecutableFile), 
                 commands);
         }
         return null;
