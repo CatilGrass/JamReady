@@ -187,10 +187,10 @@ enum ClientCommands {
     #[command(about = "Redirect to workspace")]
     Redirect,
 
-    /// 同步数据库内容
+    /// 同步文件结构
     #[command(
         visible_alias = "update",
-        about = "Synchronize database content")]
+        about = "Sync the server file struct to the local")]
     Sync,
 
     /// 提交取得锁的本地文件
