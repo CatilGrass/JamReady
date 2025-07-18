@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="AppData\ExplorerData\" />
       <Folder Include="AppResources\Assets\Icons\" />
       <Folder Include="bin\Debug\" />
       <Folder Include="obj\" />

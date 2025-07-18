@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
    
     <!-- 圆角按钮 -->
-    <Style x:Key="JrButtonStyle" TargetType="Button">
+    <Style x:Key="JamReadyButtonStyle" TargetType="Button">
         <Setter Property="Padding" Value="15, 0, 15, 0"/>
         <Setter Property="Background" Value="{StaticResource WidgetCommonColor}"/>
         <Setter Property="Foreground" Value="{StaticResource WidgetForegroundColor}"/>
@@ -46,17 +46,25 @@
         </Setter>
     </Style>
     
-    <Style x:Key="JrButtonStyleTitleBar" TargetType="Button">
+    <!-- 标题按钮样式 -->
+    <Style x:Key="JamReadyButtonStyleTitleBar" TargetType="Button">
+        <Setter Property="IsHitTestVisible" Value="True"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border 
+                        Background="{TemplateBinding Background}" 
+                        IsHitTestVisible="True">
+                    <ContentPresenter 
+                        x:Name="ContentPresenter"
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
-        </Setter>
+    </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#4D757575"/>
@@ -67,6 +75,63 @@
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Background" Value="Transparent"/>
             </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- 标题图标动画 -->
+    <ElasticEase 
+        x:Key="ElasticEaseOut"
+        EasingMode="EaseOut"
+        Oscillations="2"
+        Springiness="5"/>
+
+    <!-- 标题图标动画样式 -->
+    <Style x:Key="JamReadyButtonIconStyleAnimation" TargetType="Image">
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+    
+        <Style.Triggers>
+            <DataTrigger
+                Binding="{Binding IsMouseOver, 
+                RelativeSource={RelativeSource AncestorType=Button}}" 
+                Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                To="1.15" 
+                                Duration="0:0:0.35"
+                                EasingFunction="{StaticResource ElasticEaseOut}"/>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                To="1.15" 
+                                Duration="0:0:0.35"
+                                EasingFunction="{StaticResource ElasticEaseOut}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                To="0.95" 
+                                Duration="0:0:0.25"
+                                EasingFunction="{StaticResource ElasticEaseOut}"/>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                To="0.95" 
+                                Duration="0:0:0.25"
+                                EasingFunction="{StaticResource ElasticEaseOut}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.ExitActions>
+            </DataTrigger>
         </Style.Triggers>
     </Style>
 </ResourceDictionary>

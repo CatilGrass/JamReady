@@ -2,9 +2,9 @@ using System.Windows;
 
 namespace JamReadyGui.AppWindows.AppEntry;
 
-public partial class MainWindow : Window
+public partial class JamReadyExplorer : Window
 {
-    public MainWindow()
+    public JamReadyExplorer()
     {
         InitializeComponent();
     }

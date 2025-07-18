@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using JamReadyGui.AppData;
 using JamReadyGui.AppWindows.AppEntry;
-using JamReadyGui.AppWindows.BaseWindow;
 
 namespace JamReadyGui
 {
@@ -12,7 +11,7 @@ namespace JamReadyGui
             var preference = AppPreference.LoadPreference();
             if (preference == null) return;
             
-            new MainWindow().Show();
+            new JamReadyExplorer().Show();
         }
     }
 }
