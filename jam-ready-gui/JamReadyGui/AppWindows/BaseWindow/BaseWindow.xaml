@@ -4,8 +4,84 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
-        Title="BaseWindow" Height="450" Width="800">
-    <Grid>
+        Title="BaseWindow" 
+        WindowStyle="None"
+        Background="Transparent" ResizeMode="CanResize"
+        Height="450" Width="800" MinHeight="250" MinWidth="500"
+        WindowChrome.WindowChrome="{DynamicResource WindowChromeKey}">
+    
+    <Window.Resources>
+        <WindowChrome x:Key="WindowChromeKey">
+            <WindowChrome.ResizeBorderThickness>
+                <Thickness> 5 </Thickness>
+            </WindowChrome.ResizeBorderThickness>
+            <WindowChrome.CaptionHeight> 0 </WindowChrome.CaptionHeight>
+        </WindowChrome>
+    </Window.Resources>
+    
+    <Grid Background="{StaticResource AppBackgroundColor}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="31"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
         
+        <!-- 标题栏 -->
+        <Grid Grid.Row="0" Background="#000000">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="150"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- 左侧工具栏 -->
+            <StackPanel Grid.Column="0">
+                
+            </StackPanel>
+            
+            <!-- 标题显示 -->
+            <StackPanel Grid.Column="1" MouseDown="Title_OnMouseDown">
+                <Label
+                    Content="App Window Title"
+                    Foreground="#FFFFFF"
+                    FontSize="15"
+                    VerticalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"/>
+            </StackPanel>
+            
+            <!-- 右侧工具栏 -->
+            <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="141"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel
+                        Grid.Column="1"
+                        Orientation="Horizontal" 
+                        VerticalAlignment="Stretch">
+                        
+                        <Button 
+                            Style="{StaticResource JrButtonStyleTitleBar}"
+                            Width="47" Height="31">
+                            <Image Source="/AppResources/Assets/Icons/minimize.png"
+                                   Width="20"/>
+                        </Button>
+                        <Button 
+                            Style="{StaticResource JrButtonStyleTitleBar}"
+                            Width="47" Height="31">
+                            <Image Source="/AppResources/Assets/Icons/open_in_full.png"
+                                   Width="20"/>
+                        </Button>
+                        <Button 
+                            Style="{StaticResource JrButtonStyleTitleBar}"
+                            Width="47" Height="31">
+                            <Image Source="/AppResources/Assets/Icons/close.png"
+                                   Width="20"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
