@@ -12,10 +12,10 @@ use std::{fs, io};
 use std::env::current_dir;
 use tokio::net::TcpStream;
 
-pub struct SyncCommand;
+pub struct UpdateCommand;
 
 #[async_trait]
-impl Command for SyncCommand {
+impl Command for UpdateCommand {
 
     async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) {
 
@@ -45,7 +45,7 @@ impl Command for SyncCommand {
     }
 }
 
-impl SyncCommand {
+impl UpdateCommand {
 
     /// 将本地文件结构和远程同步
     fn sync_file_struct() {

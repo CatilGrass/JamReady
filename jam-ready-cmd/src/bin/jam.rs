@@ -189,9 +189,9 @@ enum ClientCommands {
 
     /// 同步文件结构
     #[command(
-        visible_alias = "update",
-        about = "Sync the server file struct to the local")]
-    Sync,
+        visible_alias = "sync",
+        about = "Update the server file struct to the local")]
+    Update,
 
     /// 提交取得锁的本地文件
     #[command(
@@ -389,7 +389,7 @@ async fn client_workspace_main() {
             Workspace::update(&workspace);
         }
 
-        ClientCommands::Sync => client_execute_command(vec!["sync".to_string()]).await,
+        ClientCommands::Update => client_execute_command(vec!["update".to_string()]).await,
         ClientCommands::Commit(args) => {
             if let Some(log) = args.log {
                 client_execute_command(vec!["commit".to_string(), log]).await
