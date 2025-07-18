@@ -12,7 +12,7 @@ namespace JamReadyGui
             var preference = AppPreference.LoadPreference();
             if (preference == null) return;
             
-            new BaseWindow().Show();
+            new MainWindow().Show();
         }
     }
 }

@@ -6,6 +6,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="AppResources/ColorSheet.xaml" />
                 <ResourceDictionary Source="AppResources/WidgetStyles/JrButtonStyle.xaml" />
+                <ResourceDictionary Source="AppResources/WindowStyles/TemplateWindowStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

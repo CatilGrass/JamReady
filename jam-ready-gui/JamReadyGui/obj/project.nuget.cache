@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "nLQBe4E72QM=",
+  "dgSpecHash": "oYugRimDXhA=",
   "success": true,
-  "projectFilePath": "D:\\Rust\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj",
+  "projectFilePath": "C:\\CatilGrass\\Projects\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\CatilGrass\\.nuget\\packages\\microsoft-windowsapicodepack-core\\1.1.5\\microsoft-windowsapicodepack-core.1.1.5.nupkg.sha512",
     "C:\\Users\\CatilGrass\\.nuget\\packages\\microsoft-windowsapicodepack-shell\\1.1.5\\microsoft-windowsapicodepack-shell.1.1.5.nupkg.sha512",

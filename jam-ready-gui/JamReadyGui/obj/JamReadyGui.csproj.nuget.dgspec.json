@@ -1,27 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Rust\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj": {}
+    "C:\\CatilGrass\\Projects\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj": {}
   },
   "projects": {
-    "D:\\Rust\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj": {
+    "C:\\CatilGrass\\Projects\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Rust\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj",
+        "projectUniqueName": "C:\\CatilGrass\\Projects\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj",
         "projectName": "JamReadyGui",
-        "projectPath": "D:\\Rust\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj",
+        "projectPath": "C:\\CatilGrass\\Projects\\JamReady\\jam-ready-gui\\JamReadyGui\\JamReadyGui.csproj",
         "packagesPath": "C:\\Users\\CatilGrass\\.nuget\\packages\\",
-        "outputPath": "D:\\Rust\\JamReady\\jam-ready-gui\\JamReadyGui\\obj\\",
+        "outputPath": "C:\\CatilGrass\\Projects\\JamReady\\jam-ready-gui\\JamReadyGui\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\CatilGrass\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\CatilGrass\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0-windows"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -68,7 +66,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.428\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Users\\CatilGrass\\.dotnet\\sdk\\6.0.428\\RuntimeIdentifierGraph.json"
         }
       }
     }

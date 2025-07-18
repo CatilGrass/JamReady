@@ -1,0 +1,118 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- 窗口模板 -->
+    <ControlTemplate x:Key="JamReadyWindowTemplate"
+                     TargetType="{x:Type Window}">
+        <Grid Background="{StaticResource AppBackgroundColor}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 标题栏 -->
+        <Grid Grid.Row="0" Background="{StaticResource AppMainColor}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="150"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- 左侧工具栏 -->
+            <StackPanel Grid.Column="0">
+                <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel 
+                        Grid.Column="0"
+                        Orientation="Horizontal" 
+                        VerticalAlignment="Stretch">
+                        <Button 
+                            Style="{StaticResource JrButtonStyleTitleBar}"
+                            Width="47" Height="35"><!--Click="MaximizeButton"-->
+                            <Image Source="/AppResources/Assets/Icons/menu.png"
+                                   Width="20"
+                                   IsHitTestVisible="False"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+            
+            <!-- 标题显示 -->
+            <StackPanel Grid.Column="1"><!--MouseDown="Title_OnMouseDown"-->
+                <Label
+                    Content="App Window Title"
+                    Foreground="{StaticResource WidgetForegroundColor}"
+                    FontSize="15"
+                    Margin="0, 5, 0, 0"
+                    VerticalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Bottom"/>
+            </StackPanel>
+            
+            <!-- 右侧工具栏 -->
+            <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="141"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel
+                        Grid.Column="1"
+                        Orientation="Horizontal" 
+                        VerticalAlignment="Stretch">
+                        
+                        <Button 
+                            Style="{StaticResource JrButtonStyleTitleBar}"
+                            Width="47" Height="35"><!--Click="MinimizeButton"-->
+                            <Image Source="/AppResources/Assets/Icons/minimize.png"
+                                   Width="20"
+                                   IsHitTestVisible="False"/>
+                        </Button>
+                        <Button 
+                            Style="{StaticResource JrButtonStyleTitleBar}"
+                            Width="47" Height="35"><!--Click="MaximizeButton"-->
+                            <Image Source="/AppResources/Assets/Icons/open_in_full.png"
+                                   Width="20"
+                                   IsHitTestVisible="False"/>
+                        </Button>
+                        <Button 
+                            Style="{StaticResource JrButtonStyleTitleBar}"
+                            Width="47" Height="35"><!--Click="CloseButton"-->
+                            <Image Source="/AppResources/Assets/Icons/close.png"
+                                   Width="20"
+                                   IsHitTestVisible="False"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Grid>
+        <Canvas Grid.Row="1">
+            <ContentPresenter></ContentPresenter>
+        </Canvas>
+    </Grid>
+    </ControlTemplate>
+    
+    <!-- 窗口样式 -->
+    <Style x:Key="JamReadyWindowStyle" TargetType="Window">
+        <Style.Resources>
+            <!-- 窗口框架控制 -->
+            <WindowChrome x:Key="JamReadyWindowChrome">
+                <WindowChrome.ResizeBorderThickness>
+                    <Thickness> 5 </Thickness>
+                </WindowChrome.ResizeBorderThickness>
+                <WindowChrome.CaptionHeight> 0 </WindowChrome.CaptionHeight>
+                <WindowChrome.UseAeroCaptionButtons> false </WindowChrome.UseAeroCaptionButtons>
+            </WindowChrome>
+        </Style.Resources>
+        <Setter Property="MinHeight" Value="250"/>
+        <Setter Property="MinWidth" Value="500"/>
+        <Setter Property="ResizeMode" Value="CanResize"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template" Value="{StaticResource JamReadyWindowTemplate}"/>
+        <Setter Property="WindowChrome.WindowChrome" Value="{StaticResource JamReadyWindowChrome}"/>
+    </Style>
+    
+</ResourceDictionary>

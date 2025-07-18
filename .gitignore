@@ -7,4 +7,4 @@
 # Gui 项目 bin 和 obj 文件夹
 /jam-ready-gui/JamReadyGui/bin/Debug/
 /jam-ready-gui/JamReadyGui/obj/Debug/
-
+/jam-ready-gui/JamReadyGui/bin/Work/config/
