@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using JamReadyGui.AppData;
-using JamReadyGui.AppWindows.AppEntry;
+using JamReadyExplorer = JamReadyGui.AppWindows.AppExplorer.JamReadyExplorer;
 
 namespace JamReadyGui
 {

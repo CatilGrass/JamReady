@@ -5,10 +5,10 @@
     <!-- 窗口模板 -->
     <ControlTemplate x:Key="JamReadyWindowTemplate"
                      TargetType="{x:Type Window}">
-        <Grid Background="{StaticResource AppBackgroundColor}">
+        <Grid Background="{StaticResource WindowBackgroundColor}">
         <Grid.RowDefinitions>
             <RowDefinition Height="35"/> <!-- 标题区 -->
-            <RowDefinition Height="2"/> <!-- 分割线 -->
+            <RowDefinition Height="1"/> <!-- 分割线 -->
             <RowDefinition Height="*"/> <!-- 内容区 -->
         </Grid.RowDefinitions>
         
@@ -52,14 +52,14 @@
                 bh:TemplateWindowBehaviour.Drag="True">
                 <Label
                     Content="App Title"
-                    Foreground="{StaticResource WidgetForegroundColor}"
+                    Foreground="{StaticResource WhiteForegroundColor}"
                     FontSize="15"
                     VerticalAlignment="Stretch"
                     HorizontalContentAlignment="Left"
                     VerticalContentAlignment="Center"/>
                 <Label
                     Content="App Sub Title"
-                    Foreground="{StaticResource AppLightGray}"
+                    Foreground="{StaticResource AppMainColorLight}"
                     FontSize="12"
                     FontWeight="Thin"
                     VerticalAlignment="Stretch"
@@ -112,11 +112,10 @@
                 </Grid>
             </StackPanel>
         </Grid>
-        <Canvas Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource AppMainColorDark}">
-        </Canvas>
-        <Canvas Grid.Row="2">
-            <ContentPresenter></ContentPresenter>
-        </Canvas>
+        <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource AppMainColorDark}"/>
+        <Grid Grid.Row="2">
+            <ContentPresenter/>
+        </Grid>
     </Grid>
     </ControlTemplate>
     
@@ -127,10 +126,12 @@
             <!-- 窗口框架控制 -->
             <WindowChrome x:Key="JamReadyWindowChrome">
                 <WindowChrome.ResizeBorderThickness>
-                    <Thickness> 5 </Thickness>
+                    <Thickness> 10 </Thickness>
                 </WindowChrome.ResizeBorderThickness>
                 <WindowChrome.CaptionHeight> 0 </WindowChrome.CaptionHeight>
                 <WindowChrome.UseAeroCaptionButtons> false </WindowChrome.UseAeroCaptionButtons>
+                <WindowChrome.CornerRadius> 12 </WindowChrome.CornerRadius>
+                <WindowChrome.GlassFrameThickness> 0 </WindowChrome.GlassFrameThickness>
             </WindowChrome>
         </Style.Resources>
         <Setter Property="MinHeight" Value="250"/>
