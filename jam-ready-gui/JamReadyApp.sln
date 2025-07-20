@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JamReadyGui", "JamReadyGui\JamReadyGui.csproj", "{853933AB-A84D-490E-9F34-1A2CC21D1E83}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JamReadyExplorer", "JamReadyExplorer\JamReadyExplorer.csproj", "{853933AB-A84D-490E-9F34-1A2CC21D1E83}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

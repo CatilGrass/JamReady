@@ -1,2 +1,15 @@
+# Idea 目录
 /.idea/
+/.idea/*
+
+# Cargo Target 目录
 /.cargo/shared/
+/.cargo/shared/*
+
+# Gui 项目 bin 和 obj 文件夹
+/jam-ready-gui/JamReadyExplorer/obj/
+/jam-ready-gui/JamReadyExplorer/bin/Debug/
+/jam-ready-gui/JamReadyExplorer/bin/Work/config/
+/jam-ready-gui/JamReadyExplorer/obj/*
+/jam-ready-gui/JamReadyExplorer/bin/Debug/*
+/jam-ready-gui/JamReadyExplorer/bin/Work/config/*

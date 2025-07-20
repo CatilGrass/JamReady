@@ -63,6 +63,8 @@ impl Command for ViewCommand {
                     match read_file(stream, client_path.clone()).await {
                         Ok(_) => {
                             // 写入本地文件映射
+                            // TODO :: 若 local.yaml 文件并未初始化，此处会无法加载本地文件的路径，从而输出无报错信息的 Error
+                            // TODO :: 请修改 local.yaml 的初始化代码，保证在运行改代码前，该文件完成了初始化
                             if let Some(local_path_buf) = local.search_to_path_relative(&database, file.path()) {
                                 let local_path_str = process_path_text(local_path_buf.display().to_string());
                                 if let Some(uuid) = database.uuid_of_path(file.path()) {

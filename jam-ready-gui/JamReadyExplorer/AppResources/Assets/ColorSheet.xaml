@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- App 主要颜色 -->
+    <SolidColorBrush x:Key="AppMainColorDark" Color="#1976D2" />
+    <SolidColorBrush x:Key="AppMainColor" Color="#2196F3" />
+    <SolidColorBrush x:Key="AppMainColorLight" Color="#BBDEFB" />
+    
+    <!-- App 强调颜色 -->
+    <SolidColorBrush x:Key="AccentColorDark" Color="#C2185B" />
+    <SolidColorBrush x:Key="AccentColor" Color="#E91E63" />
+    <SolidColorBrush x:Key="AccentColorLight" Color="#F8BBD0" />
+    
+    <!-- App 文本、图标颜色 -->
+    <SolidColorBrush x:Key="MainForegroundColor" Color="#212121" />
+    
+    <!-- App 文本、图标颜色（亮色） -->
+    <SolidColorBrush x:Key="WhiteForegroundColor" Color="#FFFFFF" />
+    
+    <!-- App 背景颜色 -->
+    <SolidColorBrush x:Key="WindowBackgroundColor" Color="#FFFFFF" />
+    
+    <!-- 常量色 -->
+    <SolidColorBrush x:Key="LightGray" Color="#727272" />
+    <SolidColorBrush x:Key="Gray" Color="#555555" />
+    
+</ResourceDictionary>
