@@ -1,0 +1,210 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+   
+    <!-- 样式：以强调色为主的按钮 -->
+    <Style x:Key="JamReadyButtonStyle" TargetType="Button">
+        <Setter Property="Padding" Value="15, 0, 15, 0"/>
+        <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+        <Setter Property="Foreground" Value="{StaticResource WhiteForegroundColor}"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" 
+                            CornerRadius="8"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter 
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center"
+                            Margin="{TemplateBinding Padding}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- 鼠标悬停 -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource AccentColorLight}"/>
+                        </Trigger>
+                        
+                        <!-- 按下 -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{StaticResource AccentColorDark}"/>
+                        </Trigger>
+                        
+                        <!-- 禁用 -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentColorDark}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 样式：标题所使用的按钮样式 -->
+    <Style x:Key="JamReadyButtonStyleTitleBar" TargetType="Button">
+        <Setter Property="IsHitTestVisible" Value="True"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border 
+                        Background="{TemplateBinding Background}" 
+                        IsHitTestVisible="True">
+                    <ContentPresenter 
+                        x:Name="ContentPresenter"
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#4D757575"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#80757575"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="Transparent"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- 动画：标题所使用的按钮图标的缩放动画 -->
+    <QuinticEase
+        x:Key="ButtonIconElasticEase"
+        EasingMode="EaseOut"/>
+
+    <!-- 样式：标题所使用的按钮图标的样式 -->
+    <Style x:Key="JamReadyButtonIconStyleAnimation" TargetType="Image">
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+    
+        <Style.Triggers>
+            <DataTrigger
+                Binding="{Binding IsMouseOver, 
+                RelativeSource={RelativeSource AncestorType=Button}}" 
+                Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                To="1.25" 
+                                Duration="0:0:0.2"
+                                EasingFunction="{StaticResource ButtonIconElasticEase}"/>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                To="1.25" 
+                                Duration="0:0:0.2"
+                                EasingFunction="{StaticResource ButtonIconElasticEase}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                To="1" 
+                                Duration="0:0:0.35"
+                                EasingFunction="{StaticResource ButtonIconElasticEase}"/>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                To="1" 
+                                Duration="0:0:0.35"
+                                EasingFunction="{StaticResource ButtonIconElasticEase}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.ExitActions>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+    
+    <!-- 样式：浏览器按钮的样式 -->
+    <Style x:Key="JamReadyExplorerItemButtonStyle" TargetType="Button">
+        <Setter Property="IsHitTestVisible" Value="True"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border 
+                        Background="{TemplateBinding Background}" 
+                        IsHitTestVisible="True">
+                        <ContentPresenter 
+                            x:Name="ContentPresenter"
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- 动画：浏览器图标的缩放动画 -->
+    <CircleEase
+        x:Key="ExplorerIconElasticEase"
+        EasingMode="EaseOut"/>
+    
+    <!-- 样式：浏览器图标的样式 -->
+    <Style x:Key="JamReadyExplorerItemIconStyleAnimation" TargetType="Image">
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+    
+        <Style.Triggers>
+            <DataTrigger
+                Binding="{Binding IsMouseOver, 
+                RelativeSource={RelativeSource AncestorType=Button}}" 
+                Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                To="1.15" 
+                                Duration="0:0:0.08"
+                                EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                To="1.15" 
+                                Duration="0:0:0.08"
+                                EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                To="0.95" 
+                                Duration="0:0:0.25"
+                                EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
+                            <DoubleAnimation 
+                                Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                To="0.95" 
+                                Duration="0:0:0.25"
+                                EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.ExitActions>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>
