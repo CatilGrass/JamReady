@@ -16,19 +16,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="AppResources\Assets\Icons\" />
+        <Folder Include="AppResources\Assets\Icons\" />
     </ItemGroup>
 
     <ItemGroup>
         <Resource Include="AppResources\Assets\Icons\**" />
     </ItemGroup>
-
+    
     <ItemGroup>
-        <Resource Include="AppResources\Assets\Icons\poor_folder_icon.png" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="bin\.gitignore" />
+        <Content Include="bin\.gitignore" />
     </ItemGroup>
 
 </Project>

@@ -34,13 +34,22 @@ public struct ExplorerPath
         set => _arguments[key] = value;
     }
     
-    private string _prefix = "NONE";
-    private string _path = "/";
-    private readonly Dictionary<string, string> _arguments = new();
-
-    public ExplorerPath(string prefix = "FS")
+    private string _prefix;
+    private string _path;
+    private readonly Dictionary<string, string> _arguments;
+    
+    public ExplorerPath()
+    {
+        _prefix = "NONE";
+        _path = "./";
+        _arguments = new Dictionary<string, string>();
+    }
+    
+    public ExplorerPath(string prefix)
     {
         _prefix = prefix;
+        _path = "./";
+        _arguments = new Dictionary<string, string>();
     }
 
     /// <summary>
@@ -49,40 +58,33 @@ public struct ExplorerPath
     /// <returns></returns>
     public override string ToString()
     {
-        try
+        // 处理空路径情况
+        if (IsNone()) return "NONE://";
+        
+        // 无参数情况
+        if (_arguments == null || _arguments.Count == 0)
         {
-            // 处理空路径情况
-            if (IsNone()) return "NONE://";
-            
-            // 无参数情况
-            if (_arguments.Count == 0)
-            {
-                return $"{Prefix}://{Path}";
-            }
-
-            // 构建参数字符串
-            var paramBuilder = new StringBuilder("[");
-            bool isFirst = true;
-            foreach (var kv in _arguments)
-            {
-                if (!isFirst) paramBuilder.Append(',');
-                paramBuilder.Append($"{kv.Key}:\"{kv.Value.Replace("\"", "\\\"")}\"");
-                isFirst = false;
-            }
-            paramBuilder.Append(']');
-
-            // 路径为空的情况
-            if (string.IsNullOrWhiteSpace(Path))
-            {
-                return $"{Prefix}://{paramBuilder}";
-            }
-            
-            return $"{Prefix}://{paramBuilder}://{Path}";
+            return $"{Prefix}://{Path}";
         }
-        catch
+
+        // 构建参数字符串
+        var paramBuilder = new StringBuilder("[");
+        bool isFirst = true;
+        foreach (var kv in _arguments)
         {
-            return "NONE://";
+            if (!isFirst) paramBuilder.Append(',');
+            paramBuilder.Append($"{kv.Key}:\"{kv.Value.Replace("\"", "\\\"")}\"");
+            isFirst = false;
         }
+        paramBuilder.Append(']');
+
+        // 路径为空的情况
+        if (string.IsNullOrWhiteSpace(Path) || Path.Trim() == "./")
+        {
+            return $"{Prefix}://{paramBuilder}";
+        }
+            
+        return $"{Prefix}://{paramBuilder}://{Path}";
     }
     
     /// <summary>

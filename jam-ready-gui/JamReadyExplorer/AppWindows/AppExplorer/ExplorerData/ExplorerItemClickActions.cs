@@ -13,7 +13,7 @@ public static class ExplorerItemClickActions
     /// <summary>
     /// 右键事件
     /// </summary>
-    public static void RightClick(ExplorerItem item)
+    public static void RightClick(ExplorerItem item, Explorer explorer)
     {
         if (item.ItemAdapter == null) return;
         var operations = item.ItemAdapter.OnRegisterOperation();
@@ -29,7 +29,10 @@ public static class ExplorerItemClickActions
                 {
                     Header = operate.Trim(), Command = new ActionCommand(() =>
                     {
-                        item.ItemAdapter?.OnOperate(insertIndex);
+                        if (item.ItemAdapter?.OnOperate(insertIndex) == true)
+                        {
+                            explorer.RefreshExplorerItems();
+                        }
                     })
                 };
                 var icon = item.ItemAdapter.GetOperationIcon(i);

@@ -72,12 +72,16 @@ public static class ExplorerRuntime
         {
             Console.WriteLine($"Generating adapter by inserter: {inserter.GetType().Name}");
             int i = 0;
-            foreach (var adapter in inserter.GetAdapters(ExplorerPath.FromString(pathString)))
+            var path = ExplorerPath.FromString(pathString);
+            if (path != null)
             {
-                if (adapter != null)
+                foreach (var adapter in inserter.GetAdapters(path.Value))
                 {
-                    ItemAdapters.Add(adapter);
-                    i++;
+                    if (adapter != null)
+                    {
+                        ItemAdapters.Add(adapter);
+                        i++;
+                    }
                 }
             }
             Console.WriteLine($"Generated {i} Adapters");

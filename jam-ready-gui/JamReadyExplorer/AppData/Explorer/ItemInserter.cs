@@ -13,5 +13,5 @@ public abstract class ItemInserter
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
-    public abstract List<ItemAdapter?> GetAdapters(ExplorerPath? path);
+    public abstract List<ItemAdapter?> GetAdapters(ExplorerPath path);
 }

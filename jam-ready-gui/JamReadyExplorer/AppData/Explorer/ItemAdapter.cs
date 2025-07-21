@@ -55,7 +55,8 @@ public abstract class ItemAdapter
     /// 操作某个事件
     /// </summary>
     /// <param name="operationIndex"> 操作索引 </param>
-    public virtual void OnOperate(int operationIndex) { }
+    /// <returns> 是否需要更新页面 </returns>
+    public virtual bool OnOperate(int operationIndex) { return false; }
 }
 
 /// <summary>

@@ -8,13 +8,13 @@ public class FileSystemPathInserter : ItemInserter
 {
     private const string PluginPrefix = "FS";
 
-    public override List<ItemAdapter?> GetAdapters(ExplorerPath? path)
+    public override List<ItemAdapter?> GetAdapters(ExplorerPath path)
     {
         var result = new List<ItemAdapter?>();
-        if (path == null || path.Value.IsNone()) return result;
+        if (path.IsNone()) return result;
 
         // 确认前缀为 FS
-        if (path.Value.Prefix == PluginPrefix)
+        if (path.Prefix == PluginPrefix)
         {
             
         }
