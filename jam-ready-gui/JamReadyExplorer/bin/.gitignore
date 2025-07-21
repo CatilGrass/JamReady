@@ -1,0 +1,4 @@
+/Work/
+/Work/*
+
+!/Work/bin/jam.exe
