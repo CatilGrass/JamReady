@@ -193,7 +193,7 @@ public sealed partial class Explorer : INotifyPropertyChanged
     public ICommand ExplorerPathRightClickCommand => new ActionCommand(_ =>
     {
         // 跳转执行
-        ExplorerActions.RightClick();
+        ExplorerActions.RightClick(this);
     });
     
     /// <summary>
@@ -207,7 +207,10 @@ public sealed partial class Explorer : INotifyPropertyChanged
     /// <summary>
     /// 浏览器中，在选定列表项上右键时
     /// </summary>
-    public ICommand ExplorerItemRightClickCommand => new RelayCommand<ExplorerItem>(ExplorerItemClickActions.RightClick);
+    public ICommand ExplorerItemRightClickCommand => new RelayCommand<ExplorerItem>(item =>
+    {
+        ExplorerItemClickActions.RightClick(item, this);
+    });
     
     /// <summary>
     /// 浏览器中，在选定列表项上开始拖拽时

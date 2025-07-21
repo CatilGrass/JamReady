@@ -14,7 +14,7 @@ public static class ExplorerActions
     /// <summary>
     /// 右键事件
     /// </summary>
-    public static void RightClick()
+    public static void RightClick(Explorer explorer)
     {
         // 上下文菜单
         var menu = new ContextMenu();
@@ -43,7 +43,10 @@ public static class ExplorerActions
                             {
                                 Header = pathMenuItem.Trim(), Command = new ActionCommand(() =>
                                 {
-                                    pathMenu.OnOperate(path, insert);
+                                    if (pathMenu.OnOperate(path, insert))
+                                    {
+                                        explorer.RefreshExplorerItems();
+                                    }
                                 })
                             };
                             var iconSub = pathMenu.GetOperationIcon(path, i);
