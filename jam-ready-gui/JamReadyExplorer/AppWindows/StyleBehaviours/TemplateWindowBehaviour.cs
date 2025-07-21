@@ -6,7 +6,7 @@ namespace JamReadyGui.AppWindows.StyleBehaviours;
 
 public class TemplateWindowBehaviour
 {
-     // 最小化
+    // 最小化
     public static readonly DependencyProperty MinimizeProperty =
         DependencyProperty.RegisterAttached("Minimize", typeof(bool), typeof(TemplateWindowBehaviour),
             new PropertyMetadata(false, OnMinimizeChanged));

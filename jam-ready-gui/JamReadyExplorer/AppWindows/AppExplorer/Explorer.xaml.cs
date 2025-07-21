@@ -102,10 +102,17 @@ public sealed partial class Explorer : INotifyPropertyChanged
         {
             if (ExplorerRuntime.CurrentPath != PathBox.Text)
             {
-                ExplorerRuntime.CurrentPath = PathBox.Text;
+                var path = ExplorerPath.FromString(PathBox.Text.Trim()) ?? new ExplorerPath();
+                var pathString = path.ToString();
+                
+                PathBox.Text = path.ToString();
+                PathBox.SelectionStart = PathBox.Text.Length;
+                
+                ExplorerRuntime.CurrentPath = pathString;
                 
                 RefreshExplorerItems();
-                Console.WriteLine($"Path changed to : {PathBox.Text}");
+                
+                Console.WriteLine($"Path changed to : {pathString}");
             }
         }
     }
@@ -126,6 +133,69 @@ public sealed partial class Explorer : INotifyPropertyChanged
                 Console.WriteLine($"Search text changed to : {SearchBox.Text}");
             }
         }
+    }
+    
+    // -----------------------------------------------------------------------------------
+    // 浏览器顶部窗口按钮事件
+    
+    /// <summary>
+    /// 返回历史地址
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    private void Explorer_BackToLast(object sender, RoutedEventArgs e)
+    {
+        
+    }
+
+    /// <summary>
+    /// 拖拽窗口
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    private void Explorer_DragWindow(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    /// <summary>
+    /// 最小化窗口
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    private void Explorer_Minimize(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    /// <summary>
+    /// 最大化或还原窗口
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    private void Explorer_MaximizeRestore(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized 
+            ? WindowState.Normal 
+            : WindowState.Maximized;
+    }
+
+    /// <summary>
+    /// 关闭窗口
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    private void Explorer_Close(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
     
     // -----------------------------------------------------------------------------------

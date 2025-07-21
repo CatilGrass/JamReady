@@ -56,8 +56,7 @@ public static class PathFormatter
             }
             
             // 去除字符
-            if (Array.IndexOf(InvalidPathChars, c) >= 0 || 
-                Array.IndexOf(InvalidFileNameChars, c) >= 0)
+            if (c != '/' && (Array.IndexOf(InvalidPathChars, c) >= 0 || Array.IndexOf(InvalidFileNameChars, c) >= 0))
             {
                 continue;
             }
