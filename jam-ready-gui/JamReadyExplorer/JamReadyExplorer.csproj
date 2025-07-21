@@ -17,8 +17,6 @@
 
     <ItemGroup>
       <Folder Include="AppResources\Assets\Icons\" />
-      <Folder Include="bin\Debug\" />
-      <Folder Include="obj\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -36,6 +34,10 @@
 
     <ItemGroup>
         <Resource Include="AppResources\Assets\Icons\poor_folder_icon.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="bin\.gitignore" />
     </ItemGroup>
 
 </Project>
