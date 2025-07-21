@@ -13,7 +13,6 @@
         <ProjectReference Include="..\JamReadyExplorer\JamReadyExplorer.csproj" />
 
         <Folder Include="Resources\" />
-        <Folder Include="PluginAdapters\" />
         <Folder Include="PluginPathMenu\" />
     </ItemGroup>
 

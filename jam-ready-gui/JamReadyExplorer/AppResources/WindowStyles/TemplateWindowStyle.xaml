@@ -36,7 +36,7 @@
                             <Button 
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/menu.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/menu_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>
@@ -54,7 +54,7 @@
                     <!-- 标题文字 -->
                     <Label
                         Content="App Title"
-                        Foreground="{StaticResource WhiteForegroundColor}"
+                        Foreground="{StaticResource WidgetForegroundColor}"
                         FontSize="15"
                         VerticalAlignment="Stretch"
                         HorizontalContentAlignment="Left"
@@ -89,7 +89,7 @@
                                 bh:TemplateWindowBehaviour.Minimize="True"
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/minimize.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/minimize_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>
@@ -99,7 +99,7 @@
                                 bh:TemplateWindowBehaviour.MaximizeRestore="True"
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/open_in_full.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/open_in_full_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>
@@ -109,7 +109,7 @@
                                 bh:TemplateWindowBehaviour.Close="True"
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/close.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/close_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>
@@ -187,7 +187,7 @@
                             <Button 
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/menu.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/menu_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>
@@ -205,7 +205,7 @@
                     <!-- 标题文字 -->
                     <Label
                         Content="App Title"
-                        Foreground="{StaticResource WhiteForegroundColor}"
+                        Foreground="{StaticResource WidgetForegroundColor}"
                         FontSize="15"
                         VerticalAlignment="Stretch"
                         HorizontalContentAlignment="Left"
@@ -240,7 +240,7 @@
                                 bh:TemplateWindowBehaviour.Minimize="True"
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/minimize.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/minimize_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>
@@ -250,7 +250,7 @@
                                 bh:TemplateWindowBehaviour.MaximizeRestore="True"
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/open_in_full.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/open_in_full_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>
@@ -260,7 +260,7 @@
                                 bh:TemplateWindowBehaviour.Close="True"
                                 Style="{StaticResource JamReadyButtonStyleTitleBar}"
                                 Width="47" Height="48">
-                                <Image Source="/AppResources/Assets/Icons/close.png"
+                                <Image Source="/AppResources/Assets/Icons/Light_128x/close_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                        Width="20"/>
                             </Button>

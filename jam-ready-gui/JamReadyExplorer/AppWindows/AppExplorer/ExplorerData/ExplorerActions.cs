@@ -74,7 +74,9 @@ public static class ExplorerActions
             }
         }
         
-        menu.Placement = PlacementMode.Mouse;
-        menu.IsOpen = true;
+        if (menu.Items.Count > 0) {
+            menu.Placement = PlacementMode.Mouse;
+            menu.IsOpen = true;
+        }
     }
 }

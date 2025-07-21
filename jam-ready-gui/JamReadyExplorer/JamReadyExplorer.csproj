@@ -20,16 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Resource Include="AppResources\Assets\Icons\arrow_back.png" />
-        <Resource Include="AppResources\Assets\Icons\close.png" />
-        <Resource Include="AppResources\Assets\Icons\menu.png" />
-        <Resource Include="AppResources\Assets\Icons\minimize.png" />
-        <Resource Include="AppResources\Assets\Icons\open_in_full.png" />
-        <Resource Include="AppResources\Assets\Icons\pin.png" />
-        <Resource Include="AppResources\Assets\Icons\refresh.png" />
-        <Resource Include="AppResources\Assets\Icons\search.png" />
-        <Resource Include="AppResources\Assets\Icons\zoom_in.png" />
-        <Resource Include="AppResources\Assets\Icons\zoom_out.png" />
+        <Resource Include="AppResources\Assets\Icons\**" />
     </ItemGroup>
 
     <ItemGroup>

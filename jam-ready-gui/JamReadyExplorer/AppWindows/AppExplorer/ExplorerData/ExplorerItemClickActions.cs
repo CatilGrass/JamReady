@@ -51,9 +51,13 @@ public static class ExplorerItemClickActions
     /// <summary>
     /// 左键事件
     /// </summary>
-    public static void LeftClick(ExplorerItem item)
+    public static void LeftClick(ExplorerItem item, Explorer explorer)
     {
         // 按下左键，执行 Adapter 的 OnEnter
-        item.ItemAdapter?.OnEnter();
+        if (item.ItemAdapter?.OnEnter() == true)
+        {
+            // 若返回 true 则执行刷新
+            explorer.RefreshExplorerItems();
+        }
     }
 }

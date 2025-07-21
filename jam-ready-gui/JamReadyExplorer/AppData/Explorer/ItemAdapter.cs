@@ -28,12 +28,15 @@ public abstract class ItemAdapter
     /// </summary>
     /// <param name="value"> 用于创建此 Adapter 的参数 </param>
     public abstract ImagePath OnInit(object value);
-    
+
     /// <summary>
     /// 注册此适配器的操作
     /// </summary>
     /// <returns> 注册的按钮名称 </returns>
-    public abstract List<string> OnRegisterOperation();
+    public virtual List<string> OnRegisterOperation()
+    {
+        return new List<string>();
+    }
 
     /// <summary>
     /// 获得操作的图标
@@ -45,13 +48,14 @@ public abstract class ItemAdapter
     /// <summary>
     /// 进入此适配器时执行
     /// </summary>
-    public abstract void OnEnter();
+    /// <returns> 是否需要更新页面 </returns>
+    public virtual bool OnEnter() { return false; }
 
     /// <summary>
     /// 操作某个事件
     /// </summary>
     /// <param name="operationIndex"> 操作索引 </param>
-    public abstract void OnOperate(int operationIndex);
+    public virtual void OnOperate(int operationIndex) { }
 }
 
 /// <summary>
@@ -81,6 +85,8 @@ public static class AdapterFactory
 /// </summary>
 public class ImagePath
 {
+    public static ImagePath Empty => new ImagePath(new Uri(""));
+    
     public ImagePath(Uri path)
     {
         Path = path;

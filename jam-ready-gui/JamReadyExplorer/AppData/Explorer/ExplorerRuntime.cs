@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JamReadyGui.AppData.Utils;
 
 namespace JamReadyGui.AppData.Explorer;
 
@@ -36,7 +37,7 @@ public static class ExplorerRuntime
     public static List<ItemAdapter?> CurrentAdapters => ItemAdapters;
     
     // 私有数据
-    private static string _currentPath = "home://";
+    private static string _currentPath = "HOME://";
     private static readonly List<string> HistoryPaths = new();
     private static readonly List<ItemAdapter?> ItemAdapters = new();
     
@@ -63,15 +64,15 @@ public static class ExplorerRuntime
     /// <summary>
     /// 使用路径重新生成适配器
     /// </summary>
-    /// <param name="path"></param>
-    private static void RegenerateAdaptersByPath(string path)
+    /// <param name="pathString"></param>
+    private static void RegenerateAdaptersByPath(string pathString)
     {
         ItemAdapters.Clear();
         foreach (var inserter in ExplorerRegistry.Inserters)
         {
             Console.WriteLine($"Generating adapter by inserter: {inserter.GetType().Name}");
             int i = 0;
-            foreach (var adapter in inserter.GetAdapters(path))
+            foreach (var adapter in inserter.GetAdapters(ExplorerPath.FromString(pathString)))
             {
                 if (adapter != null)
                 {

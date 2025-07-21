@@ -1,6 +1,3 @@
-using JamReadyGui.AppData.Explorer;
-using Plugin_FileManager.PluginInserters;
-
 namespace Plugin_FileManager;
 
 public class Plugin
@@ -10,6 +7,5 @@ public class Plugin
     /// </summary>
     public static void Register()
     {
-        ExplorerRegistry.Inserters.Add(new FilePathInserter());
     }
 }

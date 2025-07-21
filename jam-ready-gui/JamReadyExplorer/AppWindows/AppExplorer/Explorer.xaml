@@ -182,7 +182,7 @@
                 <!-- 回到跳转前的地址 -->
                 <Button 
                     Style="{StaticResource JamReadyButtonStyleTitleBar}" Width="47" Height="35">
-                    <Image Source="/AppResources/Assets/Icons/arrow_back.png" Style="{StaticResource JamReadyButtonIconStyleAnimation}" Width="20"/>
+                    <Image Source="/AppResources/Assets/Icons/Light_128x/arrow_back_2_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png" Style="{StaticResource JamReadyButtonIconStyleAnimation}" Width="20"/>
                 </Button>
             </Grid>
             
@@ -193,7 +193,7 @@
                 <TextBox 
                     Name="PathBox" Text=""
                     Background="{StaticResource AppMainColorDark}" BorderBrush="Transparent" BorderThickness="0"
-                    FontSize="14" FontWeight="Thin" Foreground="{StaticResource WhiteForegroundColor}"
+                    FontSize="14" FontWeight="Thin" Foreground="{StaticResource WidgetForegroundColor}"
                     CaretBrush="{StaticResource AccentColor}" SelectionBrush="{StaticResource AccentColor}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" Padding="8, 0, 8, 0"
                     PreviewKeyDown="PathBox_OnPreviewKeyDown">
@@ -218,7 +218,7 @@
                         <TextBox 
                             Name="SearchBox" Text=""
                             Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
-                            FontSize="14" FontWeight="Thin" Foreground="{StaticResource WhiteForegroundColor}"
+                            FontSize="14" FontWeight="Thin" Foreground="{StaticResource WidgetForegroundColor}"
                             CaretBrush="{StaticResource AccentColor}" SelectionBrush="{StaticResource AccentColor}"
                             VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalContentAlignment="Center"
                             Padding="8, 0, 8, 0" Margin="5, 0, 4, 0"
@@ -237,7 +237,7 @@
                         <Button 
                             Style="{StaticResource JamReadyButtonStyleTitleBar}"
                             Width="47" Height="35">
-                            <Image Source="/AppResources/Assets/Icons/search.png"
+                            <Image Source="/AppResources/Assets/Icons/Light_128x/search_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                    Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                    Width="20"/>
                         </Button>
@@ -247,7 +247,7 @@
                             Style="{StaticResource JamReadyButtonStyleTitleBar}"
                             Width="47" Height="35"
                             Click="Explorer_Zoom_In">
-                            <Image Source="/AppResources/Assets/Icons/zoom_in.png"
+                            <Image Source="/AppResources/Assets/Icons/Light_128x/expand_content_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                    Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                    Width="20"/>
                         </Button>
@@ -257,7 +257,7 @@
                             Style="{StaticResource JamReadyButtonStyleTitleBar}"
                             Width="47" Height="35"
                             Click="Explorer_Zoom_Out">
-                            <Image Source="/AppResources/Assets/Icons/zoom_out.png"
+                            <Image Source="/AppResources/Assets/Icons/Light_128x/collapse_content_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                    Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                    Width="20"/>
                         </Button>
@@ -267,7 +267,7 @@
                             Style="{StaticResource JamReadyButtonStyleTitleBar}"
                             Width="47" Height="35"
                             Click="Explorer_Refresh">
-                            <Image Source="/AppResources/Assets/Icons/refresh.png"
+                            <Image Source="/AppResources/Assets/Icons/Light_128x/refresh_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                    Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                    Width="20"/>
                         </Button>
@@ -276,7 +276,7 @@
                         <Button 
                             Style="{StaticResource JamReadyButtonStyleTitleBar}"
                             Width="47" Height="35">
-                            <Image Source="/AppResources/Assets/Icons/pin.png"
+                            <Image Source="/AppResources/Assets/Icons/Light_128x/keep_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                    Style="{StaticResource JamReadyButtonIconStyleAnimation}"
                                    Width="20"/>
                         </Button>

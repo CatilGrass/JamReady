@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using JamReadyGui.AppData.Utils;
 
 namespace JamReadyGui.AppData.Explorer;
 
@@ -12,5 +13,5 @@ public abstract class ItemInserter
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
-    public abstract List<ItemAdapter?> GetAdapters(string path);
+    public abstract List<ItemAdapter?> GetAdapters(ExplorerPath? path);
 }

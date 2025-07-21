@@ -2,23 +2,23 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
     <!-- App 主要颜色 -->
-    <SolidColorBrush x:Key="AppMainColorDark" Color="#1976D2" />
-    <SolidColorBrush x:Key="AppMainColor" Color="#2196F3" />
-    <SolidColorBrush x:Key="AppMainColorLight" Color="#BBDEFB" />
+    <SolidColorBrush x:Key="AppMainColorDark" Color="#2B3F48" />
+    <SolidColorBrush x:Key="AppMainColor" Color="#455A64" />
+    <SolidColorBrush x:Key="AppMainColorLight" Color="#CFD8DC" />
     
     <!-- App 强调颜色 -->
-    <SolidColorBrush x:Key="AccentColorDark" Color="#C2185B" />
-    <SolidColorBrush x:Key="AccentColor" Color="#E91E63" />
-    <SolidColorBrush x:Key="AccentColorLight" Color="#F8BBD0" />
+    <SolidColorBrush x:Key="AccentColorDark" Color="#00796B" />
+    <SolidColorBrush x:Key="AccentColor" Color="#009688" />
+    <SolidColorBrush x:Key="AccentColorLight" Color="#B2DFDB" />
     
-    <!-- App 文本、图标颜色 -->
+    <!-- App 文本、图标颜色（主要） -->
     <SolidColorBrush x:Key="MainForegroundColor" Color="#212121" />
     
-    <!-- App 文本、图标颜色（亮色） -->
-    <SolidColorBrush x:Key="WhiteForegroundColor" Color="#FFFFFF" />
+    <!-- App 文本、图标颜色（控件中） -->
+    <SolidColorBrush x:Key="WidgetForegroundColor" Color="#FFFFFF" />
     
     <!-- App 背景颜色 -->
-    <SolidColorBrush x:Key="WindowBackgroundColor" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="WindowBackgroundColor" Color="#CFD8DC" />
     
     <!-- 常量色 -->
     <SolidColorBrush x:Key="LightGray" Color="#727272" />

@@ -76,7 +76,7 @@ public sealed partial class Explorer : INotifyPropertyChanged
     /// <summary>
     /// 刷新浏览器列表项
     /// </summary>
-    private void RefreshExplorerItems()
+    public void RefreshExplorerItems()
     {
         ExplorerRuntime.Path = PathBox.Text.Trim();
         ExplorerItems.Clear();
@@ -199,7 +199,10 @@ public sealed partial class Explorer : INotifyPropertyChanged
     /// <summary>
     /// 浏览器中，在选定列表项上左键时
     /// </summary>
-    public ICommand ExplorerItemLeftClickCommand => new RelayCommand<ExplorerItem>(ExplorerItemClickActions.LeftClick);
+    public ICommand ExplorerItemLeftClickCommand => new RelayCommand<ExplorerItem>(item =>
+    {
+        ExplorerItemClickActions.LeftClick(item, this);
+    });
     
     /// <summary>
     /// 浏览器中，在选定列表项上右键时
