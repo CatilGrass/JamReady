@@ -17,7 +17,6 @@
 
     <ItemGroup>
       <Folder Include="AppResources\Assets\Icons\" />
-      <Folder Include="bin\Debug\" />
     </ItemGroup>
 
     <ItemGroup>
