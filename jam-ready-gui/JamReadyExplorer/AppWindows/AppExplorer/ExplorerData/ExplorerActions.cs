@@ -2,6 +2,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Imaging;
 using JamReadyGui.AppData.Explorer;
+using JamReadyGui.AppData.Utils;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace JamReadyGui.AppWindows.AppExplorer.ExplorerData;
@@ -43,9 +44,11 @@ public static class ExplorerActions
                             {
                                 Header = pathMenuItem.Trim(), Command = new ActionCommand(() =>
                                 {
-                                    if (pathMenu.OnOperate(path, insert))
+                                    var explorerPath = ExplorerPath.FromString(path);
+                                    if (explorerPath != null)
                                     {
-                                        explorer.RefreshExplorerItems();
+                                        if (pathMenu.OnOperate(explorerPath.Value, insert))
+                                            explorer.RefreshExplorerItems();
                                     }
                                 })
                             };

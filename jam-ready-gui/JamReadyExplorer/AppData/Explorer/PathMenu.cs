@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using JamReadyGui.AppData.Utils;
 
 namespace JamReadyGui.AppData.Explorer;
 
@@ -39,5 +40,5 @@ public abstract class PathMenu
     /// <param name="path"> 按下此按钮的目录 </param>
     /// <param name="operationIndex"> 操作索引 </param>
     /// <returns> 是否需要更新页面 </returns>
-    public abstract bool OnOperate(string path, int operationIndex);
+    public abstract bool OnOperate(ExplorerPath path, int operationIndex);
 }
