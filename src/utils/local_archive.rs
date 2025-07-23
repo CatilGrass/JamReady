@@ -23,14 +23,16 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
             // 创建新的结构
             let data = Self::DataType::default();
 
+            // 此处不应当创建目录，应当放入 update 方法
             // 创建需要的目录
-            create_paths();
+            // create_paths();
 
-            // 序列化并写入磁盘
-            let content = serde_yaml::to_string(&data).unwrap();
-            if let Ok(mut created) = File::create(&file) {
-                created.write_all(content.as_bytes()).unwrap();
-            }
+            // 此处不应当写入磁盘，而是直接返回新的值，写入磁盘的操作应放入 update 方法中
+            // // 序列化并写入磁盘
+            // let content = serde_yaml::to_string(&data).unwrap();
+            // if let Ok(mut created) = File::create(&file) {
+            //     created.write_all(content.as_bytes()).unwrap();
+            // }
 
             // 返回新的值
             data
