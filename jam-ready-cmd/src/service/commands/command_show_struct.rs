@@ -1,9 +1,11 @@
 use std::collections::BTreeMap;
+use std::env::current_dir;
 use async_trait::async_trait;
 use colored::Colorize;
 use tokio::net::TcpStream;
 use jam_ready::utils::local_archive::LocalArchive;
 use crate::data::database::Database;
+use crate::data::local_file_map::LocalFileMap;
 use crate::data::member::Member;
 use crate::data::workspace::Workspace;
 use crate::service::commands::database_sync::{sync_local, sync_remote};
@@ -21,18 +23,54 @@ impl Command for ShowFileStructCommand {
 
         // 读取本地同步的树
         let database = Database::read();
+        let local = LocalFileMap::read();
         let mut paths = Vec::new();
 
         if let Some(client) = Workspace::read().client {
             for file in database.files() {
-                let mut info = format!("{} ", &file.path());
 
-                // 版本
-                info = format!("{}[{}]", info, file.version());
+                // 本地文件
+                let local_file = local.search_to_local(&database, file.path());
+
+                // 起始的
+                let mut info = format!("{} ", &file.path());
 
                 // 是否为空
                 if file.real_path().is_empty() {
-                    info = format!("{}{}", info, "[Empty]".truecolor(128, 128, 128));
+
+                    // 显示空版本
+                    info = format!("{} {}", info, "New".truecolor(128, 128, 128));
+                } else {
+
+                    // 若存在本地文件，显示本地版本
+                    let mut added = false;
+                    if let Some(local_file) = local_file {
+                        if let Ok(current) = current_dir() {
+                            let local_file_path_buf = current.join(&local_file.local_path);
+                            if local_file_path_buf.exists() {
+
+                                // 本地版本
+                                let local_version = local_file.local_version;
+
+                                // 对比版本
+                                if local_version < file.version() {
+                                    // 本地文件更旧，显示需要更新
+                                    info = format!("{} {}", info, format!("v{}_Old", local_version).bright_red());
+                                } else {
+
+                                    // 本地文件版本同步
+                                    info = format!("{} {}", info, format!("v{}_Latest", local_version).bright_green());
+                                }
+
+                                added = true;
+                            }
+                        }
+                    }
+
+                    if !added {
+                        // 显示当前版本
+                        info = format!("{} v{}", info, file.version());
+                    }
                 }
 
                 // 锁定状态
@@ -41,17 +79,19 @@ impl Command for ShowFileStructCommand {
                     // 自己锁定
                     if uuid == client.uuid.trim() {
                         if longer_lock {
-                            info = format!("{}{}", info, "[Longer Owned]".bright_green());
+                            info = format!("{} {}", info, "Mine".bright_green());
                         } else {
-                            info = format!("{}{}", info, "[Owned]".green());
+                            info = format!("{} {}", info, "Locked".green());
                         }
                     } else {
                         if longer_lock {
-                            info = format!("{}{}", info, "[Longer Locked]".bright_red());
+                            info = format!("{} {}", info, "Theirs".bright_red());
                         } else {
-                            info = format!("{}{}", info, "[Locked]".bright_yellow());
+                            info = format!("{} {}", info, "TheirLocked".bright_yellow());
                         }
                     }
+                } else {
+                    info = format!("{} {}", info, "Available".truecolor(128, 128, 128));
                 }
                 paths.push(info)
             }
