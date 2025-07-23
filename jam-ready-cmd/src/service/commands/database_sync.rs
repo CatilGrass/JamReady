@@ -4,6 +4,7 @@ use crate::service::service_utils::{read_large_msg, send_large_msg};
 use indicatif::ProgressBar;
 use jam_ready::utils::local_archive::LocalArchive;
 use tokio::net::TcpStream;
+use crate::data::local_folder_map::LocalFolderMap;
 
 /// 接收同步消息
 pub async fn sync_local(stream: &mut TcpStream) {
@@ -11,6 +12,7 @@ pub async fn sync_local(stream: &mut TcpStream) {
     let database_sync = &read_large_msg(stream, progress_bar).await;
     if let Ok(database) = database_sync {
         Database::update(database);
+        LocalFolderMap::update(&database.into());
     }
 }
 
@@ -28,6 +30,7 @@ pub async fn sync_local_with_progress(stream: &mut TcpStream) {
     let database_sync = &read_large_msg(stream, progress_bar).await;
     if let Ok(database) = database_sync {
         Database::update(database);
+        LocalFolderMap::update(&database.into());
     }
 }
 
