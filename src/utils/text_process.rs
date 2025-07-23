@@ -72,3 +72,20 @@ fn process_iterator<I: Iterator<Item = char>>(chars: I, mut result: String) -> S
     }
     cleaned
 }
+
+/// 分割目录文本
+pub fn split_path_text(path: &str) -> (String, String) {
+    if path.is_empty() {
+        return ("".to_string(), "".to_string());
+    }
+
+    let normalized_path = path.trim_start_matches('/');
+
+    if let Some(last_idx) = normalized_path.rfind('/') {
+        let dir_part = &normalized_path[..=last_idx];
+        let file_part = &normalized_path[last_idx + 1..];
+        (dir_part.to_string(), file_part.to_string())
+    } else {
+        ("".to_string(), normalized_path.to_string())
+    }
+}
