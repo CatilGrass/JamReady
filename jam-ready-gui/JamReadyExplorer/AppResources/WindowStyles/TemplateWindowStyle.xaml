@@ -30,7 +30,7 @@
     <!-- 模板：主页面的窗口的布局 -->
     <ControlTemplate x:Key="CommonWindowTemplate"
                      TargetType="{x:Type Window}">
-        <Grid Background="{StaticResource WindowBackgroundColor}">
+        <Grid Background="{StaticResource BackgroundColor}">
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/> <!-- 标题区 -->
             <RowDefinition Height="2"/> <!-- 分割线 -->
@@ -99,7 +99,7 @@
                             <!-- 关闭窗口按钮 -->
                             <Button 
                                 bh:TemplateWindowBehaviour.Close="True"
-                                Style="{StaticResource JamReadyButtonStyleTitleBar}"
+                                Style="{StaticResource JamReadyButtonStyleCloseButton}"
                                 Width="47" Height="48">
                                 <Image Source="/AppResources/Assets/Icons/Light_128x/close_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
