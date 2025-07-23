@@ -5,7 +5,7 @@
     <Style x:Key="JamReadyButtonStyle" TargetType="Button">
         <Setter Property="Padding" Value="15, 0, 15, 0"/>
         <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-        <Setter Property="Foreground" Value="{StaticResource WhiteForegroundColor}"/>
+        <Setter Property="Foreground" Value="{StaticResource WidgetForegroundColor}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontWeight" Value="Bold"/>
@@ -66,10 +66,42 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#4D757575"/>
+                <Setter Property="Background" Value="{StaticResource AppMainColorLight}"/>
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="#80757575"/>
+                <Setter Property="Background" Value="{StaticResource AppMainColorDark}"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="Transparent"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    
+    <!-- 样式：标题所使用的按钮样式 (关闭按钮) -->
+    <Style x:Key="JamReadyButtonStyleCloseButton" TargetType="Button">
+        <Setter Property="IsHitTestVisible" Value="True"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border 
+                        Background="{TemplateBinding Background}" 
+                        IsHitTestVisible="True">
+                        <ContentPresenter 
+                            x:Name="ContentPresenter"
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource CloseButtonColor}"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource CloseButtonColorPressed}"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Background" Value="Transparent"/>
@@ -193,12 +225,12 @@
                         <Storyboard>
                             <DoubleAnimation 
                                 Storyboard.TargetProperty="RenderTransform.ScaleX" 
-                                To="0.95" 
+                                To="1" 
                                 Duration="0:0:0.25"
                                 EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
                             <DoubleAnimation 
                                 Storyboard.TargetProperty="RenderTransform.ScaleY" 
-                                To="0.95" 
+                                To="1" 
                                 Duration="0:0:0.25"
                                 EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
                         </Storyboard>

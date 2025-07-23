@@ -10,7 +10,7 @@
         Title="MainWindow"
         mc:Ignorable="d">
     
-    <Grid Background="{StaticResource WindowBackgroundColor}">
+    <Grid Background="{StaticResource BackgroundColor}">
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/> <!-- 标题区 -->
             <RowDefinition Height="1"/> <!-- 分割线 -->
@@ -110,7 +110,7 @@
                             <!-- 关闭窗口按钮 -->
                             <Button 
                                 Click="Explorer_Close"
-                                Style="{StaticResource JamReadyButtonStyleTitleBar}"
+                                Style="{StaticResource JamReadyButtonStyleCloseButton}"
                                 Width="47" Height="48">
                                 <Image Source="/AppResources/Assets/Icons/Light_128x/close_128dp_F8F8F8_FILL0_wght700_GRAD0_opsz48.png"
                                        Style="{StaticResource JamReadyButtonIconStyleAnimation}"
@@ -365,9 +365,9 @@
                                         <TextBlock
                                             Text="{Binding ItemName}"
                                             FontSize="{Binding DataContext.ExplorerItemFontSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            Foreground="{StaticResource MainForegroundColor}"
+                                            Foreground="{StaticResource ForegroundColor}"
                                             TextAlignment="Center"
-                                            TextWrapping="Wrap"
+                                            TextWrapping="WrapWithOverflow"
                                             HorizontalAlignment="Stretch" 
                                             VerticalAlignment="Bottom"
                                             IsHitTestVisible="False"/>
