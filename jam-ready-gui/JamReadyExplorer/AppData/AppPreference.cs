@@ -11,6 +11,8 @@ namespace JamReadyGui.AppData;
 [Serializable]
 public class AppPreference
 {
+    public string CurrentPath = "HOME://";
+    
     /// <summary>
     /// 加载 App 首选项
     /// </summary>

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using JamReadyGui.AppData;
 using JamReadyGui.AppData.Explorer;
 using JamReadyGui.AppData.Utils;
 using JamReadyGui.AppWindows.AppExplorer.ExplorerData;
@@ -60,10 +61,15 @@ public sealed partial class Explorer : INotifyPropertyChanged
     {
         InitializeComponent();
         
+        var preference = AppPreference.LoadPreference();
+        
         // 设置数据上下文
         DataContext = this; 
 
-        // 设置地址栏的文本为 App 默认内容
+        // 加载当前目录并设置到 App 输入框
+        if (preference != null)
+            ExplorerRuntime.CurrentPath = preference.CurrentPath;
+        
         PathBox.Text = ExplorerRuntime.CurrentPath;
         
         // 初次刷新浏览器列表项
@@ -78,7 +84,6 @@ public sealed partial class Explorer : INotifyPropertyChanged
     /// </summary>
     public void RefreshExplorerItems()
     {
-        ExplorerRuntime.Path = PathBox.Text.Trim();
         ExplorerItems.Clear();
         int i = 0;
         foreach (var adapter in ExplorerRuntime.CurrentAdapters)
@@ -86,6 +91,9 @@ public sealed partial class Explorer : INotifyPropertyChanged
             ExplorerItems.Add(new ExplorerItem(i, adapter));
             i ++;
         }
+                
+        PathBox.Text = ExplorerRuntime.CurrentPath;
+        PathBox.SelectionStart = PathBox.Text.Length;
     }
     
     // -----------------------------------------------------------------------------------
@@ -104,9 +112,6 @@ public sealed partial class Explorer : INotifyPropertyChanged
             {
                 var path = ExplorerPath.FromString(PathBox.Text.Trim()) ?? new ExplorerPath();
                 var pathString = path.ToString();
-                
-                PathBox.Text = path.ToString();
-                PathBox.SelectionStart = PathBox.Text.Length;
                 
                 ExplorerRuntime.CurrentPath = pathString;
                 
@@ -146,7 +151,8 @@ public sealed partial class Explorer : INotifyPropertyChanged
     /// <exception cref="NotImplementedException"></exception>
     private void Explorer_BackToLast(object sender, RoutedEventArgs e)
     {
-        
+        ExplorerRuntime.ToLastPath();
+        RefreshExplorerItems();
     }
 
     /// <summary>
@@ -195,6 +201,16 @@ public sealed partial class Explorer : INotifyPropertyChanged
     /// <exception cref="NotImplementedException"></exception>
     private void Explorer_Close(object sender, RoutedEventArgs e)
     {
+        var preference = AppPreference.LoadPreference();
+        
+        if (preference != null)
+        {
+            // 存储当前目录
+            preference.CurrentPath = ExplorerRuntime.CurrentPath;
+            
+            AppPreference.WritePreference(preference);
+        }
+
         Close();
     }
     

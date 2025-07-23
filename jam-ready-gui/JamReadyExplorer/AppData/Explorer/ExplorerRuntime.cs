@@ -87,4 +87,16 @@ public static class ExplorerRuntime
             Console.WriteLine($"Generated {i} Adapters");
         }
     }
+
+    /// <summary>
+    /// 前往上一个目录
+    /// </summary>
+    public static void ToLastPath()
+    {
+        if (HistoryPaths.Count > 0)
+        {
+            CurrentPath = HistoryPaths[^1];
+            HistoryPaths.RemoveAt(HistoryPaths.Count - 1);
+        }
+    }
 }

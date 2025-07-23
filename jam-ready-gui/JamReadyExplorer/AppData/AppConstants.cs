@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using JamReadyGui.AppData.Utils;
 
 namespace JamReadyGui.AppData;
 
@@ -44,6 +46,24 @@ public static class AppConstants
         }
 
         return files;
+    }
+
+    /// <summary>
+    /// 获得插件资源文件
+    /// </summary>
+    /// <param name="pluginName"></param>
+    /// <param name="fileName"></param>
+    /// <returns></returns>
+    public static FileInfo? GetPluginResourceFile(string pluginName, string fileName)
+    {
+        var directory = GetResourceDirectoryOfPluginName(pluginName);
+        if (directory != null)
+        {
+            var filePath = PathFormatter.FormatPath(directory.FullName + "\\" + fileName);
+            var file = new FileInfo(filePath);
+            return file.Exists ? file : null;
+        }
+        return null;
     }
 
     /// <summary>
