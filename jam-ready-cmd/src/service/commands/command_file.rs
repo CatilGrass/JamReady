@@ -1,3 +1,4 @@
+use std::env::current_dir;
 use crate::data::database::{Database, VirtualFile};
 use crate::data::member::Member;
 use crate::service::commands::database_sync::{sync_local, sync_remote};
@@ -8,6 +9,8 @@ use crate::service::service_utils::{read_msg, send_msg};
 use async_trait::async_trait;
 use jam_ready::utils::text_process::process_path_text;
 use tokio::net::TcpStream;
+use jam_ready::utils::local_archive::LocalArchive;
+use crate::data::local_file_map::{LocalFile, LocalFileMap};
 
 pub struct FileOperationCommand;
 
@@ -31,6 +34,43 @@ impl Command for FileOperationCommand {
                 eprintln!("Err: {}", msg)
             }
             _ => {}
+        }
+
+        // 检查操作符
+        match args[1].to_lowercase().trim() {
+
+            // 添加文件 (若创建的文件地址在本地存在，则为其建立映射)
+            "add" => {
+
+                // 加载本地数据
+                let mut local = LocalFileMap::read();
+                let database = Database::read();
+
+                let search = args[2];
+                if let Ok(current) = current_dir() {
+                    let local_file_path_buf = current.join(search);
+
+                    // 本地确实存在该文件
+                    if local_file_path_buf.exists() {
+
+                        // 且远程确实存在该文件 (因为刚创建的所以大概率存在)
+                        if let Some(file) = database.search_file(search.to_string()) {
+                            let file_path = file.path();
+                            if let Some(file_uuid) = database.uuid_of_path(file_path.clone()) {
+                                local.file_uuids.insert(file_path, file_uuid.clone());
+                                local.file_paths.insert(file_uuid, LocalFile{
+                                    local_path: search.to_string(),
+                                    local_version: file.version(),
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // 保存本地数据
+                LocalFileMap::update(&local);
+            }
+            _ => { }
         }
     }
 
