@@ -12,7 +12,7 @@ public class ParentDirectoryAdapter : ItemAdapter
     
     public override ImagePath OnInit(object value)
     {
-        var iconFile = AppConstants.GetPluginResourceFile(Plugin.PluginName, "FileSystem_Folder.png");
+        var iconFile = AppConstants.GetPluginResourceFile(Plugin.PluginName, "FileSystem_Folder_Back.png");
         
         // 上一级文件
         if (value is DirectoryInfo directory && iconFile != null)
@@ -20,6 +20,21 @@ public class ParentDirectoryAdapter : ItemAdapter
             Name = "..";
             _jumpTo = directory;
             return new ImagePath(new Uri(iconFile.FullName));
+        }
+        
+        // 彩蛋
+        if (value is (DirectoryInfo dir, string easterEggWord))
+        {
+            if (easterEggWord == "Safety")
+            {
+                iconFile = AppConstants.GetPluginResourceFile(Plugin.PluginName, "FileSystem_Folder_Back_Pete.png");
+                if (iconFile != null)
+                {
+                    Name = "Exit here :)";
+                    _jumpTo = dir;
+                    return new ImagePath(new Uri(iconFile.FullName));
+                }
+            }
         }
         
         // 磁盘选择
