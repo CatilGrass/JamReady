@@ -24,7 +24,7 @@ public abstract class PathMenu
     /// 注册此目录的操作
     /// </summary>
     /// <returns> 注册的按钮名称 </returns>
-    public abstract List<string>? OnRegisterOperation(string path);
+    public abstract List<string>? OnRegisterOperation(ExplorerPath path);
 
     /// <summary>
     /// 获得操作的图标
@@ -32,7 +32,7 @@ public abstract class PathMenu
     /// <param name="path"> 按下此按钮的目录 </param>
     /// <param name="operationIndex"> 索引号 </param>
     /// <returns></returns>
-    public virtual ImagePath? GetOperationIcon(string path, int operationIndex) => null;
+    public virtual ImagePath? GetOperationIcon(ExplorerPath path, int operationIndex) => null;
 
     /// <summary>
     /// 此目录的按钮按下时执行
