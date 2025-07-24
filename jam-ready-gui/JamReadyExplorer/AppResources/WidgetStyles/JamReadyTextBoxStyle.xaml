@@ -8,7 +8,7 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="Thin"/>
-        <Setter Property="Foreground" Value="{StaticResource WidgetForegroundColor}"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundColor}"/>
         <Setter Property="TextWrapping" Value="NoWrap"/>
     </Style>
     

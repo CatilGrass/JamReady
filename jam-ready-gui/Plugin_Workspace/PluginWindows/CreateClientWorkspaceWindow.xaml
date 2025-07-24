@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         mc:Ignorable="d"
-        Title="CreateWorkspace" Height="300" Width="400">
+        Title="CreateWorkspace" Height="300" Width="500">
     <Grid>
         
         <Button Width="100" Height="40" Content="AAA"/>

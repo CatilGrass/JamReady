@@ -1,12 +1,14 @@
-menu_name: "File..."
+Menu_File_Name: "File..."
 
-create_folder: "New Folder"
-remove_folder: "Remove Folder"
+MenuItem_CreateFolder_Name: "New Folder"
+MenuItem_RemoveFolder_Name: "Remove Folder"
 
-new_folder_name: "My Folder"
+Window_ConfirmRemoveFolderWindow_Title: "Remove Folder"
+Window_CreateFolderWindow_Title: "Create Folder Here"
 
-create: "Create"
+Window_ConfirmRemoveFolderWindow_ConfirmText_Content: "Confirm deletion of folder [folder]?\n This operation is irreversible!"
+Window_CreateFolderWindow_FolderNameInput_Default: "My Folder"
 
-remove_folder_hint: "Confirm deletion of folder [folder]?\n This operation is irreversible!"
-confirm: "Yes"
-cancel: "No"
+Button_Create: "Create"
+Button_Positive: "Yes"
+Button_Negative: "No"

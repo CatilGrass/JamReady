@@ -1,8 +1,6 @@
-path_menu: "Workspace..."
+Menu_Workspace_Name: "Workspace..."
 
-menu_create_client: "Connect to workspace"
-menu_create_server: "Create workspace"
+MenuItem_JoinWorkspace_Name: "Join Workspace"
+MenuItem_CreateWorkspace_Name: "Create Workspace"
 
-workspace: "Workspace"
-client: "Client"
-server: "Server"
+Window_CreateClientWorkspaceWindow_Title: "Join Workspace Here"
