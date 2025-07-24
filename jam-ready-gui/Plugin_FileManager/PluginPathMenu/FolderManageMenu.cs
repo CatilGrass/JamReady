@@ -11,7 +11,7 @@ public class FolderManageMenu : PathMenu
 {
     public override string GetMenuName()
     {
-        return ExplorerRuntime.Lang(Plugin.PluginName, "menu_name");
+        return ExplorerRuntime.Lang(Plugin.PluginName, "Menu_File_Name");
     }
 
     public override List<string>? OnRegisterOperation(ExplorerPath path)
@@ -20,7 +20,7 @@ public class FolderManageMenu : PathMenu
         Do(path, _ =>
         {
             menuItemList.Add(ExplorerRuntime.Lang(Plugin.
-                PluginName, "create_folder"));
+                PluginName, "MenuItem_CreateFolder_Name"));
         });
         return menuItemList;
     }

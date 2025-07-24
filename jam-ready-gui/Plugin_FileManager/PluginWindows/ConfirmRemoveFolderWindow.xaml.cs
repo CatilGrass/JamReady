@@ -14,12 +14,12 @@ public partial class ConfirmRemoveFolderWindow : Window
         
         InitializeComponent();
 
-        Title = ExplorerRuntime.Lang(Plugin.PluginName, "remove_folder");
+        Title = ExplorerRuntime.Lang(Plugin.PluginName, "Window_ConfirmRemoveFolderWindow_Title");
         
-        ConfirmText.Content = ExplorerRuntime.Lang(Plugin.PluginName, "remove_folder_hint")
+        ConfirmText.Content = ExplorerRuntime.Lang(Plugin.PluginName, "Window_ConfirmRemoveFolderWindow_ConfirmText_Content")
             .Replace("[folder]", _directoryInfo.Name);
-        ConfirmButton.Content = ExplorerRuntime.Lang(Plugin.PluginName, "confirm");
-        CancelButton.Content = ExplorerRuntime.Lang(Plugin.PluginName, "cancel");
+        ConfirmButton.Content = ExplorerRuntime.Lang(Plugin.PluginName, "Button_Positive");
+        CancelButton.Content = ExplorerRuntime.Lang(Plugin.PluginName, "Button_Negative");
     }
 
     private void ConfirmButton_OnClick(object sender, RoutedEventArgs e)

@@ -12,14 +12,14 @@
     <SolidColorBrush x:Key="AccentColorLight" Color="#6FBEEA" />
     
     <!-- App 文本、图标颜色（主要） -->
-    <SolidColorBrush x:Key="ForegroundColorDark" Color="#D1C4E9" />
-    <SolidColorBrush x:Key="ForegroundColor" Color="#F1FBFF" />
-    <SolidColorBrush x:Key="ForegroundColorLight" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ForegroundColorDark" Color="#151515" />
+    <SolidColorBrush x:Key="ForegroundColor" Color="#212121" />
+    <SolidColorBrush x:Key="ForegroundColorLight" Color="#323232" />
     
     <!-- App 背景颜色 -->
-    <SolidColorBrush x:Key="BackgroundColorDark" Color="#151515" />
-    <SolidColorBrush x:Key="BackgroundColor" Color="#212121" />
-    <SolidColorBrush x:Key="BackgroundColorLight" Color="#323232" />
+    <SolidColorBrush x:Key="BackgroundColorDark" Color="#D1C4E9" />
+    <SolidColorBrush x:Key="BackgroundColor" Color="#F1FBFF" />
+    <SolidColorBrush x:Key="BackgroundColorLight" Color="#FFFFFF" />
     
     <!-- App 文本、图标颜色（控件中） -->
     <SolidColorBrush x:Key="WidgetForegroundColor" Color="#FFFFFF" />
