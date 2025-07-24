@@ -1,0 +1,8 @@
+path_menu: "Workspace..."
+
+menu_create_client: "Connect to workspace"
+menu_create_server: "Create workspace"
+
+workspace: "Workspace"
+client: "Client"
+server: "Server"

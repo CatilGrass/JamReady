@@ -1,0 +1,12 @@
+menu_name: "文件..."
+
+create_folder: "新文件夹"
+remove_folder: "删除文件夹"
+
+new_folder_name: "我的文件夹"
+
+create: "创建"
+
+remove_folder_hint: "确认删除文件夹 [folder]\n此操作不可逆!"
+confirm: "确认"
+cancel: "取消"
