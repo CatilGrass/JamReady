@@ -6,12 +6,16 @@ namespace JamReadyGui.AppData.Utils;
 
 public class PluginLoader
 {
+    /// <summary>
+    /// 通过 dll 文件加载插件
+    /// </summary>
+    /// <param name="file"></param>
+    /// <exception cref="InvalidOperationException"></exception>
     public static void LoadPluginByPath(FileInfo file)
     {
         var dllPath = file.FullName;
         try
         {
-            Console.WriteLine($"Loading plugin from: {dllPath}");
             Assembly assembly = Assembly.LoadFrom(dllPath);
 
             Type? pluginType = assembly.GetType($"{file.Name.Trim().Replace(".dll", "")}.Plugin");
@@ -29,11 +33,11 @@ public class PluginLoader
             }
             
             registerMethod.Invoke(pluginInstance, null);
-            Console.WriteLine($"Plugin: {dllPath} loaded successfully.");
+            Console.WriteLine($"Plugin {file.Name} loaded successfully.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Load plugin failed: {ex.Message}");
+            Console.WriteLine($"Plugin {file.Name} load failed: {ex.Message}");
         }
     }
 }
