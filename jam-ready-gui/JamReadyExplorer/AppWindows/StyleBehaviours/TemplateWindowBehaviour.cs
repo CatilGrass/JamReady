@@ -38,12 +38,18 @@ public class TemplateWindowBehaviour
     {
         if (d is Button button)
         {
+            var window = Window.GetWindow(button);
+            if (window is { ResizeMode: ResizeMode.NoResize })
+            {
+                button.Visibility = Visibility.Collapsed;
+            }
+            
             button.Click += (_, _) =>
             {
-                var window = Window.GetWindow(button);
-                if (window != null)
+                var window1 = Window.GetWindow(button);
+                if (window1 != null)
                 {
-                    window.WindowState = window.WindowState == WindowState.Maximized 
+                    window1.WindowState = window1.WindowState == WindowState.Maximized 
                         ? WindowState.Normal 
                         : WindowState.Maximized;
                 }
@@ -64,7 +70,7 @@ public class TemplateWindowBehaviour
         if (d is Button button)
         {
             button.Click += (_, _) =>
-            {
+            { 
                 var window = Window.GetWindow(button);
                 window?.Close();
             };

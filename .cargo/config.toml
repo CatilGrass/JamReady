@@ -32,7 +32,8 @@ PATH_DATABASE = { value = "" }
 
 # 文件
 FILE_DATABASE = { value = ".jam/database.yaml" }
-FILE_LOCAL_FILE_MAP = { value = ".jam/local.yaml" }
+FILE_LOCAL_FILE_MAP = { value = ".jam/files.yaml" }
+FILE_LOCAL_FOLDER_MAP = { value = ".jam/folders.yaml" }
 FILE_WORKSPACE_SERVER_DATA = { value = ".jam/workspace.yaml" }
 FILE_WORKSPACE_USER_DATA = { value = ".jam/user.yaml" }
 

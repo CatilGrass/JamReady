@@ -48,6 +48,8 @@ public static class ExplorerItemClickActions
             }
             menu.Placement = PlacementMode.Mouse;
             menu.IsOpen = true;
+            menu.HorizontalOffset = menu.ActualWidth * 0.7;
+            menu.VerticalOffset = - 16;
         }
     }
 

@@ -11,7 +11,15 @@ namespace JamReadyGui.AppData;
 [Serializable]
 public class AppPreference
 {
+    /// <summary>
+    /// 当前所在的地址
+    /// </summary>
     public string CurrentPath = "HOME://";
+
+    /// <summary>
+    /// 当前语言标识
+    /// </summary>
+    public string Language = "en_us";
     
     /// <summary>
     /// 加载 App 首选项
@@ -36,5 +44,19 @@ public class AppPreference
     {
         var jsonFile = new FileInfo(AppConstants.PreferenceConfigureFile);
         File.WriteAllText(jsonFile.FullName, JsonConvert.SerializeObject(preference));
+    }
+
+    /// <summary>
+    /// 操作首选项
+    /// </summary>
+    /// <param name="action"></param>
+    public static void OperatePreference(Action<AppPreference> action)
+    {
+        var preference = LoadPreference();
+        if (preference != null)
+        {
+            action(preference);
+            WritePreference(preference);
+        }
     }
 }

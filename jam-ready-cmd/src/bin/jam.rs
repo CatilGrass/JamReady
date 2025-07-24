@@ -13,6 +13,7 @@ use rand::Rng;
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use strum::IntoEnumIterator;
+use jam_ready_cmd::data::local_file_map::LocalFileMap;
 use jam_ready_cmd::service::service_utils::get_self_address;
 
 // --------------------------------------------------------------------------- //
@@ -139,6 +140,9 @@ async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace)
 
     // 写入
     Workspace::update(&mut workspace);
+
+    // 开始构建本地映射表
+    LocalFileMap::update(&LocalFileMap::read());
 }
 
 async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace) {

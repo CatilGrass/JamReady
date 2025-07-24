@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using JamReadyGui.AppData;
 using JamReadyGui.AppData.Explorer;
 using JamReadyGui.AppData.Utils;
+using Plugin_FileManager.PluginWindows;
 
 namespace Plugin_FileManager.PluginAdapters;
 
@@ -32,6 +34,24 @@ public class DirectoryAdapter : ItemAdapter
             };
             ExplorerRuntime.Path = path.ToString();
             return true;
+        }
+        return false;
+    }
+
+    public override List<string> OnRegisterOperation()
+    {
+        return new List<string>
+        {
+            ExplorerRuntime.Lang(Plugin.PluginName, "remove_folder")
+        };
+    }
+
+    public override bool OnOperate(int operationIndex)
+    {
+        // 删除文件夹
+        if (operationIndex == 0)
+        {
+            if (_jumpTo != null) new ConfirmRemoveFolderWindow(_jumpTo).Show();
         }
         return false;
     }
