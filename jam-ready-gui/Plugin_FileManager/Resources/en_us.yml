@@ -1,0 +1,12 @@
+menu_name: "File..."
+
+create_folder: "New Folder"
+remove_folder: "Remove Folder"
+
+new_folder_name: "My Folder"
+
+create: "Create"
+
+remove_folder_hint: "Confirm deletion of folder [folder]?\n This operation is irreversible!"
+confirm: "Yes"
+cancel: "No"

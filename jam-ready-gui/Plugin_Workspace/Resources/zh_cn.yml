@@ -1,0 +1,8 @@
+path_menu: "工作区..."
+
+menu_create_client: "连接到远程工作区"
+menu_create_server: "创建工作区"
+
+workspace: "工作区"
+client: "本地工作区"
+server: "数据库"
