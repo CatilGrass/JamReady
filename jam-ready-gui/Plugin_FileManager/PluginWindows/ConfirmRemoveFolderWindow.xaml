@@ -1,0 +1,54 @@
+<Window x:Class="Plugin_FileManager.PluginWindows.ConfirmRemoveFolderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Plugin_FileManager.PluginWindows"
+        Style="{StaticResource CommonWindowStyle}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        mc:Ignorable="d"
+        Title="New Folder" Height="220" Width="320">
+    <Grid Margin="25">
+        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <Label
+            Grid.Row="0" 
+            Grid.ColumnSpan="2"
+            Name="ConfirmText" 
+            Content="Sure?"
+            FontSize="17"
+            VerticalContentAlignment="Center"
+            HorizontalContentAlignment="Center"
+            Foreground="{StaticResource ForegroundColor}"
+        />
+        
+        <Button 
+            Grid.Row="1"
+            Grid.Column="0"
+            Name="CancelButton"
+            Click="CancelButton_OnClick"
+            Style="{StaticResource JamReadyButtonStyle}"
+            Margin="15" 
+            Content="No"/>
+        
+        <Button 
+            Grid.Row="1"
+            Grid.Column="1"
+            Name="ConfirmButton"
+            Click="ConfirmButton_OnClick"
+            Style="{StaticResource JamReadyButtonStyle}"
+            Margin="15" 
+            Content="Yes"/>
+        
+    </Grid>
+</Window>
