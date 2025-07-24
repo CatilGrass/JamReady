@@ -10,7 +10,7 @@ public class CreateWorkspaceMenu : PathMenu
 {
     public override string GetMenuName()
     {
-        return ExplorerRuntime.Lang(Plugin.PluginName, "path_menu");
+        return ExplorerRuntime.Lang(Plugin.PluginName, "Menu_Workspace_Name");
     }
 
     public override List<string> OnRegisterOperation(ExplorerPath path)
@@ -20,8 +20,8 @@ public class CreateWorkspaceMenu : PathMenu
         
         return new List<string>
         {
-            ExplorerRuntime.Lang(Plugin.PluginName, "menu_create_client"),
-            ExplorerRuntime.Lang(Plugin.PluginName, "menu_create_server")
+            ExplorerRuntime.Lang(Plugin.PluginName, "MenuItem_JoinWorkspace_Name"),
+            ExplorerRuntime.Lang(Plugin.PluginName, "MenuItem_CreateWorkspace_Name")
         };
     }
 

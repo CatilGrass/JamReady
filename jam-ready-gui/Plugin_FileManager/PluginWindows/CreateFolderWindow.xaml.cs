@@ -14,10 +14,10 @@ public partial class CreateFolderWindow
         
         InitializeComponent();
 
-        Title = ExplorerRuntime.Lang(Plugin.PluginName, "create_folder");
+        Title = ExplorerRuntime.Lang(Plugin.PluginName, "Window_CreateFolderWindow_Title");
         
-        NameInput.Text = ExplorerRuntime.Lang(Plugin.PluginName, "new_folder_name");
-        CreateButton.Content = ExplorerRuntime.Lang(Plugin.PluginName, "create");
+        NameInput.Text = ExplorerRuntime.Lang(Plugin.PluginName, "Window_CreateFolderWindow_FolderNameInput_Default");
+        CreateButton.Content = ExplorerRuntime.Lang(Plugin.PluginName, "Button_Create");
     }
 
     private void CreateButton_OnClick(object sender, RoutedEventArgs e)
