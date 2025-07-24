@@ -61,6 +61,9 @@ public sealed partial class Explorer : INotifyPropertyChanged
     {
         InitializeComponent();
         
+        // 绑定自己到全局变量
+        ExplorerRuntime.CurrentExplorer = this;
+        
         var preference = AppPreference.LoadPreference();
         
         // 设置数据上下文
@@ -212,6 +215,7 @@ public sealed partial class Explorer : INotifyPropertyChanged
         }
 
         Close();
+        Application.Current.Shutdown();
     }
     
     // -----------------------------------------------------------------------------------

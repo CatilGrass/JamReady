@@ -65,6 +65,21 @@ public static class AppConstants
         }
         return null;
     }
+    
+    /// <summary>
+    /// 获得插件资源文件
+    /// </summary>
+    /// <param name="pluginName"></param>
+    /// <returns></returns>
+    public static List<FileInfo> GetPluginResourceFiles(string pluginName)
+    {
+        var result = new List<FileInfo>();
+        var directory = GetResourceDirectoryOfPluginName(pluginName);
+        if (directory != null)
+            foreach (var fileInfo in directory.GetFiles())
+                result.Add(fileInfo);
+        return result;
+    }
 
     /// <summary>
     /// 通过插件名称获得资源目录

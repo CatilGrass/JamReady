@@ -10,6 +10,30 @@ namespace JamReadyGui.AppData.Explorer;
 public static class ExplorerRuntime
 {
     /// <summary>
+    /// 当前浏览器窗口
+    /// </summary>
+    public static AppWindows.AppExplorer.Explorer? CurrentExplorer;
+    
+    /// <summary>
+    /// 当前语言标识
+    /// </summary>
+    public static string Language
+    {
+        get => _language;
+        set
+        {
+            // 设置语言
+            _language = value.Trim().ToLower();
+            
+            // 保存首选项
+            AppPreference.OperatePreference(p =>
+            {
+                p.Language = _language;
+            });
+        }
+    }
+    
+    /// <summary>
     /// 正在搜索的内容
     /// </summary>
     public static string SearchContent = "";
@@ -40,6 +64,16 @@ public static class ExplorerRuntime
     private static string _currentPath = "HOME://";
     private static readonly List<string> HistoryPaths = new();
     private static readonly List<ItemAdapter?> ItemAdapters = new();
+    private static string _language = "en_us";
+
+    /// <summary>
+    /// 构建运行时
+    /// </summary>
+    public static void InitializeExplorerRuntime()
+    {
+        // 加载语言
+        AppPreference.OperatePreference(p => _language = p.Language);
+    }
     
     /// <summary>
     /// 刷新目录
@@ -67,10 +101,10 @@ public static class ExplorerRuntime
     /// <param name="pathString"></param>
     private static void RegenerateAdaptersByPath(string pathString)
     {
+        Console.WriteLine("Regenerating adapters...");
         ItemAdapters.Clear();
         foreach (var inserter in ExplorerRegistry.Inserters)
         {
-            Console.WriteLine($"Generating adapter by inserter: {inserter.GetType().Name}");
             int i = 0;
             var path = ExplorerPath.FromString(pathString);
             if (path != null)
@@ -84,8 +118,13 @@ public static class ExplorerRuntime
                     }
                 }
             }
-            Console.WriteLine($"Generated {i} Adapters");
+
+            if (i > 0)
+            {
+                Console.WriteLine($"Generated {i} adapter{(i > 1 ? "s" : "")} by {inserter.GetType().Name}");
+            }
         }
+        Console.WriteLine("Regenerate adapter complete.");
     }
 
     /// <summary>
@@ -98,5 +137,16 @@ public static class ExplorerRuntime
             CurrentPath = HistoryPaths[^1];
             HistoryPaths.RemoveAt(HistoryPaths.Count - 1);
         }
+    }
+
+    /// <summary>
+    /// 获得语言内容
+    /// </summary>
+    /// <param name="pluginName"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public static string Lang(string pluginName, string key)
+    {
+        return ExplorerRegistry.Lang(pluginName, Language, key);
     }
 }
