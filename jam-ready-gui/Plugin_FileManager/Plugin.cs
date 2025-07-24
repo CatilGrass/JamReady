@@ -1,5 +1,6 @@
 using JamReadyGui.AppData.Explorer;
 using Plugin_FileManager.PluginInserters;
+using Plugin_FileManager.PluginPathMenu;
 
 namespace Plugin_FileManager;
 
@@ -15,5 +16,7 @@ public class Plugin
     {
         ExplorerRegistry.Inserters.Add(new DirectorySelectInserter());
         ExplorerRegistry.Inserters.Add(new DiskSelectInserter());
+        
+        ExplorerRegistry.PathMenus.Add(new FolderManageMenu());
     }
 }
