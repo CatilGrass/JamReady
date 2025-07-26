@@ -25,7 +25,10 @@ pub struct LocalFile {
     pub local_path: String,
 
     /// 本地持有的版本
-    pub local_version: u32
+    pub local_version: u32,
+
+    /// 本地文件摘要
+    pub local_digest: String,
 }
 
 impl LocalArchive for LocalFileMap {
