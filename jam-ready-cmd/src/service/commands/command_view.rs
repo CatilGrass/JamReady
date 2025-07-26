@@ -1,3 +1,6 @@
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::time::Duration;
 use crate::data::database::Database;
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::data::member::Member;
@@ -7,6 +10,9 @@ use crate::service::jam_command::Command;
 use async_trait::async_trait;
 use jam_ready::utils::local_archive::LocalArchive;
 use tokio::net::TcpStream;
+use tokio::select;
+use tokio::time::sleep;
+use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::text_process::process_path_text;
 use crate::service::messages::{ClientMessage, ServerMessage};
 use crate::service::service_utils::{read_msg, send_msg};
@@ -59,22 +65,29 @@ impl Command for ViewCommand {
                     // 发送 "就绪"
                     send_msg(stream, &ClientMessage::Ready).await;
 
-                    // 读取文件
+                    // 下载文件
                     match read_file(stream, client_path.clone()).await {
                         Ok(_) => {
-                            // 写入本地文件映射
-                            if let Some(local_path_buf) = local.search_to_path_relative(&database, file.path()) {
-                                let local_path_str = process_path_text(local_path_buf.display().to_string());
-                                if let Some(uuid) = database.uuid_of_path(file.path()) {
-                                    local.file_paths.insert(uuid.clone(), LocalFile {
-                                        local_path: local_path_str.clone(),
-                                        local_version: file.version(),
-                                    });
-                                    local.file_uuids.insert(local_path_str, uuid.clone());
-                                }
-                                print_msg = "File download completed".to_string();
-                                success = true;
+                            // 获得本地文件映射的键
+                            let local_path_buf;
+                            if let Some(p) = local.search_to_path_relative(&database, file.path()) {
+                                local_path_buf = p;
+                            } else {
+                                local_path_buf = PathBuf::from_str(file.path().as_str()).unwrap();
                             }
+
+                            // 写入本地文件映射
+                            let local_path_str = process_path_text(local_path_buf.display().to_string());
+                            if let Some(uuid) = database.uuid_of_path(file.path()) {
+                                local.file_paths.insert(uuid.clone(), LocalFile {
+                                    local_path: local_path_str.clone(),
+                                    local_version: file.version(),
+                                    local_digest: md5_digest(client_path).unwrap_or("".to_string()),
+                                });
+                                local.file_uuids.insert(local_path_str, uuid.clone());
+                            }
+                            print_msg = "File download completed".to_string();
+                            success = true;
                         }
                         Err(_) => {
                             print_msg = "File download failed".to_string();
@@ -85,12 +98,19 @@ impl Command for ViewCommand {
         }
 
         // 读取结束消息
-        match read_msg::<ServerMessage>(stream).await {
-            ServerMessage::Deny(err) => {
-                print_msg = format!("{}: {}", print_msg, err);
+        select! {
+            _ = sleep(Duration::from_secs(2)) => {
+                print_msg = "Timeout".to_string();
             }
-            ServerMessage::Done => {}
-            _ => {}
+            result = read_msg::<ServerMessage>(stream) => {
+                match result {
+                    ServerMessage::Deny(err) => {
+                        print_msg = format!("{}: {}", print_msg, err);
+                    }
+                    ServerMessage::Done => {}
+                    _ => {}
+                }
+            }
         }
 
         if success {
