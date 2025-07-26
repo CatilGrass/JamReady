@@ -21,18 +21,21 @@ impl Command for UpdateCommand {
 
         // 同步数据库
         sync_local_with_progress(stream).await;
+        println!("Ok: Sync database.");
 
         // 将本地文件结构和远程同步
         Self::sync_file_struct();
+        println!("Ok: Sync file struct.");
 
         // 删除本地目录下所有的空文件夹
         // TODO :: 此处排除 /.jam/ 文件夹
         if let Ok(current) = current_dir() {
             let _ = Self::remove_unused_directory(current);
         }
+        println!("Ok: Removed empty directories.");
 
         // TODO :: 同步关联、关注 （待制作）
-        println!("Ok");
+        println!("Ok: Done.");
     }
 
     async fn remote(
@@ -182,6 +185,10 @@ impl UpdateCommand {
             for entry in fs::read_dir(path)? {
                 let entry = entry?;
                 let entry_path = entry.path();
+
+                if entry_path == current_dir()?.join(env!("PATH_WORKSPACE_ROOT")) {
+                    continue;
+                }
 
                 if entry_path.is_dir() {
                     let has_sub_entries = remove_empty_dirs(&entry_path)?;
