@@ -34,17 +34,13 @@ struct WorkspaceSetup {
 #[derive(Subcommand, Debug)]
 enum WorkspaceSetupCommands {
 
-    /// 检查当前工作区类型
-    #[command(about = "Get workspace type")]
-    Type,
+    /// 登录到工作区
+    #[command(about = "Login to workspace")]
+    Login(ClientSetupArgs),
 
-    /// 建立客户端环境
-    #[command(about = "Setup as client")]
-    Client(ClientSetupArgs),
-
-    /// 建立服务端环境
-    #[command(about = "Setup as server")]
-    Server(ServerSetupArgs),
+    /// 建立新的工作区
+    #[command(about = "Setup workspace")]
+    Setup(ServerSetupArgs),
 }
 
 /// 客户端建立参数
@@ -80,14 +76,11 @@ async fn setup_workspace_main(workspace: Workspace) {
     let cmd = WorkspaceSetup::parse();
     match cmd.command {
 
-        // 检查工作区类型
-        WorkspaceSetupCommands::Type => print!("null"),
-
         // 建立客户端工作区
-        WorkspaceSetupCommands::Client(args) => setup_client_workspace(args, workspace).await,
+        WorkspaceSetupCommands::Login(args) => setup_client_workspace(args, workspace).await,
 
         // 建立服务端工作区
-        WorkspaceSetupCommands::Server(args) => setup_server_workspace(args, workspace).await,
+        WorkspaceSetupCommands::Setup(args) => setup_server_workspace(args, workspace).await,
     }
 }
 
@@ -172,6 +165,7 @@ async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace)
 #[command(
     disable_help_flag = true,
     disable_version_flag = true,
+    disable_help_subcommand = true,
     help_template = "{all-args}"
 )]
 struct ClientWorkspaceEntry {
@@ -183,62 +177,53 @@ struct ClientWorkspaceEntry {
 #[derive(Subcommand, Debug)]
 enum ClientCommands {
 
-    /// 检查当前工作区类型
-    #[command(about = "Get workspace type")]
-    Type,
-
-    /// 重新定向至工作区
-    #[command(about = "Redirect to workspace")]
-    Redirect,
-
-    /// 同步文件结构
-    #[command(
-        visible_alias = "sync",
-        about = "Update the server file struct to the local")]
-    Update,
-
-    /// 提交取得锁的本地文件
-    #[command(
-        visible_alias = "save",
-        visible_alias = "sv",
-        about = "Commit locked local files")]
-    Commit(CommitArgs),
+    #[command(hide = true, short_flag = 'h', long_flag = "help")]
+    Help,
 
     /// 列出文件结构
     #[command(
         visible_alias = "tree",
         visible_alias = "list",
         visible_alias = "ls",
-        about = "List file structure")]
+        about = "List the file struct of the workspace")]
     Struct,
 
+    // ---------------------------
+    // 工作区相关
+
+    /// 重新定向至工作区
+    #[command(
+        visible_alias = "red",
+        about = "REDIRECT\tTo workspace"
+    )]
+    Redirect,
+
+    /// 同步文件结构
+    #[command(
+        visible_alias = "sync",
+        about = "UPDATE\tFile structs of Workspace to local")]
+    Update,
+
+    // ---------------------------
+    // 文件操作
+
+    /// 提交取得锁的本地文件
+    #[command(
+        visible_alias = "cmt",
+        visible_alias = "save",
+        visible_alias = "sv",
+        about = "COMMIT\tAll files are changed and locked")]
+    Commit(CommitArgs),
+
     /// 归档数据库版本 (仅 Leader)
-    #[command(about = "Archive database version (Leader only)")]
+    #[command(about = "ARCHIVE\tCurrent database status (Leader only)")]
     Archive,
-
-    /// 文件操作
-    #[command(
-        visible_alias = "fo",
-        subcommand,
-        about = "File operations")]
-    File(FileOperationCommands),
-
-    /// 操作参数
-    #[command(
-        visible_alias = "set",
-        about = "Operate params")]
-    Param(ParamArgs),
-}
-
-/// 文件操作命令
-#[derive(Subcommand, Debug)]
-enum FileOperationCommands {
 
     /// 添加文件
     #[command(
         visible_alias = "new",
         visible_alias = "create",
-        about = "Add new virtual file")]
+        about = "FILE\tNew virtual file")]
     Add(NewArgs),
 
     /// 移除文件
@@ -246,26 +231,29 @@ enum FileOperationCommands {
         visible_alias = "rm",
         visible_alias = "delete",
         visible_alias = "del",
-        about = "Remove existing virtual file")]
+        about = "REMOVE\tVirtual file")]
     Remove(RemoveArgs),
 
     /// 移动、重命名、或为文件重建映射
     #[command(
         visible_alias = "mv",
-        about = "Move/Rename/Remap virtual file")]
+        visible_alias = "rename",
+        about = "MOVE\tChange path of Uuid or Virtual file")]
     Move(MoveArgs),
 
     /// 拿到文件的锁
     #[command(
+        visible_alias = "g",
         visible_alias = "lock",
-        about = "Get file lock")]
+        about = "LOCK\tVirtual file")]
     Get(GetArgs),
 
     /// 丢掉文件的锁
     #[command(
+        visible_alias = "t",
         visible_alias = "unlock",
         visible_alias = "release",
-        about = "Throw file lock")]
+        about = "UNLOCK\tVirtual file")]
     Throw(SearchArgs),
 
     /// 下载并查看文件
@@ -273,8 +261,22 @@ enum FileOperationCommands {
         visible_alias = "v",
         visible_alias = "download",
         visible_alias = "dl",
-        about = "Download and view file")]
+        about = "DOWNLOAD\tVirtual file to local")]
     View(SearchArgs),
+
+    // ---------------------------
+    // 其他操作
+
+    /// 操作参数
+    #[command(
+        visible_alias = "set",
+        about = "EDIT\tLocal parameters")]
+    Param(ParamArgs),
+}
+
+/// 文件操作命令
+#[derive(Subcommand, Debug)]
+enum FileOperationCommands {
 }
 
 /// 新建目录
@@ -331,7 +333,7 @@ struct MoveArgs {
     to_path: String,
 
     /// 尝试拿到锁定
-    #[arg(long, short = 'g', alias = "lock", alias = "l")]
+    #[arg(long, short = 'g', alias = "lock")]
     get: bool
 }
 
@@ -379,8 +381,7 @@ async fn client_workspace_main() {
 
     match cmd.command {
 
-        // 检查工作区类型
-        ClientCommands::Type => print!("client"),
+        ClientCommands::Help => {}
 
         // 重新连接至工作区
         ClientCommands::Redirect => {
@@ -403,37 +404,33 @@ async fn client_workspace_main() {
         }
         ClientCommands::Struct => client_execute_command(vec!["struct".to_string()]).await,
         ClientCommands::Archive => client_execute_command(vec!["archive".to_string()]).await,
-        ClientCommands::File(commands) => {
-            match commands {
-                FileOperationCommands::Add(args) => {
-                    // 添加文件
-                    client_execute_command(vec!["file".to_string(), "add".to_string(), args.path.clone()]).await;
-                    if args.get {
-                        // 获得文件的锁
-                        client_execute_command(vec!["file".to_string(), "get".to_string(), args.path]).await;
-                    }
-                },
-                FileOperationCommands::Remove(args) => {
-                    if args.get {
-                        // 获得文件的锁
-                        client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
-                    }
-                    // 移除文件
-                    client_execute_command(vec!["file".to_string(), "remove".to_string(), args.search]).await;
-                },
-                FileOperationCommands::Move(args) => {
-                    if args.get {
-                        // 获得文件的锁
-                        client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.from_search).clone()]).await;
-                    }
-                    // 移动文件
-                    client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await
-                },
-                FileOperationCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
-                FileOperationCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
-                FileOperationCommands::View(args) => client_execute_command(vec!["view".to_string(), args.search]).await,
+        ClientCommands::Add(args) => {
+            // 添加文件
+            client_execute_command(vec!["file".to_string(), "add".to_string(), args.path.clone()]).await;
+            if args.get {
+                // 获得文件的锁
+                client_execute_command(vec!["file".to_string(), "get".to_string(), args.path]).await;
             }
-        }
+        },
+        ClientCommands::Remove(args) => {
+            if args.get {
+                // 获得文件的锁
+                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
+            }
+            // 移除文件
+            client_execute_command(vec!["file".to_string(), "remove".to_string(), args.search]).await;
+        },
+        ClientCommands::Move(args) => {
+            if args.get {
+                // 获得文件的锁
+                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.from_search).clone()]).await;
+            }
+            // 移动文件
+            client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await
+        },
+        ClientCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
+        ClientCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
+        ClientCommands::View(args) => client_execute_command(vec!["view".to_string(), args.search]).await,
         ClientCommands::Param(args) => {
             match args.value {
                 None => client_query_param(args.key),
@@ -475,10 +472,6 @@ struct ServerWorkspaceEntry {
 /// 服务端操作类命令
 #[derive(Subcommand, Debug)]
 enum ServerOperationCommands {
-
-    /// 检查当前工作区类型
-    #[command(about = "Get workspace type")]
-    Type,
 
     /// 启动服务器，并监听客户端消息
     #[command(about = "Run server")]
@@ -633,9 +626,6 @@ async fn server_workspace_main() {
 
     match cmd.command {
 
-        // 检查工作区类型
-        ServerOperationCommands::Type => print!("server"),
-
         ServerOperationCommands::Run(args) => server_run(args).await,
 
         ServerOperationCommands::Add(op) => {
@@ -707,6 +697,7 @@ fn server_add_member (member_name: String) {
             }
         }
         let uuid = uuid::Uuid::new_v4().to_string();
+        let login_code = generate_login_code();
         server.members.insert(
             uuid.clone(),
             Member {
@@ -719,10 +710,10 @@ fn server_add_member (member_name: String) {
             uuid.clone()
         );
         server.login_code_map.insert(
-            generate_login_code(),
+            login_code.clone(),
             uuid
         );
-        println!("Member \"{}\" has been added to the workspace", member_name);
+        println!("Member \"{}\" has been added to the workspace, login code: {}", member_name, login_code);
         Workspace::update(&mut workspace);
     }
 }
