@@ -1,16 +1,17 @@
-use std::env::current_dir;
 use crate::data::database::{Database, VirtualFile};
+use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::data::member::Member;
 use crate::service::commands::database_sync::{sync_local, sync_remote};
 use crate::service::jam_command::Command;
 use crate::service::messages::ServerMessage;
-use crate::service::messages::ServerMessage::{Deny, Pass};
+use crate::service::messages::ServerMessage::{Deny, Text};
 use crate::service::service_utils::{read_msg, send_msg};
 use async_trait::async_trait;
-use jam_ready::utils::text_process::process_path_text;
-use tokio::net::TcpStream;
+use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::local_archive::LocalArchive;
-use crate::data::local_file_map::{LocalFile, LocalFileMap};
+use jam_ready::utils::text_process::process_path_text;
+use std::env::current_dir;
+use tokio::net::TcpStream;
 
 pub struct FileOperationCommand;
 
@@ -25,10 +26,10 @@ impl Command for FileOperationCommand {
         // 检查服务器返回的消息
         let message: ServerMessage = read_msg(stream).await;
         match message {
-            Pass => {
+            Text(msg) => {
                 // 成功后，从服务端接收最新的同步
                 sync_local(stream).await;
-                println!("Ok")
+                println!("Ok: {}", msg)
             }
             Deny(msg) => {
                 eprintln!("Err: {}", msg)
@@ -61,6 +62,7 @@ impl Command for FileOperationCommand {
                                 local.file_paths.insert(file_uuid, LocalFile{
                                     local_path: search.to_string(),
                                     local_version: file.version(),
+                                    local_digest: md5_digest(local_file_path_buf).unwrap_or("".to_string()),
                                 });
                             }
                         }
@@ -100,7 +102,7 @@ impl Command for FileOperationCommand {
                         if success {
 
                             // 成功
-                            send_msg(stream, &Pass).await;
+                            send_msg(stream, &Text(format!("Virtual file \"{}\" created.", args[2]))).await;
 
                             // 发送同步
                             sync_remote(stream, database).await;
@@ -110,7 +112,7 @@ impl Command for FileOperationCommand {
                 }
 
                 // 失败
-                send_msg(stream, &Deny("Failed to create file.".to_string())).await;
+                send_msg(stream, &Deny("Failed to create virtual file.".to_string())).await;
                 false
             }
 
@@ -129,18 +131,18 @@ impl Command for FileOperationCommand {
                     if let Ok(_uuid) = database.remove_file_map(process_path_text(args[2].to_string())) {
 
                         // 成功
-                        send_msg(stream, &Pass).await;
+                        send_msg(stream, &Text(format!("Removed virtual file \"{}\".", args[2]))).await;
 
                         // 发送同步
                         sync_remote(stream, database).await;
                         return true;
                     }
 
-                    send_msg(stream, &Deny("Remove file failed!".to_string())).await;
+                    send_msg(stream, &Deny("Remove virtual file failed!".to_string())).await;
                     false
                 } else {
 
-                    send_msg(stream, &Deny("Remove file failed!".to_string())).await;
+                    send_msg(stream, &Deny("Remove virtual file failed!".to_string())).await;
                     false
                 }
             }
@@ -169,7 +171,7 @@ impl Command for FileOperationCommand {
                     if let Ok(()) = database.move_file(args[2].to_string(), move_to_path.clone()) {
 
                         // 成功
-                        send_msg(stream, &Pass).await;
+                        send_msg(stream, &Text(format!("Moved \"{}\" to \"{}\" success.", args[2], args[3]))).await;
 
                         // 发送同步
                         sync_remote(stream, database).await;
@@ -180,7 +182,7 @@ impl Command for FileOperationCommand {
                     if let Ok(()) = database.move_file_with_uuid(args[2].to_string(), move_to_path) {
 
                         // 成功
-                        send_msg(stream, &Pass).await;
+                        send_msg(stream, &Text(format!("Moved uuid \"{}\" to \"{}\" success.", args[2], args[3]))).await;
 
                         // 发送同步
                         sync_remote(stream, database).await;
@@ -203,7 +205,7 @@ impl Command for FileOperationCommand {
                     return if file.give_uuid_locker(uuid, false) {
 
                         // 成功
-                        send_msg(stream, &Pass).await;
+                        send_msg(stream, &Text(format!("Get locker of \"{}\" success.", args[2]))).await;
 
                         // 发送同步
                         sync_remote(stream, database).await;
@@ -228,7 +230,7 @@ impl Command for FileOperationCommand {
                     return if file.give_uuid_locker(uuid, true) {
 
                         // 成功
-                        send_msg(stream, &Pass).await;
+                        send_msg(stream, &Text(format!("Get longer locker of \"{}\" success.", args[2]))).await;
 
                         // 发送同步
                         sync_remote(stream, database).await;
@@ -257,7 +259,7 @@ impl Command for FileOperationCommand {
                             file.throw_locker();
 
                             // 成功
-                            send_msg(stream, &Pass).await;
+                            send_msg(stream, &Text(format!("Throw the locker of \"{}\" success.", args[2]))).await;
 
                             // 发送同步
                             sync_remote(stream, database).await;
