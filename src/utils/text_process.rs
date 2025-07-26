@@ -1,4 +1,6 @@
 use std::vec;
+use colored::Colorize;
+use regex::Regex;
 
 /// 处理 ID 文本
 pub fn process_id_text(input: String) -> String {
@@ -88,4 +90,36 @@ pub fn split_path_text(path: &str) -> (String, String) {
     } else {
         ("".to_string(), normalized_path.to_string())
     }
+}
+
+/// 处理彩色文本
+pub fn parse_colored_text(text: &str) -> String {
+    let re = Regex::new(r"\[(red|green|blue|yellow|magenta|cyan|white|gray)](.*?)\[/]").unwrap();
+
+    let mut result = String::new();
+    let mut last_pos = 0;
+
+    for cap in re.captures_iter(text) {
+        result.push_str(&text[last_pos..cap.get(0).unwrap().start()]);
+        last_pos = cap.get(0).unwrap().end();
+
+        let color = cap.get(1).unwrap().as_str();
+        let content = cap.get(2).unwrap().as_str();
+
+        let colored_content = match color {
+            "red" => content.red(),
+            "green" => content.green(),
+            "blue" => content.blue(),
+            "yellow" => content.yellow(),
+            "magenta" => content.magenta(),
+            "cyan" => content.cyan(),
+            "white" => content.white(),
+            "gray" => content.truecolor(128, 128, 128),
+            _ => content.normal(),
+        };
+
+        result.push_str(&colored_content.to_string());
+    }
+    result.push_str(&text[last_pos..]);
+    result
 }

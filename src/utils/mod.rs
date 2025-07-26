@@ -6,3 +6,4 @@ pub mod levenshtein_distance;
 pub mod logger_build;
 pub mod marcos;
 pub mod service_runner;
+pub mod file_digest;

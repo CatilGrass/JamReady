@@ -33,13 +33,13 @@ impl Command for ShowFileStructCommand {
                 let local_file = local.search_to_local(&database, file.path());
 
                 // 起始的
-                let mut info = format!("{} ", &file.path());
+                let mut info = format!("{}", &file.path());
 
                 // 是否为空
                 if file.real_path().is_empty() {
 
                     // 显示空版本
-                    info = format!("{} {}", info, "New".truecolor(128, 128, 128));
+                    info = format!("{} {}", info, "[v0]".truecolor(128, 128, 128));
                 } else {
 
                     // 若存在本地文件，显示本地版本
@@ -55,11 +55,11 @@ impl Command for ShowFileStructCommand {
                                 // 对比版本
                                 if local_version < file.version() {
                                     // 本地文件更旧，显示需要更新
-                                    info = format!("{} {}", info, format!("v{}_Old", local_version).bright_red());
+                                    info = format!("{} {}", info, format!("[v{}↓]", local_version).bright_red());
                                 } else {
 
                                     // 本地文件版本同步
-                                    info = format!("{} {}", info, format!("v{}_Latest", local_version).bright_green());
+                                    info = format!("{} {}", info, format!("[v{}]", local_version).bright_green());
                                 }
 
                                 added = true;
@@ -69,7 +69,7 @@ impl Command for ShowFileStructCommand {
 
                     if !added {
                         // 显示当前版本
-                        info = format!("{} v{}", info, file.version());
+                        info = format!("{} [v{}]", info, file.version());
                     }
                 }
 
@@ -79,19 +79,21 @@ impl Command for ShowFileStructCommand {
                     // 自己锁定
                     if uuid == client.uuid.trim() {
                         if longer_lock {
-                            info = format!("{} {}", info, "Mine".bright_green());
+                            // 自己的长锁
+                            info = format!("{} {}", info, "[HELD]".bright_green());
                         } else {
-                            info = format!("{} {}", info, "Locked".green());
+                            // 自己的短锁
+                            info = format!("{} {}", info, "[held]".green());
                         }
                     } else {
                         if longer_lock {
-                            info = format!("{} {}", info, "Theirs".bright_red());
+                            // 他人的长锁
+                            info = format!("{} {}", info, "[LOCKED]".bright_red());
                         } else {
-                            info = format!("{} {}", info, "TheirLocked".bright_yellow());
+                            // 他人的短锁
+                            info = format!("{} {}", info, "[locked]".bright_yellow());
                         }
                     }
-                } else {
-                    info = format!("{} {}", info, "Available".truecolor(128, 128, 128));
                 }
                 paths.push(info)
             }
@@ -144,7 +146,7 @@ fn show_tree(paths: Vec<String>) -> String {
     // 生成树形结构的文本
     fn generate_tree_lines(children: &BTreeMap<String, Node>, indent: usize) -> Vec<String> {
         let mut lines = Vec::new();
-        let indent_str = "  ".repeat(indent * 2);
+        let indent_str = "   |".repeat(indent);
 
         // 遍历所有有子节点的节点
         for (name, node) in children.iter() {

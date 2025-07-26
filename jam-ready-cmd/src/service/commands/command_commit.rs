@@ -11,6 +11,7 @@ use tokio::net::TcpStream;
 use tokio::select;
 use tokio::time::sleep;
 use uuid::Uuid;
+use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::text_process::process_path_text;
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::service::commands::file_transmitter::{read_file, send_file};
@@ -56,6 +57,35 @@ impl Command for CommitCommand {
                     if let Some(client_path) = local.file_to_path(&database, file) {
                         if !client_path.exists() { continue; }
 
+                        // 当前的 Md5
+                        let current_md5= md5_digest(client_path.clone()).unwrap_or("".to_string());
+
+                        // 本地文件
+                        let local_file = local.file_paths.get(&database.uuid_of_path(file.path()).unwrap_or("".to_string()));
+
+                        // 确认版本和MD5，以确保文件是最新版且已更改的
+                        if let Some(local_file) = local_file {
+
+                            // 如果远程的版本号为0则可以放通，因为是第一次提交
+                            if file.version() > 0 {
+                                // 若 MD5 一致，说明未产生修改
+                                let record_md5 = &local_file.local_digest;
+                                if record_md5 == &current_md5 {
+                                    continue;
+                                }
+                                // 若版本号不一致，说明修改时版本未同步，不允许
+                                if local_file.local_version != file.version() {
+                                    continue;
+                                }
+                            }
+                        } else {
+                            // 若本地映射不存在，判断远端是否为版本0
+                            // 若远端存在版本，则说明本地的文件和远端不同步，需要先下载
+                            if file.version() > 0 {
+                                continue;
+                            }
+                        }
+
                         // 确认要上传，加入计数器
                         all_count += 1;
 
@@ -83,13 +113,15 @@ impl Command for CommitCommand {
 
                                                 // 提交成功后版本 +1
                                                 local_file.local_version += 1;
+                                                local_file.local_digest = current_md5;
                                             }
                                         } else {
                                             // 没有映射就创建
                                             if let Some(uuid) = database.uuid_of_path(file.path()) {
                                                 local.file_paths.insert(uuid.clone(), LocalFile {
                                                     local_path: file.path(),
-                                                    local_version: file.version(),
+                                                    local_version: file.version() + 1, // 成功后应当从当前版本向前推进1
+                                                    local_digest: current_md5,
                                                 });
                                                 local.file_uuids.insert(file.path(), uuid);
                                             }
@@ -122,7 +154,7 @@ impl Command for CommitCommand {
             // 打印计数器
             if all_count > 0 {
                 if success_count >= all_count {
-                    println!("Ok: Commited {} files, Success {} files.", all_count, success_count);
+                    println!("Ok: Commited {} files", all_count);
                 } else {
                     eprintln!("Err: Commited {} files, Success {} files.", all_count, success_count);
                 }
@@ -225,6 +257,7 @@ async fn process_remote_receive(
                                 info!("Update file {}: \"{}\"", file.path(), description);
 
                                 // 若不是长期锁，则直接丢弃
+                                // (**不是我要的长期锁，直接丢弃**)
                                 if !file.is_longer_lock_unchecked() {
                                     file.throw_locker();
                                 }

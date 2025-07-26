@@ -34,22 +34,22 @@
 
 ```bash
 # 创建 Textures/T_Player.png 并获得其修改权
-jam file new "Textures/T_Player.png" --get
+jam new "Textures/T_Player.png" -g
 
 # 尝试获得 Textures/T_Player.png 的修改权并尝试删除该文件
-jam file remove "Textures/T_Player.png" --get
+jam rm "Textures/T_Player.png" -g
 
 # 获得文件修改权并移动(重命名)文件
-jam file move "Textures/T_Player.png" "Textures/T_Player_BaseColor.png" --get
+jam mv "Textures/T_Player.png" "Textures/T_Player_BaseColor.png" -g
 
 # 下载并在本地查阅 Textures/T_Player.png
-jam file view "Textures/T_Player.png"
+jam v "Textures/T_Player.png"
 
 # 提交所有的本地更改到工作区，此时其他成员将会查看到您的新版本
-jam commit
+jam cmt
 
 ### 另外，若删除了文件且需要还原该文件时，可以使用 Uuid 还原该文件
-jam file move "c6727632-ff49-4fba-85e4-56a4984cb174" "Textures/T_Player.png" --get
+jam mv "c6727632-ff49-4fba-85e4-56a4984cb174" "Textures/T_Player.png" -g
 ```
 
 ### 🔒锁定系统🔒
@@ -62,9 +62,9 @@ jam file move "c6727632-ff49-4fba-85e4-56a4984cb174" "Textures/T_Player.png" --g
 
 ```bash
 # 尝试拿到某个文件的锁
-jam file get "Textures/T_Player.png"
+jam g "Textures/T_Player.png"
 
 # 尝试拿到某个文件的锁 (长期持有)
-jam file get "Textures/T_Player.png" --longer
+jam g "Textures/T_Player.png" -l
 ```
 
