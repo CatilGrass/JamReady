@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use async_trait::async_trait;
+use colored::Colorize;
+use log::info;
 use tokio::net::TcpStream;
 use crate::data::database::Database;
 use crate::data::member::Member;
@@ -43,6 +45,8 @@ pub async fn execute_remote_command(
     (uuid, member): (String, &Member),
     database: &mut Database
 ) -> bool {
+    info!("{} Exec {}", &member.member_name.yellow(), format!("{:?}", &args).cyan());
+
     if let Some(command_name) = args.get(0) {
         let command_name = command_name.trim().to_lowercase();
         if let Some(command) = registry.get(command_name.as_str()) {

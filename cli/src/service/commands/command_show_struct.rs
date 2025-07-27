@@ -145,32 +145,29 @@ fn show_tree(paths: Vec<String>) -> String {
     }
 
     // 生成树形结构的文本
-    fn generate_tree_lines(children: &BTreeMap<String, Node>, indent: usize) -> Vec<String> {
+    fn generate_tree_lines(children: &BTreeMap<String, Node>, prefix: &str) -> Vec<String> {
         let mut lines = Vec::new();
-        let indent_str = "   | ".repeat(indent);
+        let last_index = children.len().saturating_sub(1);
 
-        // 遍历所有有子节点的节点
-        for (name, node) in children.iter() {
+        let child_prefix = format!("{}│   ", prefix);
 
-            // 如果有子节点，则当作目录处理
+        for (index, (name, node)) in children.iter().enumerate() {
+            let is_last_child = index == last_index;
+            let connector = if is_last_child { "└── " } else { "├── " };
+
             if !node.children.is_empty() {
+                lines.push(format!("{}{}{}/", prefix, connector, name));
 
-                // 目录添加斜杠
-                lines.push(format!("| {}{}/", indent_str, name));
-
-                // 递归处理子节点
-                lines.extend(generate_tree_lines(&node.children, indent + 1));
-            }
-        }
-
-        // 处理所有文件节点
-        for (name, node) in children.iter() {
-
-            // 只输出文件节点
-            if node.is_file {
-
-                // 文件节点不添加斜杠
-                lines.push(format!("| {}{}", indent_str, name));
+                if !node.children.is_empty() {
+                    let child_lines = generate_tree_lines(
+                        &node.children,
+                        &child_prefix
+                    );
+                    lines.extend(child_lines);
+                }
+            } else {
+                // 文件
+                lines.push(format!("{}{}{}", prefix, connector, name));
             }
         }
 
@@ -178,5 +175,5 @@ fn show_tree(paths: Vec<String>) -> String {
     }
 
     // 从根节点的子节点开始生成
-    generate_tree_lines(&root.children, 0).join("\n")
+    generate_tree_lines(&root.children, "").join("\n")
 }

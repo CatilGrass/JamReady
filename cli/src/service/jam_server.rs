@@ -25,7 +25,7 @@ const MAX_BUFFER_SIZE: usize = 1024;
 
 /// 服务器入口
 pub async fn jam_server_entry(
-    short_logger: bool
+    full_logger: bool
 ) {
 
     // 构建日志，尝试获得工作区名称
@@ -39,12 +39,12 @@ pub async fn jam_server_entry(
 
         // 设置 Logger
         if server.enable_debug_logger {
-            logger_build(Trace, short_logger);
+            logger_build(Trace, !full_logger);
         } else {
-            logger_build(Info, short_logger);
+            logger_build(Info, !full_logger);
         }
     } else {
-        logger_build(Info, short_logger);
+        logger_build(Info, !full_logger);
     }
 
     info!("/// Jam Ready! ///");
@@ -105,7 +105,6 @@ pub async fn jam_server_entry(
                 if result {
                     entry_mutex_async!(database_write, |guard| {
                         Database::update(guard);
-                        info!("Updated database");
                     });
                 }
             }
@@ -198,6 +197,7 @@ async fn process_member_command (
 ) {
     // 接收命令
     let command: ClientMessage = read_msg(stream).await;
+
     if let ClientMessage::Command(args_input) = command {
         let args: Vec<&str> = args_input.iter().map(String::as_str).collect();
 

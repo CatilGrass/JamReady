@@ -5,14 +5,14 @@ use jam_ready::utils::address_str_parser::parse_address_v4_str;
 use jam_ready::utils::levenshtein_distance::levenshtein_distance;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::{parse_colored_text, process_id_text, process_id_text_not_to_lower};
-use jam_ready_cmd::data::local_file_map::LocalFileMap;
-use jam_ready_cmd::data::member::{Member, MemberDuty};
-use jam_ready_cmd::data::parameters::{erase_parameter, read_parameter, write_parameter};
-use jam_ready_cmd::data::workspace::WorkspaceType::{Client, Server, Unknown};
-use jam_ready_cmd::data::workspace::{ClientWorkspace, ServerWorkspace, Workspace};
-use jam_ready_cmd::service::jam_client::{execute, search_workspace_lan};
-use jam_ready_cmd::service::jam_server::jam_server_entry;
-use jam_ready_cmd::service::service_utils::get_self_address;
+use jam_ready_cli::data::local_file_map::LocalFileMap;
+use jam_ready_cli::data::member::{Member, MemberDuty};
+use jam_ready_cli::data::parameters::{erase_parameter, read_parameter, write_parameter};
+use jam_ready_cli::data::workspace::WorkspaceType::{Client, Server, Unknown};
+use jam_ready_cli::data::workspace::{ClientWorkspace, ServerWorkspace, Workspace};
+use jam_ready_cli::service::jam_client::{execute, search_workspace_lan};
+use jam_ready_cli::service::jam_server::jam_server_entry;
+use jam_ready_cli::service::service_utils::get_self_address;
 use rand::Rng;
 use std::collections::HashMap;
 use std::env::args;
@@ -629,9 +629,9 @@ enum ServerOperationCommands {
 #[derive(Args, Debug)]
 struct RunArgs {
 
-    /// 简短的 Logger
-    #[arg(short = 'S', long = "short-logger")]
-    short_logger: bool
+    /// 完整的 Logger
+    #[arg(short = 'f', long = "full-logger")]
+    full_logger: bool
 }
 
 /// 服务端操作指向
@@ -809,7 +809,7 @@ async fn server_workspace_main() {
 }
 
 async fn server_run(args: RunArgs) {
-    jam_server_entry(args.short_logger).await
+    jam_server_entry(args.full_logger).await
 }
 
 /// 添加成员
