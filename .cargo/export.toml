@@ -1,6 +1,11 @@
 # 从 “项目文件夹” 导出到 “打包文件夹”
 [release.root]
 
+# Windows 下 Powershell 的补全脚本安装
+win_ps_completions = { raw = "./.cargo/completions/", target = "./bin", files = [
+    "install_completions.ps1"
+] }
+
 # 从 “编译文件夹” 导出到 “打包文件夹”
 [release.deps]
 
