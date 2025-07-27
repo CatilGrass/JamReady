@@ -72,6 +72,9 @@ fn process_iterator<I: Iterator<Item = char>>(chars: I, mut result: String) -> S
     while cleaned.ends_with('/') {
         cleaned.pop();
     }
+
+    cleaned = cleaned.trim_start_matches("./").to_string();
+
     cleaned
 }
 
