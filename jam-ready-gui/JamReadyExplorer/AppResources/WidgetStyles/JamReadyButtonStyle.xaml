@@ -4,8 +4,8 @@
     <!-- 样式：以强调色为主的按钮 -->
     <Style x:Key="JamReadyButtonStyle" TargetType="Button">
         <Setter Property="Padding" Value="15, 0, 15, 0"/>
-        <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-        <Setter Property="Foreground" Value="{StaticResource WidgetForegroundColor}"/>
+        <Setter Property="Background" Value="{DynamicResource AccentColor}"/>
+        <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundColor}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontWeight" Value="Bold"/>
@@ -25,18 +25,18 @@
                     <ControlTemplate.Triggers>
                         <!-- 鼠标悬停 -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource AccentColorLight}"/>
+                            <Setter Property="Background" Value="{DynamicResource AccentColorLight}"/>
                         </Trigger>
                         
                         <!-- 按下 -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{StaticResource AccentColorDark}"/>
+                            <Setter Property="Background" Value="{DynamicResource AccentColorDark}"/>
                         </Trigger>
                         
                         <!-- 禁用 -->
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-                            <Setter Property="Foreground" Value="{StaticResource AccentColorDark}"/>
+                            <Setter Property="Background" Value="{DynamicResource AccentColor}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AccentColorDark}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -65,10 +65,10 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource AppMainColorLight}"/>
+                <Setter Property="Background" Value="{DynamicResource AppMainColorLight}"/>
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="{StaticResource AppMainColorDark}"/>
+                <Setter Property="Background" Value="{DynamicResource AppMainColorDark}"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Background" Value="Transparent"/>
@@ -182,6 +182,18 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            
+            <!-- 鼠标悬停 -->
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#23000000"/>
+            </Trigger>
+                        
+            <!-- 按下 -->
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#5F000000"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
     
     <!-- 动画：浏览器图标的缩放动画 -->
@@ -194,7 +206,7 @@
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="RenderTransform">
             <Setter.Value>
-                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
             </Setter.Value>
         </Setter>
     
@@ -208,12 +220,12 @@
                         <Storyboard>
                             <DoubleAnimation 
                                 Storyboard.TargetProperty="RenderTransform.ScaleX" 
-                                To="1.15" 
+                                To="1.10" 
                                 Duration="0:0:0.08"
                                 EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
                             <DoubleAnimation 
                                 Storyboard.TargetProperty="RenderTransform.ScaleY" 
-                                To="1.15" 
+                                To="1.10" 
                                 Duration="0:0:0.08"
                                 EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
                         </Storyboard>
@@ -224,12 +236,12 @@
                         <Storyboard>
                             <DoubleAnimation 
                                 Storyboard.TargetProperty="RenderTransform.ScaleX" 
-                                To="1" 
+                                To="0.95" 
                                 Duration="0:0:0.25"
                                 EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
                             <DoubleAnimation 
                                 Storyboard.TargetProperty="RenderTransform.ScaleY" 
-                                To="1" 
+                                To="0.95" 
                                 Duration="0:0:0.25"
                                 EasingFunction="{StaticResource ExplorerIconElasticEase}"/>
                         </Storyboard>
