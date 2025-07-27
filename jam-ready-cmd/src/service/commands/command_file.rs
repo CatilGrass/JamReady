@@ -11,6 +11,7 @@ use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::process_path_text;
 use std::env::current_dir;
+use colored::Colorize;
 use tokio::net::TcpStream;
 
 pub struct FileOperationCommand;
@@ -32,9 +33,13 @@ impl Command for FileOperationCommand {
                 println!("Ok: {}", msg)
             }
             Deny(msg) => {
-                eprintln!("Err: {}", msg)
+                // 失败后，不处理后续事项
+                eprintln!("Err: {}", msg);
+                return;
             }
-            _ => {}
+            _ => {
+                return;
+            }
         }
 
         // 检查操作符
@@ -66,6 +71,11 @@ impl Command for FileOperationCommand {
                                 });
                             }
                         }
+                    } else {
+                        // 不存在本地文件，通知成员需要将文件存储到哪
+                        println!("You created a virtual file, but the file does not exist locally.");
+                        println!("Please save the completed file to the following path:");
+                        println!("{}", local_file_path_buf.display().to_string().green());
                     }
                 }
 

@@ -42,7 +42,7 @@ public class DirectoryAdapter : ItemAdapter
     {
         return new List<string>
         {
-            ExplorerRuntime.Lang(Plugin.PluginName, "remove_folder")
+            ExplorerRuntime.Lang(Plugin.PluginName, "Adapter_DirectoryAdapter_MenuItem_RemoveFolder_Name")
         };
     }
 

@@ -10,6 +10,7 @@ colored = "3.0.0"
 
 # 命令行
 clap = { version = "4.5.38", features = ["derive"] }
+clap_complete = "4.5.55"
 
 # Logger
 log = "0.4.27"
