@@ -39,7 +39,7 @@ impl Command for ShowFileStructCommand {
                 if file.real_path().is_empty() {
 
                     // 显示空版本
-                    info = format!("{} {}", info, "[v0]".truecolor(128, 128, 128));
+                    info = format!("{} {}", info, "[Empty]".truecolor(128, 128, 128));
                 } else {
 
                     // 若存在本地文件，显示本地版本
@@ -67,10 +67,11 @@ impl Command for ShowFileStructCommand {
                         }
                     }
 
-                    if !added {
-                        // 显示当前版本
-                        info = format!("{} [v{}]", info, file.version());
-                    }
+                    // 本地不存在此文件时，不打印版本，因为并不关注
+                    // if !added {
+                    //     // 显示当前版本
+                    //     info = format!("{} [v{}]", info, file.version());
+                    // }
                 }
 
                 // 锁定状态
@@ -146,7 +147,7 @@ fn show_tree(paths: Vec<String>) -> String {
     // 生成树形结构的文本
     fn generate_tree_lines(children: &BTreeMap<String, Node>, indent: usize) -> Vec<String> {
         let mut lines = Vec::new();
-        let indent_str = "   |".repeat(indent);
+        let indent_str = "   | ".repeat(indent);
 
         // 遍历所有有子节点的节点
         for (name, node) in children.iter() {
@@ -155,7 +156,7 @@ fn show_tree(paths: Vec<String>) -> String {
             if !node.children.is_empty() {
 
                 // 目录添加斜杠
-                lines.push(format!("{}{}/", indent_str, name));
+                lines.push(format!("| {}{}/", indent_str, name));
 
                 // 递归处理子节点
                 lines.extend(generate_tree_lines(&node.children, indent + 1));
@@ -169,7 +170,7 @@ fn show_tree(paths: Vec<String>) -> String {
             if node.is_file {
 
                 // 文件节点不添加斜杠
-                lines.push(format!("{}{}", indent_str, name));
+                lines.push(format!("| {}{}", indent_str, name));
             }
         }
 
