@@ -5,7 +5,7 @@ use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::net::TcpStream;
 
-const CHUNK_SIZE: usize = 8 * 1024; // 优化为8KB缓冲区
+const CHUNK_SIZE: usize = 8 * 1024;
 
 /// 发送文件
 pub async fn send_file(
@@ -61,7 +61,7 @@ pub async fn send_file(
         progress_bar.set_position(bytes_sent);
     }
 
-    // 完整性和刷新检查
+    // 完整性检查
     if bytes_sent != file_size {
         return Err(format!(
             "Transfer incomplete: expected {} bytes, sent {} bytes",
@@ -71,7 +71,7 @@ pub async fn send_file(
 
     stream.flush().await?;
 
-    // 等待接收方确认
+    // 等待确认
     let mut ack = [0u8; 1];
     tokio::time::timeout(Duration::from_secs(10), stream.read_exact(&mut ack)).await??;
 
@@ -116,7 +116,7 @@ pub async fn read_file(
         return Err("Zero-length file transfer".into());
     }
 
-    // 原子性写入文件
+    // 写入文件
     let file = OpenOptions::new()
         .write(true)
         .create(true)
@@ -140,13 +140,13 @@ pub async fn read_file(
     let mut bytes_received = 0;
 
     while bytes_received < file_size {
-        // 计算当前需要读取的大小
+        // 计算读取的大小
         let read_size = std::cmp::min(
             buffer.len(),
             (file_size - bytes_received) as usize
         );
 
-        // 精确读取指定大小的数据
+        // 读取指定大小的数据
         stream.read_exact(&mut buffer[..read_size]).await?;
 
         // 写入文件
@@ -154,13 +154,13 @@ pub async fn read_file(
         bytes_received += read_size as u64;
         progress_bar.set_position(bytes_received);
 
-        // 定期刷新缓冲区
+        // 刷新缓冲区
         if bytes_received % (CHUNK_SIZE as u64 * 10) == 0 {
             writer.flush().await?;
         }
     }
 
-    // 强制刷新并同步到磁盘
+    // 同步到磁盘
     writer.flush().await?;
     let file = writer.into_inner(); // 取出内部文件
     file.sync_all().await?;

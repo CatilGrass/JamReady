@@ -1,0 +1,8 @@
+Menu_Create_Workspace_Name: "Workspace..."
+Menu_Enter_Workspace_Name: "Workspace..."
+
+MenuItem_JoinWorkspace_Name: "Login Workspace"
+MenuItem_CreateWorkspace_Name: "Create Workspace"
+MenuItem_EnterWorkspace_Name: "Enter Current Workspace"
+
+Window_CreateClientWorkspaceWindow_Title: "Login Workspace Here"

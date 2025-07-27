@@ -20,7 +20,7 @@ win_exes = { raw = "./", target = "./bin", files = [
 # 从 “编译文件夹” 部署到 “项目文件夹” (复制)
 [release.deploy_deps]
 
-# 可执行文件部署到 jam-ready-gui (Windows)
-win_exes = { raw = "./", target = "./jam-ready-gui/JamReadyExplorer/bin/Work/bin/", files = [
+# 可执行文件部署到 gui (Windows)
+win_exes = { raw = "./", target = "./gui/JamReadyExplorer/bin/Work/bin/", files = [
     "jam.exe"
 ] }

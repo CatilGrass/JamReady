@@ -1,0 +1,8 @@
+Menu_Create_Workspace_Name: "工作区..."
+Menu_Enter_Workspace_Name: "工作区.."
+
+MenuItem_JoinWorkspace_Name: "登录 工作区"
+MenuItem_CreateWorkspace_Name: "建立 新工作区"
+MenuItem_EnterWorkspace_Name: "进入当前工作区"
+
+Window_CreateClientWorkspaceWindow_Title: "在此处登录工作区"
