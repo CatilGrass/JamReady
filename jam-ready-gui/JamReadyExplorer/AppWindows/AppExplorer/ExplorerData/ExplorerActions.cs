@@ -74,7 +74,6 @@ public static class ExplorerActions
                         })
                     };
 
-                    // 子项必须至少有一项才会添加该主菜单
                     if (pathMenuItems.Count > 0)
                     {
                         var icon = pathMenu.GetIcon();
