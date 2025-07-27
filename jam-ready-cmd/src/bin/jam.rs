@@ -1,21 +1,25 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, CommandFactory, Parser, Subcommand};
+use clap_complete::generate;
+use colored::Colorize;
 use jam_ready::utils::address_str_parser::parse_address_v4_str;
 use jam_ready::utils::levenshtein_distance::levenshtein_distance;
 use jam_ready::utils::local_archive::LocalArchive;
-use jam_ready::utils::text_process::{process_id_text, process_id_text_not_to_lower};
+use jam_ready::utils::text_process::{parse_colored_text, process_id_text, process_id_text_not_to_lower};
+use jam_ready_cmd::data::local_file_map::LocalFileMap;
 use jam_ready_cmd::data::member::{Member, MemberDuty};
 use jam_ready_cmd::data::parameters::{erase_parameter, read_parameter, write_parameter};
 use jam_ready_cmd::data::workspace::WorkspaceType::{Client, Server, Unknown};
 use jam_ready_cmd::data::workspace::{ClientWorkspace, ServerWorkspace, Workspace};
 use jam_ready_cmd::service::jam_client::{execute, search_workspace_lan};
 use jam_ready_cmd::service::jam_server::jam_server_entry;
+use jam_ready_cmd::service::service_utils::get_self_address;
 use rand::Rng;
 use std::collections::HashMap;
+use std::env::args;
+use std::io;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::process::exit;
 use strum::IntoEnumIterator;
-use jam_ready_cmd::data::local_file_map::LocalFileMap;
-use jam_ready_cmd::service::service_utils::get_self_address;
-
 // --------------------------------------------------------------------------- //
 
 /// 建立工作区入口
@@ -23,6 +27,7 @@ use jam_ready_cmd::service::service_utils::get_self_address;
 #[command(
     disable_help_flag = true,
     disable_version_flag = true,
+    disable_help_subcommand = true,
     help_template = "{all-args}"
 )]
 struct WorkspaceSetup {
@@ -34,11 +39,17 @@ struct WorkspaceSetup {
 #[derive(Subcommand, Debug)]
 enum WorkspaceSetupCommands {
 
-    /// 登录到工作区
+    // 生成补全脚本
+    GenerateClientCompletions {
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
+
+    // 登录到工作区
     #[command(about = "Login to workspace")]
     Login(ClientSetupArgs),
 
-    /// 建立新的工作区
+    // 建立新的工作区
     #[command(about = "Setup workspace")]
     Setup(ServerSetupArgs),
 }
@@ -47,14 +58,14 @@ enum WorkspaceSetupCommands {
 #[derive(Args, Debug)]
 struct ClientSetupArgs {
 
-    /// 用户登录口令，用于识别身份
+    // 用户登录口令，用于识别身份
     login_code: String,
 
-    /// 目标地址 (直接指定)
+    // 目标地址 (直接指定)
     #[arg(short, long)]
     target: Option<String>,
 
-    /// 工作区名称 (由网络发现获取目标地址)
+    // 工作区名称 (由网络发现获取目标地址)
     #[arg(short, long)]
     workspace: Option<String>,
 }
@@ -63,18 +74,30 @@ struct ClientSetupArgs {
 #[derive(Args, Debug)]
 struct ServerSetupArgs {
 
-    /// 工作区名称，服务端必填
+    // 工作区名称，服务端必填
     workspace: String,
 
-    /// 端口设定，可选
+    // 端口设定，可选
     #[arg(short, long)]
     port: Option<u16>
 }
 
 /// 建立工作区
 async fn setup_workspace_main(workspace: Workspace) {
+
+    if args().len() <= 1 {
+        setup_print_help();
+        exit(0);
+    }
+
     let cmd = WorkspaceSetup::parse();
     match cmd.command {
+
+        // 生成补全脚本
+        WorkspaceSetupCommands::GenerateClientCompletions { shell } => {
+            let mut cmd = ClientWorkspaceEntry::command();
+            generate(shell, &mut cmd, "jam", &mut io::stdout());
+        }
 
         // 建立客户端工作区
         WorkspaceSetupCommands::Login(args) => setup_client_workspace(args, workspace).await,
@@ -82,6 +105,32 @@ async fn setup_workspace_main(workspace: Workspace) {
         // 建立服务端工作区
         WorkspaceSetupCommands::Setup(args) => setup_server_workspace(args, workspace).await,
     }
+}
+
+fn setup_print_help() {
+    println!("{}", parse_colored_text("\
+Login to Workspace
+==================
+Use either of these commands:
+
+1. By workspace name:
+   [green]jam login[/] [yellow]<YOUR_LOGIN_CODE>[/] [cyan]--workspace[/] [yellow]<TARGET_WORKSPACE_NAME>[/]
+
+2. By workspace address:
+   [green]jam login[/] [yellow]<YOUR_LOGIN_CODE>[/] [cyan]--target[/] [yellow]<TARGET_WORKSPACE_ADDRESS>[/]
+
+Examples:
+• [gray]jam login XXXX-XXXX[/] [cyan]--workspace[/] MyWorkspace
+• [gray]jam login XXXX-XXXX[/] [cyan]--target[/] localhost:5011
+
+Setup Workspace
+===============
+Create a new workspace with:
+   [green]jam setup[/] [yellow]<YOUR_WORKSPACE_NAME>[/]
+
+Example:
+   [gray]jam setup[/] MyWorkspace
+   "))
 }
 
 async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace) {
@@ -177,116 +226,115 @@ struct ClientWorkspaceEntry {
 #[derive(Subcommand, Debug)]
 enum ClientCommands {
 
-    #[command(hide = true, short_flag = 'h', long_flag = "help")]
+    #[command(
+        hide = true,
+        short_flag = 'h',
+        long_flag = "help",
+        about = "\nQuery commands")]
     Help,
 
-    /// 列出文件结构
+    // 列出文件结构
     #[command(
         visible_alias = "tree",
         visible_alias = "list",
         visible_alias = "ls",
-        about = "List the file struct of the workspace")]
+        about = "List the file struct of the workspace.\n\nLocal file operation commands")]
     Struct,
 
     // ---------------------------
     // 工作区相关
 
-    /// 重新定向至工作区
+    // 重新定向至工作区
     #[command(
         visible_alias = "red",
-        about = "REDIRECT\tTo workspace"
+        about = "Redirect to workspace."
     )]
     Redirect,
 
-    /// 同步文件结构
+    // 同步文件结构
     #[command(
         visible_alias = "sync",
-        about = "UPDATE\tFile structs of Workspace to local")]
+        about = "Sync the workspace file struct to local.\n\nWorkspace file operation commands")]
     Update,
 
     // ---------------------------
     // 文件操作
 
-    /// 提交取得锁的本地文件
+    // 提交取得锁的本地文件
     #[command(
         visible_alias = "cmt",
         visible_alias = "save",
         visible_alias = "sv",
-        about = "COMMIT\tAll files are changed and locked")]
+        about = "Commit all modified files.")]
     Commit(CommitArgs),
 
-    /// 归档数据库版本 (仅 Leader)
-    #[command(about = "ARCHIVE\tCurrent database status (Leader only)")]
+    // 归档数据库版本 (仅 Leader)
+    #[command(about = "Archive and backup workspace. [red](Leader only)[/]")]
     Archive,
 
-    /// 添加文件
+    // 添加文件
     #[command(
         visible_alias = "new",
         visible_alias = "create",
-        about = "FILE\tNew virtual file")]
+        about = "Add a virtual file [gray](And get lock?)[/].")]
     Add(NewArgs),
 
-    /// 移除文件
+    // 移除文件
     #[command(
         visible_alias = "rm",
         visible_alias = "delete",
         visible_alias = "del",
-        about = "REMOVE\tVirtual file")]
+        about = "[gray](Try to get lock?)[/] Remove the virtual file.")]
     Remove(RemoveArgs),
 
-    /// 移动、重命名、或为文件重建映射
+    // 移动、重命名、或为文件重建映射
     #[command(
         visible_alias = "mv",
         visible_alias = "rename",
-        about = "MOVE\tChange path of Uuid or Virtual file")]
+        about = "[gray](Try to get lock?)[/] Rename, move, or restore virtual file.")]
     Move(MoveArgs),
 
-    /// 拿到文件的锁
+    // 拿到文件的锁
     #[command(
         visible_alias = "g",
         visible_alias = "lock",
-        about = "LOCK\tVirtual file")]
+        about = "Get a [gray](longer?)[/] lock on a virtual file.")]
     Get(GetArgs),
 
-    /// 丢掉文件的锁
+    // 丢掉文件的锁
     #[command(
         visible_alias = "t",
         visible_alias = "unlock",
         visible_alias = "release",
-        about = "UNLOCK\tVirtual file")]
+        about = "Throw the lock on a virtual file.")]
     Throw(SearchArgs),
 
-    /// 下载并查看文件
+    // 下载并查看文件
     #[command(
         visible_alias = "v",
         visible_alias = "download",
         visible_alias = "dl",
-        about = "DOWNLOAD\tVirtual file to local")]
+        about = "Download and view virtual file.\n\nOther")]
     View(SearchArgs),
 
     // ---------------------------
     // 其他操作
 
-    /// 操作参数
+    // 操作参数
     #[command(
         visible_alias = "set",
-        about = "EDIT\tLocal parameters")]
+        about = "Edit or view query parameters.")]
     Param(ParamArgs),
-}
-
-/// 文件操作命令
-#[derive(Subcommand, Debug)]
-enum FileOperationCommands {
 }
 
 /// 新建目录
 #[derive(Args, Debug)]
 struct NewArgs {
 
-    /// 目录
+    // 目录
     path: String,
 
-    /// 尝试拿到锁定
+    // 尝试拿到锁定
     #[arg(long, short = 'g', alias = "lock", alias = "l")]
     get: bool
 }
@@ -295,10 +343,10 @@ struct NewArgs {
 #[derive(Args, Debug)]
 struct RemoveArgs {
 
-    /// 搜索
+    // 搜索
     search: String,
 
-    /// 尝试拿到锁定
+    // 尝试拿到锁定
     #[arg(long, short = 'g', alias = "lock", alias = "l")]
     get: bool
 }
@@ -307,17 +355,17 @@ struct RemoveArgs {
 #[derive(Args, Debug)]
 struct SearchArgs {
 
-    /// 搜索
+    // 搜索
     search: String
 }
 
 #[derive(Args, Debug)]
 struct GetArgs {
 
-    /// 搜索
+    // 搜索
     search: String,
 
-    /// 是否为长期锁
+    // 是否为长期锁
     #[arg(short = 'l', long = "longer")]
     longer: bool
 }
@@ -326,31 +374,35 @@ struct GetArgs {
 #[derive(Args, Debug)]
 struct MoveArgs {
 
-    /// 搜索
+    // 搜索
     from_search: String,
 
-    /// 移动到
+    // 移动到
     to_path: String,
 
-    /// 尝试拿到锁定
+    // 尝试拿到锁定
     #[arg(long, short = 'g', alias = "lock")]
-    get: bool
+    get: bool,
+
+    // 自动同步工作区
+    #[arg(long, short = 'u', alias = "update")]
+    update: bool
 }
 
 #[derive(Args, Debug)]
 struct CommitArgs {
 
-    /// 日志
+    // 日志
     log: Option<String>
 }
 
 #[derive(Args, Debug)]
 struct ParamArgs {
 
-    /// 键
+    // 键
     key: String,
 
-    /// 值
+    // 值
     value: Option<String>
 }
 
@@ -358,7 +410,7 @@ struct ParamArgs {
 #[derive(Args, Debug)]
 struct ExecuteCommandArgs {
 
-    /// 命令
+    // 命令
     command: String
 }
 
@@ -367,21 +419,27 @@ struct ExecuteCommandArgs {
 #[derive(Subcommand, Debug)]
 enum LoggerCommands {
 
-    /// 启用 Logger
+    // 启用 Logger
     #[command(about = "Enable logger")]
     Enable,
 
-    /// 禁用 Logger
+    // 禁用 Logger
     #[command(about = "Disable logger")]
     Disable
 }
 
 async fn client_workspace_main() {
+
+    if args().count() <= 1 {
+        client_print_helps();
+        exit(0);
+    }
+
     let cmd = ClientWorkspaceEntry::parse();
 
     match cmd.command {
 
-        ClientCommands::Help => {}
+        ClientCommands::Help => client_print_helps(),
 
         // 重新连接至工作区
         ClientCommands::Redirect => {
@@ -426,7 +484,11 @@ async fn client_workspace_main() {
                 client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.from_search).clone()]).await;
             }
             // 移动文件
-            client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await
+            client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await;
+            if args.update {
+                // 更新工作区
+                client_execute_command(vec!["update".to_string()]).await
+            }
         },
         ClientCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
         ClientCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
@@ -441,6 +503,71 @@ async fn client_workspace_main() {
                 }
             }
         }
+    }
+}
+
+/// 打印客户端帮助
+fn client_print_helps() {
+    let commands = ClientWorkspaceEntry::command();
+
+    // 打印单个命令
+    for subcommand in commands.get_subcommands() {
+
+        // 命令名称
+        let command_name = subcommand.get_name();
+        if command_name == "help" {
+            println!("Query commands\n");
+            continue;
+        }
+        print!("    {}", command_name.cyan());
+
+        let mut args_str = String::new();
+        // 命令参数
+        for arg in subcommand.get_arguments() {
+
+            // 必填参数
+            if arg.is_required_set() {
+                args_str.push_str(format!(" [green]<{}>[/]", arg.get_id().to_string().to_uppercase()).as_str());
+            } else {
+
+                // 可选参数
+                let long = arg.get_long();
+                let short = arg.get_short();
+                if let Some(long) = long {
+                    args_str.push_str(format!(" [yellow][--{}", long).as_str());
+                }
+                if let Some(short) = short {
+                    let split = if long.is_some() { ", -" } else { "[yellow][" };
+                    args_str.push_str(format!("{}{}", split, short).as_str());
+                }
+                if long.is_some() || short.is_some() {
+                    args_str.push_str("][/]");
+                }
+            }
+        }
+        print!("{}", parse_colored_text(args_str.as_str()));
+
+        // 别名
+        let aliases = subcommand.get_visible_aliases();
+        if aliases.count() > 0 {
+            let mut aliases_str = String::new();
+            aliases_str.push_str("[gray](");
+            for alias in subcommand.get_visible_aliases() {
+                aliases_str.push_str(format!("{}, ", alias).as_str());
+            }
+            aliases_str = aliases_str.trim().trim_end_matches(',').to_string();
+            aliases_str.push_str(")[/]");
+            print!(" {}", parse_colored_text(aliases_str.as_str()));
+        }
+
+        // 描述
+        if let Some(about) = subcommand.get_about() {
+            print!("\n        {}", parse_colored_text(about.to_string().as_str()));
+        }
+
+        // 末尾换行
+        println!();
+        println!();
     }
 }
 
@@ -998,6 +1125,9 @@ async fn main() {
 
     // 加载工作区
     let workspace = Workspace::read();
+
+    // 初始化颜色库
+    colored::control::set_virtual_terminal(true).unwrap();
 
     // 若未初始化工作区，则引导用户初始化
     if workspace.workspace_type == Unknown {
