@@ -1,5 +1,5 @@
 [package]
-name = "jam_ready_cmd"
+name = "jam_ready_cli"
 edition = "2024"
 version.workspace = true
 

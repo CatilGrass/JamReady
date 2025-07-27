@@ -438,7 +438,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jam_ready_cmd"
+name = "jam_ready_cli"
 version = "0.1.0"
 dependencies = [
  "async-trait",
