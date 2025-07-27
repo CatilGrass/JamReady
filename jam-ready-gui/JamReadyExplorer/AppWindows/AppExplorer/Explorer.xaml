@@ -11,7 +11,7 @@
         Title="Jam Ready Explorer"
         mc:Ignorable="d">
     
-    <Grid Background="{StaticResource BackgroundColor}">
+    <Grid Background="{DynamicResource BackgroundColor}">
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/> <!-- 标题区 -->
             <RowDefinition Height="1"/> <!-- 分割线 -->
@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
         
             <!-- 纵向0：标题区 -->
-            <Grid Grid.Row="0" Background="{StaticResource AppMainColor}">
+            <Grid Grid.Row="0" Background="{DynamicResource AppMainColor}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="47"/>
                     <ColumnDefinition Width="*"/>
@@ -49,7 +49,7 @@
                 <!-- 横向1：地址输入、窗口拖拽区域 -->
                 <Grid
                     Grid.Column="1"
-                    Background="{StaticResource AppMainColor}">
+                    Background="{DynamicResource AppMainColor}">
                     
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -61,16 +61,16 @@
                         Name="PathBox" 
                         Grid.Column="0" Padding="8"
                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"
-                        Background="{StaticResource AppMainColorDark}" BorderBrush="Transparent" BorderThickness="0"
-                        CaretBrush="{StaticResource AccentColor}" SelectionBrush="{StaticResource AccentColor}"
-                        FontSize="14" FontWeight="Thin" Foreground="{StaticResource WidgetForegroundColor}"
+                        Background="{DynamicResource AppMainColorDark}" BorderBrush="Transparent" BorderThickness="0"
+                        CaretBrush="{DynamicResource AccentColor}" SelectionBrush="{DynamicResource AccentColor}"
+                        FontSize="14" FontWeight="Thin" Foreground="{DynamicResource WidgetForegroundColor}"
                         TextWrapping="NoWrap" IsHitTestVisible="True"
                         PreviewKeyDown="PathBox_OnPreviewKeyDown"/>
                     
                     <!-- 拖拽区 -->
                     <Grid 
                         Column="1" 
-                        Background="{StaticResource AppMainColor}"
+                        Background="{DynamicResource AppMainColor}"
                         MouseMove="Explorer_DragWindow"> </Grid>
                     
                 </Grid>
@@ -123,7 +123,7 @@
             </Grid>
             
             <!-- 纵向1：分割线 -->
-            <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource AppMainColorDark}"/>
+            <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource AppMainColorDark}"/>
             
             <!-- 纵向2：内容区 -->
             <Grid Grid.Row="2">
@@ -138,7 +138,7 @@
                     <!-- 纵向0：工具栏 -->
                     <Grid 
                         Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                        Background="{StaticResource AppMainColor}">
+                        Background="{DynamicResource AppMainColor}">
             
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="47"/> <!-- 左侧工具 -->
@@ -175,8 +175,8 @@
                                     Grid.Column="0" Padding="8"
                                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"
                                     Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
-                                    CaretBrush="{StaticResource AccentColor}" SelectionBrush="{StaticResource AccentColor}"
-                                    FontSize="14" FontWeight="Thin" Foreground="{StaticResource WidgetForegroundColor}"
+                                    CaretBrush="{DynamicResource AccentColor}" SelectionBrush="{DynamicResource AccentColor}"
+                                    FontSize="14" FontWeight="Thin" Foreground="{DynamicResource WidgetForegroundColor}"
                                     TextWrapping="NoWrap"
                                     PreviewKeyDown="SearchBox_OnPreviewKeyDown"/>
                         
@@ -241,7 +241,7 @@
                     </Grid>
                     
                     <!-- 纵向1：分割线 -->
-                    <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource AppMainColorDark}"/>
+                    <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource AppMainColorDark}"/>
                     
                     <!-- 纵向2：内容区 -->
                     <ScrollViewer
