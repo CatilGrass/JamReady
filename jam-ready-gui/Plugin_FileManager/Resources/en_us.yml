@@ -3,6 +3,8 @@ Menu_File_Name: "File..."
 MenuItem_CreateFolder_Name: "New Folder"
 MenuItem_RemoveFolder_Name: "Remove Folder"
 
+Adapter_DirectoryAdapter_MenuItem_RemoveFolder_Name: "Remove Folder"
+
 Window_ConfirmRemoveFolderWindow_Title: "Remove Folder"
 Window_CreateFolderWindow_Title: "Create Folder Here"
 

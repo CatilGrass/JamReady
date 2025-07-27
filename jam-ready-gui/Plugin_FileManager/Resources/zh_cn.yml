@@ -3,6 +3,8 @@ Menu_File_Name: "文件..."
 MenuItem_CreateFolder_Name: "新建 文件夹"
 MenuItem_RemoveFolder_Name: "删除 文件夹"
 
+Adapter_DirectoryAdapter_MenuItem_RemoveFolder_Name: "删除该文件夹"
+
 Window_ConfirmRemoveFolderWindow_Title: "确认？"
 Window_CreateFolderWindow_Title: "在此处创建文件夹"
 
