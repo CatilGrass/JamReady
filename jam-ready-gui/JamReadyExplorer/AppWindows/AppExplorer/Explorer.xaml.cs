@@ -34,7 +34,7 @@ public sealed partial class Explorer : INotifyPropertyChanged
             OnPropertyChanged(nameof(ExplorerItemFontSize));
         }
     }
-
+    
     /// <summary>
     /// 浏览器中的列表项大小
     /// </summary>

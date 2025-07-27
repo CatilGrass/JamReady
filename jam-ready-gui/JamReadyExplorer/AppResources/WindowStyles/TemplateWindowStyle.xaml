@@ -30,7 +30,7 @@
     <!-- 模板：主页面的窗口的布局 -->
     <ControlTemplate x:Key="CommonWindowTemplate"
                      TargetType="{x:Type Window}">
-        <Grid Background="{StaticResource BackgroundColor}">
+        <Grid Background="{DynamicResource BackgroundColor}">
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/> <!-- 标题区 -->
             <RowDefinition Height="2"/> <!-- 分割线 -->
@@ -38,7 +38,7 @@
         </Grid.RowDefinitions>
         
             <!-- 纵向0：标题区 -->
-            <Grid Grid.Row="0" Background="{StaticResource AppMainColor}">
+            <Grid Grid.Row="0" Background="{DynamicResource AppMainColor}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="150"/>
@@ -48,13 +48,13 @@
                 <StackPanel 
                     Grid.Column="0"
                     Orientation="Horizontal"
-                    Background="{StaticResource AppMainColor}"
+                    Background="{DynamicResource AppMainColor}"
                     bh:TemplateWindowBehaviour.Drag="True">
                     
                     <!-- 标题文字 -->
                     <Label
                         Content="{TemplateBinding Title}"
-                        Foreground="{StaticResource WidgetForegroundColor}"
+                        Foreground="{DynamicResource WidgetForegroundColor}"
                         Margin="16, 0, 0, 0"
                         FontSize="15"
                         VerticalAlignment="Stretch"
@@ -113,7 +113,7 @@
             </Grid>
             
             <!-- 纵向1：分割线 -->
-            <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource AppMainColorDark}"/>
+            <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource AppMainColorDark}"/>
             
             <!-- 纵向2：内容区 -->
             <Grid Grid.Row="2">

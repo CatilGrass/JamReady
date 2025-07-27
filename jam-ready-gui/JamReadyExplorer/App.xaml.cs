@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Media;
 using JamReadyGui.AppData;
 using JamReadyGui.AppData.Explorer;
 using JamReadyGui.AppData.Utils;
@@ -16,6 +17,9 @@ namespace JamReadyGui
             
             // 初始化
             ExplorerRuntime.InitializeExplorerRuntime();
+            
+            // 应用颜色
+            preference.Theme.Apply();
             
             // 查询所有插件文件
             foreach (var dllFile in AppConstants.GetPluginDllFiles())
