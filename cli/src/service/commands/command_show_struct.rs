@@ -43,7 +43,6 @@ impl Command for ShowFileStructCommand {
                 } else {
 
                     // 若存在本地文件，显示本地版本
-                    let mut added = false;
                     if let Some(local_file) = local_file {
                         if let Ok(current) = current_dir() {
                             let local_file_path_buf = current.join(&local_file.local_path);
@@ -61,8 +60,6 @@ impl Command for ShowFileStructCommand {
                                     // 本地文件版本同步
                                     info = format!("{} {}", info, format!("[v{}]", local_version).bright_green());
                                 }
-
-                                added = true;
                             }
                         }
                     }

@@ -18,8 +18,12 @@ use std::collections::HashMap;
 use std::env::args;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::ops::Add;
 use std::process::exit;
 use strum::IntoEnumIterator;
+use jam_ready::utils::file_digest::md5_digest;
+use jam_ready_cli::data::database::Database;
+use jam_ready_cli::data::local_folder_map::{LocalFolderMap, Node};
 // --------------------------------------------------------------------------- //
 
 /// 建立工作区入口
@@ -233,6 +237,13 @@ enum ClientCommands {
         about = "\nQuery commands")]
     Help,
 
+    // 查询器
+    #[command(
+        subcommand,
+        visible_alias = "q",
+        about = "Query something")]
+    Query(ClientQueryCommands),
+
     // 列出文件结构
     #[command(
         visible_alias = "tree",
@@ -325,6 +336,123 @@ enum ClientCommands {
         visible_alias = "set",
         about = "Edit or view query parameters.")]
     Param(ParamArgs),
+
+    #[command(hide = true)]
+    Glock
+}
+
+/// 客户端查询命令
+#[derive(Subcommand, Debug)]
+enum ClientQueryCommands {
+
+    // 列出某个目录下的结构
+    #[command(
+        visible_alias = "list",
+        visible_alias = "ll",
+        about = "List the structure under a specific directory")]
+    ListDirectory(StringArgs),
+
+    // 查询虚拟文件的 Uuid
+    #[command(
+        visible_alias = "uuid",
+        visible_alias = "uid",
+        visible_alias = "id",
+        visible_alias = "u",
+        visible_alias = "i",
+        about = "Query the Uuid of the virtual file")]
+    FileUuid(StringArgs),
+
+    // 查询虚拟文件的版本
+    #[command(
+        visible_alias = "version",
+        visible_alias = "vsn",
+        visible_alias = "v",
+        about = "Query the version of the virtual file")]
+    FileVersion(StringArgs),
+
+    // 查询虚拟文件的路径
+    #[command(
+        visible_alias = "path",
+        visible_alias = "fp",
+        visible_alias = "p",
+        about = "Query the path of the virtual file")]
+    FilePath(StringArgs),
+
+    // 查询虚拟文件的名称
+    #[command(
+        visible_alias = "name",
+        visible_alias = "fn",
+        visible_alias = "n",
+        about = "Query the name of the virtual file")]
+    FileName(StringArgs),
+
+    // 查询虚拟文件的锁定状态
+    #[command(
+        visible_alias = "lock-status",
+        visible_alias = "ls",
+        about = "Query the lock status of the virtual file")]
+    FileLockStatus(StringArgs),
+
+    // 查询自己的 Uuid
+    #[command(
+        visible_alias = "me",
+        about = "Query your Uuid")]
+    SelfUuid,
+
+    // 查询目标工作区地址
+    #[command(
+        visible_alias = "target-addr",
+        visible_alias = "addr",
+        visible_alias = "target",
+        visible_alias = "t",
+        about = "Query the address of the target workspace")]
+    TargetAddress,
+
+    // 查询目标工作区名称
+    #[command(
+        visible_alias = "ws",
+        visible_alias = "w",
+        about = "Query the name of the target workspace")]
+    Workspace,
+
+    // 查询虚拟文件是否在本地
+    #[command(
+        visible_alias = "cl",
+        about = "Query whether the virtual file is local")]
+    ContainLocal(StringArgs),
+
+    // 查询本地文件映射的虚拟文件
+    #[command(
+        visible_alias = "ltr",
+        about = "Query the local file mapped to the virtual file")]
+    LocalToRemote(StringArgs),
+
+    // 查询虚拟文件映射的本地文件
+    #[command(
+        visible_alias = "rtl",
+        about = "Query the virtual file mapped to the local file")]
+    RemoteToLocal(StringArgs),
+
+    // 查询本地文件是否被更改
+    #[command(
+        visible_alias = "change",
+        visible_alias = "c",
+        about = "Query whether the local file has been changed")]
+    Changed(StringArgs),
+
+    // 查询本地文件的版本号
+    #[command(
+        visible_alias = "lv",
+        about = "Query the version number of the local file")]
+    LocalVersion(StringArgs)
+}
+
+#[derive(Args, Debug)]
+struct StringArgs {
+
+    // 目录
+    #[arg(default_value = "")]
+    value: String
 }
 
 /// 新建目录
@@ -441,6 +569,10 @@ async fn client_workspace_main() {
 
         ClientCommands::Help => client_print_helps(),
 
+        ClientCommands::Query(command) => {
+            client_query(command);
+        }
+
         // 重新连接至工作区
         ClientCommands::Redirect => {
             let mut workspace = Workspace::read();
@@ -503,6 +635,199 @@ async fn client_workspace_main() {
                 }
             }
         }
+        ClientCommands::Glock => print_glock_xd()
+    }
+}
+
+/// 客户端查询
+fn client_query(command: ClientQueryCommands) {
+    match command {
+
+        // 列出某个目录下的结构
+        ClientQueryCommands::ListDirectory(args) => {
+            let folder_map = LocalFolderMap::read();
+            let list = folder_map.folder_files.get(
+                args.value
+                    .trim()
+                    .trim_start_matches("./")
+                    .trim_start_matches("/")
+            );
+            if let Some(list) = list {
+                let mut result_file = "".to_string();
+                let mut result_dir = "".to_string();
+                for item in list {
+                    match item {
+                        Node::Jump(directory_str) => {
+                            let v = process_path(directory_str.trim().trim_end_matches('/'))
+                                .to_string().add("/");
+                            result_dir = format!("{}\n{}", result_dir, v);
+                        }
+                        Node::File(virtual_file_path_str) => {
+                            let v = process_path(virtual_file_path_str);
+                            result_file = format!("{}\n{}", result_file, v);
+                        }
+                        _ => { continue; }
+                    }
+                }
+                println!("{}", format!("{}\n{}", result_dir.trim(), result_file.trim()).trim());
+            }
+        }
+
+        // 查询虚拟文件的Uuid
+        ClientQueryCommands::FileUuid(args) => {
+            let database = Database::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                if let Some(uuid) = database.uuid_of_path(file.path()) {
+                    println!("{}", uuid);
+                }
+            }
+        }
+
+        // 查询虚拟文件的版本
+        ClientQueryCommands::FileVersion(args) => {
+            let database = Database::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                println!("{}", file.version())
+            }
+        }
+
+        // 查询虚拟文件的路径
+        ClientQueryCommands::FilePath(args) => {
+            let database = Database::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                println!("{}", file.path())
+            }
+        }
+
+        // 查询虚拟文件的名称
+        ClientQueryCommands::FileName(args) => {
+            let database = Database::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                println!("{}", process_path(file.path().as_str()))
+            }
+        }
+
+        // 查询虚拟文件的锁定状态
+        ClientQueryCommands::FileLockStatus(args) => {
+            let database = Database::read();
+            let workspace = Workspace::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                if let Some(locker_owner) = file.get_locker_owner_uuid() {
+                    if locker_owner == workspace.client.unwrap().uuid {
+                        if file.is_longer_lock_unchecked() {
+                            println!("HELD")
+                        } else {
+                            println!("held")
+                        }
+                    } else {
+                        if file.is_longer_lock_unchecked() {
+                            println!("LOCK")
+                        } else {
+                            println!("lock")
+                        }
+                    }
+                } else {
+                    println!("Available")
+                }
+            }
+        }
+
+        // 查询自己的Uuid
+        ClientQueryCommands::SelfUuid => {
+            println!("{}", Workspace::read().client.unwrap().uuid);
+        }
+
+        // 查询目标工作区地址
+        ClientQueryCommands::TargetAddress => {
+            println!("{}", Workspace::read().client.unwrap().target_addr);
+        }
+
+        // 查询目标工作区名称
+        ClientQueryCommands::Workspace => {
+            println!("{}", Workspace::read().client.unwrap().workspace_name);
+        }
+
+        // 查询虚拟文件是否在本地
+        ClientQueryCommands::ContainLocal(args) => {
+            let database = Database::read();
+            let local = LocalFileMap::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                if let Some(uuid) = database.uuid_of_path(file.path()) {
+                    if let Some(_) = local.file_paths.get(uuid.as_str()) {
+                        println!("True");
+                    } else {
+                        println!("False");
+                    }
+                }
+            }
+        }
+
+        // 查询本地文件映射的虚拟文件
+        ClientQueryCommands::LocalToRemote(args) => {
+            let database = Database::read();
+            let local = LocalFileMap::read();
+            if let Some(uuid) = local.local_path_to_uuid(args.value.trim().to_string()) {
+                if let Some(file) = database.search_file(uuid.trim().to_string()) {
+                    if file.path().is_empty() {
+                        println!("{}", uuid);
+                    } else {
+                        println!("{}", file.path())
+                    }
+                }
+            }
+        }
+
+        // 查询虚拟文件映射的本地文件
+        ClientQueryCommands::RemoteToLocal(args) => {
+            let database = Database::read();
+            let local = LocalFileMap::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                if let Some(local_file) = local.search_to_local(&database, file.path()) {
+                    println!("{}", local_file.local_path)
+                }
+            }
+        }
+
+        // 查询本地文件是否被更改
+        ClientQueryCommands::Changed(args) => {
+            let database = Database::read();
+            let local = LocalFileMap::read();
+            if let Some(file) = database.search_file(args.value.trim().to_string()) {
+                if let Some(local_file) = local.search_to_local(&database, file.path()) {
+                    let local_digest = &local_file.local_digest;
+                    let current_digest = if let Some(path_buf) = local.search_to_path(&database, args.value.trim().to_string()) {
+                        if path_buf.exists() {
+                            Some(md5_digest(path_buf).unwrap_or(local_digest.clone()))
+                        } else {
+                            Some(local_digest.clone())
+                        }
+                    } else {
+                        None
+                    };
+                    if let Some(digest) = current_digest {
+                        if digest.trim() == local_digest {
+                            println!("False");
+                        } else {
+                            println!("True");
+                        }
+                    }
+                }
+            }
+        }
+
+        // 查询本地文件的版本号
+        ClientQueryCommands::LocalVersion(args) => {
+            let database = Database::read();
+            let local = LocalFileMap::read();
+            if let Some(local_file) = local.search_to_local(&database, args.value.trim().to_string()) {
+                println!("{}", local_file.local_version);
+            }
+        }
+    }
+
+    fn process_path(input: &str) -> String {
+        let binding = input.to_string();
+        binding.split("/").last().unwrap_or("").to_string()
     }
 }
 
@@ -512,6 +837,8 @@ fn client_print_helps() {
 
     // 打印单个命令
     for subcommand in commands.get_subcommands() {
+
+        if subcommand.is_hide_set() { continue };
 
         // 命令名称
         let command_name = subcommand.get_name();
@@ -1137,4 +1464,41 @@ async fn main() {
     } else if workspace.workspace_type == Server {
         server_workspace_main().await;
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+fn print_glock_xd() {
+    println!("{}", "\
+It's a glock :)
+    ▄▬▬█▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬█▬▄
+   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
+   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▐
+   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▐
+   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
+  ▄█▬▬▬▬▬▄▄▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▐
+    █▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄▬▀
+     █▒▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▌
+      █▒▓▓▓▓▓▓█▬▄▬▬▬▬▬▬▄▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▀
+      █▒▓▓▓▓▓▓▓▓█  ▐      ▌
+     █▒▓▓▓▓▓▓▓▓█ ▌  ▌     ▌
+     █▒▓▓▓▓▓▓▓▓█  ▬▬      ▐
+     █▒▓▓▓▓▓▓▓▓█▀▬▬▬▬▬▬▬▬▬▀
+    █▒▓▓▓▓▓▓▓▓█
+    █▒▓▓▓▓▓▓▓▓█
+   █▒▓▓▓▓▓▓▓▓█
+   █▒▓▓▓▓▓▓▓▓█
+   █▒▓▓▓▓▓▓▓▓█
+  █▒▓▓▓▓▓▓▓▓█
+  ▀▬▄▬▬▬▬▬▬▄█
+    ▀▬▬▬▬▬▬▀
+    ");
 }

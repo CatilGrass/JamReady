@@ -4,12 +4,12 @@ target-dir = "./.cargo/shared/target"
 [alias]
 
 # 构建相关
-dev_build = ["build", "--workspace", "--profile", "dev"]
-release_build = ["build", "--workspace", "--profile", "release"]
+dbuild = ["build", "--workspace", "--profile", "dev"]
+rbuild = ["build", "--workspace", "--profile", "release"]
 
 # 打包相关
 dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_porject", "dev" ]
-make = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_porject" ]
+release = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_porject" ]
 
 [env]
 # ------ 项目设置 ------
