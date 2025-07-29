@@ -838,6 +838,8 @@ fn client_print_helps() {
     // 打印单个命令
     for subcommand in commands.get_subcommands() {
 
+        if subcommand.is_hide_set() { continue };
+
         // 命令名称
         let command_name = subcommand.get_name();
         if command_name == "help" {
@@ -1476,7 +1478,7 @@ async fn main() {
 
 fn print_glock_xd() {
     println!("{}", "\
-It'a glock :)
+It's a glock :)
     ▄▬▬█▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬█▬▄
    ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
    ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▐
