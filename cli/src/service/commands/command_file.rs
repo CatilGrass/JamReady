@@ -3,15 +3,14 @@ use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::data::member::Member;
 use crate::service::commands::database_sync::{sync_local, sync_remote};
 use crate::service::jam_command::Command;
-use crate::service::messages::ServerMessage;
 use crate::service::messages::ServerMessage::{Deny, Text};
 use crate::service::service_utils::{read_msg, send_msg};
 use async_trait::async_trait;
+use colored::Colorize;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::process_path_text;
 use std::env::current_dir;
-use colored::Colorize;
 use tokio::net::TcpStream;
 
 pub struct FileOperationCommand;
@@ -20,296 +19,233 @@ pub struct FileOperationCommand;
 impl Command for FileOperationCommand {
 
     async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) {
+        // 参数校验
+        if args.len() < 3 { return; }
 
-        // 检查参数数量
-        if args.len() < 3 { return; } // <操作符> <地址> <地址2: 可选>
-
-        // 检查服务器返回的消息
-        let message: ServerMessage = read_msg(stream).await;
-        match message {
+        // 此命令的所有操作均在服务端完成，客户端仅处理服务端的响应
+        // 处理服务器响应
+        match read_msg(stream).await {
             Text(msg) => {
-                // 成功后，从服务端接收最新的同步
                 sync_local(stream).await;
                 println!("Ok: {}", msg)
             }
             Deny(msg) => {
-                // 失败后，不处理后续事项
                 eprintln!("Err: {}", msg);
                 return;
             }
-            _ => {
-                return;
-            }
+            _ => return,
         }
 
-        // 检查操作符
-        match args[1].to_lowercase().trim() {
+        // 若操作成功，则会开始处理客户端的后续逻辑
 
-            // 添加文件 (若创建的文件地址在本地存在，则为其建立映射)
-            "add" => {
+        // 文件添加成功后，检查本地是否存在对应文件，若存在，则更新本地映射
+        if args[1].to_lowercase().trim() == "add" {
+            let mut local = LocalFileMap::read();
+            let database = Database::read();
+            let search = args[2];
 
-                // 加载本地数据
-                let mut local = LocalFileMap::read();
-                let database = Database::read();
+            if let Ok(current) = current_dir() {
+                let local_file_path_buf = current.join(search);
 
-                let search = args[2];
-                if let Ok(current) = current_dir() {
-                    let local_file_path_buf = current.join(search);
-
-                    // 本地确实存在该文件
-                    if local_file_path_buf.exists() {
-
-                        // 且远程确实存在该文件 (因为刚创建的所以大概率存在)
-                        if let Some(file) = database.search_file(search.to_string()) {
-                            let file_path = file.path();
-                            if let Some(file_uuid) = database.uuid_of_path(file_path.clone()) {
-                                local.file_uuids.insert(file_path, file_uuid.clone());
-                                local.file_paths.insert(file_uuid, LocalFile{
-                                    local_path: search.to_string(),
-                                    local_version: file.version(),
-                                    local_digest: md5_digest(local_file_path_buf).unwrap_or("".to_string()),
-                                });
-                            }
+                // 处理本地文件存在的情况
+                if local_file_path_buf.exists() {
+                    if let Some(file) = database.search_file(search.to_string()) {
+                        let file_path = file.path();
+                        if let Some(file_uuid) = database.uuid_of_path(file_path.clone()) {
+                            local.file_uuids.insert(file_path, file_uuid.clone());
+                            local.file_paths.insert(file_uuid, LocalFile {
+                                local_path: search.to_string(),
+                                local_version: file.version(),
+                                local_digest: md5_digest(local_file_path_buf).unwrap_or_default(),
+                            });
                         }
-                    } else {
-                        // 不存在本地文件，通知成员需要将文件存储到哪
-                        println!("You created a virtual file, but the file does not exist locally.");
-                        println!("Please save the completed file to the following path:");
-                        println!("{}", local_file_path_buf.display().to_string().green());
                     }
                 }
-
-                // 保存本地数据
-                LocalFileMap::update(&local);
+                else {
+                    // 否则，提示成员该文件应当被存储的地址
+                    println!("Virtual file created but missing locally.");
+                    println!("Save completed file to:");
+                    println!("{}", local_file_path_buf.display().to_string().green());
+                }
             }
-            _ => { }
+
+            LocalFileMap::update(&local);
         }
     }
 
     async fn remote(
         &self,
-        stream: &mut TcpStream, args: Vec<&str>,
-        (uuid, _member): (String, &Member), database: &mut Database) -> bool {
+        stream: &mut TcpStream,
+        args: Vec<&str>,
+        (uuid, _member): (String, &Member),
+        database: &mut Database
+    ) -> bool {
+        // 参数校验
+        if args.len() < 3 {
+            send_msg(stream, &Deny("Insufficient arguments".to_string())).await;
+            return false;
+        }
 
-        // 检查参数数量
-        if args.len() < 3 { return false; } // <操作符> <搜索/地址> <地址2: 可选>
-
-        let operation_str = args[1];
+        let operation = args[1].to_lowercase();
         let input = args[2];
 
-        // 搜索得到虚拟文件
-        let virtual_file = database.search_file_mut(input.to_string());
-
-        match operation_str.to_lowercase().trim() {
-
-            // 添加文件
+        match operation.trim() {
+            // ===== 文件添加操作 =====
             "add" => {
-
-                // 文件未存在时
-                if let None = virtual_file {
-                    if let Ok(success) = database.insert_virtual_file(
-                        VirtualFile::new(input.to_string())) {
-                        if success {
-
-                            // 成功
-                            send_msg(stream, &Text(format!("Virtual file \"{}\" created.", args[2]))).await;
-
-                            // 发送同步
-                            sync_remote(stream, database).await;
-                            return true;
-                        }
-                    }
-                }
-
-                // 失败
-                send_msg(stream, &Deny("Failed to create virtual file.".to_string())).await;
-                false
-            }
-
-            // 移除文件 (仅移除映射)
-            "remove" => {
-
-                // 文件存在时
-                if let Some(file) = virtual_file {
-
-                    // 检查锁定情况
-                    if !is_available(file, stream, uuid).await {
-                        return false;
-                    }
-
-                    // 移除文件映射
-                    if let Ok(_uuid) = database.remove_file_map(process_path_text(args[2].to_string())) {
-
-                        // 成功
-                        send_msg(stream, &Text(format!("Removed virtual file \"{}\".", args[2]))).await;
-
-                        // 发送同步
-                        sync_remote(stream, database).await;
-                        return true;
-                    }
-
-                    send_msg(stream, &Deny("Remove virtual file failed!".to_string())).await;
-                    false
-                } else {
-
-                    send_msg(stream, &Deny("Remove virtual file failed!".to_string())).await;
-                    false
-                }
-            }
-
-            // 移动文件 (重建映射)
-            "move" => {
-
-                // 再次检查参数，若缺少第三个参数，则失败
-                if args.len() < 4 {
-                    send_msg(stream, &Deny("Failed to move the file: Please specify the destination address.".to_string())).await;
+                if database.search_file(input.to_string()).is_some() {
+                    send_msg(stream, &Deny(format!("File '{}' already exists", input))).await;
                     return false;
                 }
 
-                // 移动到的地址
-                let move_to_path = process_path_text(args[3].to_string());
-
-                // 文件存在时
-                if let Some(file) = virtual_file {
-
-                    // 检查锁定情况
-                    if !is_available(file, stream, uuid).await {
-                        return false;
-                    }
-
-                    // 尝试以目录移动
-                    if let Ok(()) = database.move_file(args[2].to_string(), move_to_path.clone()) {
-
-                        // 成功
-                        send_msg(stream, &Text(format!("Moved \"{}\" to \"{}\" success.", args[2], args[3]))).await;
-
-                        // 发送同步
-                        sync_remote(stream, database).await;
-                        return true;
-                    }
-
-                    // 尝试以 Uuid 移动
-                    if let Ok(()) = database.move_file_with_uuid(args[2].to_string(), move_to_path) {
-
-                        // 成功
-                        send_msg(stream, &Text(format!("Moved uuid \"{}\" to \"{}\" success.", args[2], args[3]))).await;
-
-                        // 发送同步
-                        sync_remote(stream, database).await;
-                        return true;
-                    }
-                }
-
-                // 失败
-                send_msg(stream, &Deny("Move file failed!".to_string())).await;
-                false
-            }
-
-            // 拿到文件的锁
-            "get" => {
-
-                // 文件存在
-                if let Some(file) = virtual_file {
-
-                    // 尝试拿锁
-                    return if file.give_uuid_locker(uuid, false) {
-
-                        // 成功
-                        send_msg(stream, &Text(format!("Get locker of \"{}\" success.", args[2]))).await;
-
-                        // 发送同步
+                match database.insert_virtual_file(VirtualFile::new(input.to_string())) {
+                    Ok(true) => {
+                        send_msg(stream, &Text(format!("Created virtual file '{}'", input))).await;
                         sync_remote(stream, database).await;
                         true
-                    } else {
-                        send_msg(stream, &Deny("Get locker failed!".to_string())).await;
+                    }
+                    _ => {
+                        send_msg(stream, &Deny("Failed to create virtual file".to_string())).await;
                         false
                     }
                 }
-
-                send_msg(stream, &Deny("Get locker failed!".to_string())).await;
-                false
             }
 
-            // 拿到文件的锁 (长期)
-            "get_longer" => {
+            // ===== 文件移除操作 =====
+            "remove" => {
+                let path = process_path_text(input.to_string());
+                let Some(file) = database.search_file_mut(input.to_string()) else {
+                    send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
+                    return false;
+                };
 
-                // 文件存在
-                if let Some(file) = virtual_file {
+                if !is_available(file, stream, uuid.clone()).await {
+                    return false;
+                }
 
-                    // 尝试拿锁
-                    return if file.give_uuid_locker(uuid, true) {
-
-                        // 成功
-                        send_msg(stream, &Text(format!("Get longer locker of \"{}\" success.", args[2]))).await;
-
-                        // 发送同步
+                match database.remove_file_map(path) {
+                    Ok(_) => {
+                        send_msg(stream, &Text(format!("Removed virtual file '{}'", input))).await;
                         sync_remote(stream, database).await;
                         true
-                    } else {
-                        send_msg(stream, &Deny("Get longer locker failed!".to_string())).await;
+                    }
+                    Err(_) => {
+                        send_msg(stream, &Deny(format!("Failed to remove '{}'", input))).await;
                         false
                     }
                 }
+            }
 
-                send_msg(stream, &Deny("Get longer locker failed!".to_string())).await;
+            // ===== 文件移动操作 =====
+            "move" => {
+                if args.len() < 4 {
+                    send_msg(stream, &Deny("Missing destination path".to_string())).await;
+                    return false;
+                }
+
+                let Some(file) = database.search_file_mut(input.to_string()) else {
+                    send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
+                    return false;
+                };
+
+                if !is_available(file, stream, uuid.clone()).await {
+                    return false;
+                }
+
+                let dest = process_path_text(args[3].to_string());
+
+                // 尝试路径移动
+                if database.move_file(input.to_string(), dest.clone()).is_ok() {
+                    send_msg(stream, &Text(format!("Moved '{}' to '{}'", input, args[3]))).await;
+                    sync_remote(stream, database).await;
+                    return true;
+                }
+
+                // 尝试UUID移动
+                if database.move_file_with_uuid(input.to_string(), dest).is_ok() {
+                    send_msg(stream, &Text(format!("Moved UUID '{}' to '{}'", input, args[3]))).await;
+                    sync_remote(stream, database).await;
+                    return true;
+                }
+
+                send_msg(stream, &Deny(format!("Failed to move '{}'", input))).await;
                 false
             }
 
-            // 丢掉文件的锁
+            // ===== 文件锁操作 =====
+            "get" | "get_longer" => {
+                let is_long = operation.trim() == "get_longer";
+
+                // 仅当需要时才获取文件的可变引用
+                let Some(file) = database.search_file_mut(input.to_string()) else {
+                    send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
+                    return false;
+                };
+
+                if file.give_uuid_locker(uuid.clone(), is_long) {
+                    let action = if is_long { "long-term lock" } else { "lock" };
+                    send_msg(stream, &Text(format!("Acquired {} on '{}'", action, input))).await;
+                    // 立即释放文件的可变引用
+                    let _ = file;
+
+                    // 现在可以安全地借用整个数据库进行同步
+                    sync_remote(stream, database).await;
+                    true
+                } else {
+                    send_msg(stream, &Deny("Failed to acquire lock".to_string())).await;
+                    false
+                }
+            }
+
+            // ===== 释放文件锁操作 =====
             "throw" => {
+                // 仅当需要时才获取文件的可变引用
+                let Some(file) = database.search_file_mut(input.to_string()) else {
+                    send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
+                    return false;
+                };
 
-                // 文件存在
-                if let Some(file) = virtual_file {
+                match file.get_locker_owner() {
+                    Some((owner, _)) if owner == uuid => {
+                        file.throw_locker();
+                        send_msg(stream, &Text(format!("Released lock on '{}'", input))).await;
+                        // 立即释放文件的可变引用
+                        let _ = file;
 
-                    // 获得文件的锁持有者
-                    if let Some((owner_uuid, _)) = file.get_locker_owner() {
-
-                        // 如果是自己则丢掉锁
-                        return if uuid == owner_uuid {
-                            file.throw_locker();
-
-                            // 成功
-                            send_msg(stream, &Text(format!("Throw the locker of \"{}\" success.", args[2]))).await;
-
-                            // 发送同步
-                            sync_remote(stream, database).await;
-                            true
-                        } else {
-
-                            // 其他人持有
-                            send_msg(stream, &Deny("You cannot throw the locker held by others.".to_string())).await;
-                            false
-                        }
+                        // 现在可以安全地借用整个数据库进行同步
+                        sync_remote(stream, database).await;
+                        true
+                    }
+                    Some(_) => {
+                        send_msg(stream, &Deny("File locked by another member".to_string())).await;
+                        false
+                    }
+                    None => {
+                        send_msg(stream, &Deny("File is not locked".to_string())).await;
+                        false
                     }
                 }
-
-                send_msg(stream, &Deny("Throw locker failed!".to_string())).await;
-                false
             }
 
+            // ===== 未知操作处理 =====
             _ => {
-                send_msg(stream, &Deny(format!("No operation named \"{}\" exists.", operation_str))).await;
+                send_msg(stream, &Deny(format!("Unknown operation '{}'", operation))).await;
                 false
             }
         }
     }
 }
 
-/// 检查锁定情况
+/// 检查文件可用性（锁定状态）
 async fn is_available(file: &VirtualFile, stream: &mut TcpStream, self_uuid: String) -> bool {
-    // 获得文件的锁持有者
-    if let Some((owner_uuid, _)) = file.get_locker_owner() {
-
-        // 其他人拿到锁
-        if self_uuid != owner_uuid {
-            send_msg(stream, &Deny("The file has been locked by another team member!".to_string())).await;
-            return false;
+    match file.get_locker_owner() {
+        Some((owner, _)) if owner != self_uuid => {
+            send_msg(stream, &Deny("File locked by another team member".to_string())).await;
+            false
         }
-    } else {
-
-        // 没人拿到锁
-        send_msg(stream, &Deny("Before operating on the file, please \"get\" it first!".to_string())).await;
-        return false;
+        None => {
+            send_msg(stream, &Deny("Acquire lock before file operations".to_string())).await;
+            false
+        }
+        _ => true
     }
-    true
 }
