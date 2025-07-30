@@ -260,7 +260,7 @@ enum ClientCommands {
         visible_alias = "red",
         about = "Redirect to workspace."
     )]
-    Redirect,
+    Redirect(RedirectArgs),
 
     // 同步文件结构
     #[command(
@@ -534,26 +534,21 @@ struct ParamArgs {
     value: Option<String>
 }
 
-/// 运行命令参数
+
 #[derive(Args, Debug)]
-struct ExecuteCommandArgs {
+struct RedirectArgs {
 
-    // 命令
-    command: String
-}
+    // 用户登录口令，用于识别身份
+    #[arg(short, long = "code")]
+    login_code: Option<String>,
 
+    // 目标地址 (直接指定)
+    #[arg(short, long)]
+    target: Option<String>,
 
-/// Logger 相关命令
-#[derive(Subcommand, Debug)]
-enum LoggerCommands {
-
-    // 启用 Logger
-    #[command(about = "Enable logger")]
-    Enable,
-
-    // 禁用 Logger
-    #[command(about = "Disable logger")]
-    Disable
+    // 工作区名称 (由网络发现获取目标地址)
+    #[arg(short, long)]
+    workspace: Option<String>,
 }
 
 async fn client_workspace_main() {
@@ -573,15 +568,53 @@ async fn client_workspace_main() {
             client_query(command);
         }
 
-        // 重新连接至工作区
-        ClientCommands::Redirect => {
+        // 重定向至工作区
+        ClientCommands::Redirect(args) => {
             let mut workspace = Workspace::read();
+
             if let Some(client) = &mut workspace.client {
+
+                // 重定向账户
+                if let Some(login_code) = args.login_code {
+                    client.login_code = login_code;
+                    println!("Trying to change login code to {}", client.login_code);
+                }
+
+                // 此处：若同时指定工作区名称和地址，仅更新地址
+                if let Some(target_addr) = args.target {
+
+                    // 若成功
+                    if let Ok(addr) = parse_address_v4_str(target_addr).await {
+                        client.target_addr = addr;
+
+                        println!("Changed target address to {}", &client.target_addr);
+
+                        // 并保存工作区信息
+                        Workspace::update(&workspace);
+                        return;
+                    }
+                    // 失败则继续工作区的查询
+                }
+
+                // 若存在工作区名称数据
+                if let Some(workspace_name) = args.workspace {
+
+                    // 则更新工作区数据
+                    client.workspace_name = workspace_name;
+                }
+
+                // 根据当前工作区刷新地址
                 if let Ok(addr) = search_workspace_lan(client.workspace_name.clone()).await {
                     client.target_addr = addr;
+
+                    println!("Redirected {} to {}.", client.workspace_name, addr);
+
+                    // 并保存工作区信息
+                    Workspace::update(&workspace);
+                    return;
                 }
             }
-            Workspace::update(&workspace);
+            println!("Redirect failed.");
         }
 
         ClientCommands::Update => client_execute_command(vec!["update".to_string()]).await,
