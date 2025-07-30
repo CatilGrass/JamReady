@@ -1,16 +1,30 @@
 # 从 “项目文件夹” 导出到 “打包文件夹”
 [release.root]
 
-# Windows 下 Powershell 的补全脚本安装
-win_ps_completions = { raw = "./.cargo/completions/", target = "./bin", files = [
-    "install_completions.ps1"
+# 安装脚本
+installation_scripts = { raw = "./.cargo/scripts/installation/", target = "./scripts/", files = [
+
+    # Windows
+    "install_completions.ps1",
+    "install_cli.ps1",
+    "uninstall_cli.ps1"
+] }
+
+# 调试脚本
+debug_scripts = { raw = "./.cargo/scripts/debug/", target = "./scripts/", files = [
+
+    # Windows
+    "debug_deploy.ps1",
+    "debug_test.ps1"
 ] }
 
 # 从 “编译文件夹” 导出到 “打包文件夹”
 [release.deps]
 
-# 可执行文件 (Windows)
-win_exes = { raw = "./", target = "./bin", files = [
+# 可执行文件
+executable_files = { raw = "./", target = "./bin", files = [
+
+    # Windows
     "jam.exe"
 ] }
 
