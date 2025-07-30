@@ -63,12 +63,6 @@ impl Command for ShowFileStructCommand {
                             }
                         }
                     }
-
-                    // 本地不存在此文件时，不打印版本，因为并不关注
-                    // if !added {
-                    //     // 显示当前版本
-                    //     info = format!("{} [v{}]", info, file.version());
-                    // }
                 }
 
                 // 锁定状态
