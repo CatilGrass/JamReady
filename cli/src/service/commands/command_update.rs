@@ -28,7 +28,6 @@ impl Command for UpdateCommand {
         println!("Ok: Sync file struct.");
 
         // 删除本地目录下所有的空文件夹
-        // TODO :: 此处排除 /.jam/ 文件夹
         if let Ok(current) = current_dir() {
             let _ = Self::remove_unused_directory(current);
         }
