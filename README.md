@@ -1,5 +1,9 @@
 # 🎮 JamReady - 提速你的 GameJam 🚀🚀🚀🚀🚀
 
+  ![](https://img.shields.io/github/stars/CatilGrass/JamReady?style=flat-square)  ![](https://img.shields.io/badge/CLI-v0.1.0-blue?style=flat-square)  ![](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)  ![](https://img.shields.io/badge/GUI-In_Development-orange?style=flat-square)
+
+
+
 ## 简述
 
 > ​	该项目诞生于 GameJam 活动之后的一次复盘讨论中，我们团队注意到 Git、SVN 等版本控制流程并不适合小型快速的项目开发。于是，为了追求更简单的版本控制，`JamReady` 项目便应运而生。
@@ -67,4 +71,44 @@ jam g "Textures/T_Player.png"
 # 尝试拿到某个文件的锁 (长期持有)
 jam g "Textures/T_Player.png" -l
 ```
+
+
+
+## 本地构建 & 运行
+
+​	若您有将项目在本地构建、打包的需求，请确保您的计算机中安装了以下环境
+
+1. Cargo + Rust 环境 [[安装]](https://www.rust-lang.org/learn/get-started)
+2. .NET SDK 9 (客户端部分) [[安装]](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+
+
+
+### 一、运行客户端界面
+
+```bash
+# 在根目录运行如下命令
+dotnet run --project app/JamReadyApp/JamReadyWorkspace
+```
+
+
+
+### 二、发布项目
+
+```bash
+# 在根目录运行如下命令
+# 构建 JamReady CLI 部分代码
+cargo build_release
+
+# 构建 JamReady GUI 部分代码 (可选)
+dotnet publish app/JamReadyApp
+
+# 发布项目
+cargo release
+```
+
+
+
+
+
+
 
