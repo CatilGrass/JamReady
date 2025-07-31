@@ -1,0 +1,8 @@
+.idea/
+.idea/*
+
+.obj/
+.obj/*
+
+JamReadyWorkspace/bin/
+JamReadyWorkspace/bin/*
