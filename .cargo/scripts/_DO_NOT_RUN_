@@ -1,0 +1,7 @@
+- 警告 -
+    绝对禁止直接运行此文件夹内的任何脚本！
+    这些脚本设计时预设的路径和变量仅适用于打包完成后的环境。
+
+- WARNING -
+    DO NOT EXECUTE ANY SCRIPTS IN THIS FOLDER!
+    These scripts are designed to run ONLY in packaged environments.

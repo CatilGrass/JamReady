@@ -1,9 +1,11 @@
-use std::fs::{copy, create_dir_all, remove_dir_all};
-use std::path::PathBuf;
+use jam_ready::utils::open_in_explorer::open_in_explorer;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::{env, fs};
-use jam_ready::utils::open_in_explorer::open_in_explorer;
+use std::fs::{copy, create_dir_all, read_dir, remove_dir_all};
+use std::path::{Path, PathBuf};
+use std::{env, fs, io};
+use colored::Colorize;
+use jam_ready::utils::text_process::process_path_text;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -50,46 +52,108 @@ pub fn main() {
     let _ = remove_dir_all(&export_version_dir);
 
     for data in config.release.root {
-        println!("Releasing \"{}\"", data.0);
+        println!("{} \"{}\"", "   Releasing".green().bold(), data.0);
         let raw_path = root.join(data.1.raw);
         let target_path = export_version_dir.join(data.1.target);
         copy_files(&raw_path, &target_path, data.1.files);
     }
 
     for data in config.release.deps {
-        println!("Releasing \"{}\"", data.0);
+        println!("{} \"{}\"", "   Releasing".green().bold(), data.0);
         let raw_path = target_dir.join(data.1.raw);
         let target_path = export_version_dir.join(data.1.target);
         copy_files(&raw_path, &target_path, data.1.files);
     }
 
     for data in config.release.deploy_root {
-        println!("Deploy \"{}\"", data.0);
+        println!("{} \"{}\"", "      Deploy".green().bold(), data.0);
         let raw_path = root.join(data.1.raw);
         let target_path = root.join(data.1.target);
         copy_files(&raw_path, &target_path, data.1.files);
     }
 
     for data in config.release.deploy_deps {
-        println!("Deploy \"{}\"", data.0);
+        println!("{} \"{}\"", "      Deploy".green().bold(), data.0);
         let raw_path = target_dir.join(data.1.raw);
         let target_path = root.join(data.1.target);
         copy_files(&raw_path, &target_path, data.1.files);
     }
 
-    if let Ok(()) = open_in_explorer(export_version_dir) {
-        println!("DONE");
+    if let Ok(()) = open_in_explorer(export_version_dir.clone()) {
+        println!("\n{}", "Release successfully.");
+        if let Some(path_text) = export_version_dir.to_str() {
+            println!("Build path: {:?}", process_path_text(path_text.to_string()));
+        }
     }
 }
 
-fn copy_files (raw: &PathBuf, target: &PathBuf, file_names: Vec<String>) {
+fn copy_files(raw: &PathBuf, target: &PathBuf, file_names: Vec<String>) {
     create_dir_all(target).unwrap();
 
-    for file in file_names.iter() {
-        let file_path_raw = raw.join(file);
-        let file_path_target = target.join(file);
-        if file_path_raw.exists() {
-            let _ = copy(&file_path_raw, &file_path_target);
+    for file in file_names {
+        let source_path = raw.join(&file);
+
+        if source_path.is_file() {
+            // 文件复制：直接复制到目标位置
+            let destination_path = target.join(&file);
+            if let Err(e) = copy_with_parents(&source_path, &destination_path) {
+                eprintln!("Error copying file: {:?} -> {:?}: {}", source_path, destination_path, e);
+            }
+        } else if source_path.is_dir() {
+            // 文件夹复制：将文件夹内容复制到目标目录（不包含文件夹本身）
+            if let Err(e) = copy_dir_contents(&source_path, target) {
+                eprintln!("Error copying directory contents: {:?} -> {:?}: {}", source_path, target, e);
+            }
+        } else {
+            eprintln!("Warning: Path is neither file nor directory: {:?}", source_path);
         }
     }
+}
+
+// 支持创建父目录的文件复制
+fn copy_with_parents(src: &PathBuf, dst: &PathBuf) -> io::Result<()> {
+    if let Some(parent) = dst.parent() {
+        create_dir_all(parent)?;
+    }
+    copy(src, dst)?;
+    Ok(())
+}
+
+// 递归复制文件夹内容（不包含文件夹本身）
+fn copy_dir_contents(src_dir: &Path, dst_dir: &Path) -> io::Result<()> {
+    create_dir_all(dst_dir)?;
+
+    for entry in read_dir(src_dir)? {
+        let entry = entry?;
+        let source_path = entry.path();
+        let entry_name = entry.file_name();
+        let destination_path = dst_dir.join(&entry_name);
+
+        if source_path.is_dir() {
+            // 递归复制子文件夹
+            copy_dir_recursive(&source_path, &destination_path)?;
+        } else {
+            // 复制文件
+            copy(&source_path, &destination_path)?;
+        }
+    }
+    Ok(())
+}
+
+// 递归复制整个文件夹结构（包括子文件夹）
+fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
+    create_dir_all(dst)?;
+
+    for entry in read_dir(src)? {
+        let entry = entry?;
+        let entry_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+
+        if entry_path.is_dir() {
+            copy_dir_recursive(&entry_path, &dst_path)?;
+        } else {
+            copy(&entry_path, &dst_path)?;
+        }
+    }
+    Ok(())
 }
