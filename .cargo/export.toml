@@ -1,6 +1,11 @@
 # 从 “项目文件夹” 导出到 “打包文件夹”
 [release.root]
 
+# GUI 部分打包
+gui_executable_files = { raw = "./app/JamReadyApp/JamReadyWorkspace/bin/Release/net9.0/", target = "./", files = [
+    "publish/"
+] }
+
 # 安装脚本
 installation_scripts = { raw = "./.cargo/scripts/installation/", target = "./scripts/", files = [
 
