@@ -105,7 +105,7 @@ impl Command for ViewCommand {
             result = read_msg::<ServerMessage>(stream) => {
                 match result {
                     ServerMessage::Deny(err) => {
-                        print_msg = format!("{}: {}", print_msg, err);
+                        print_msg = format!("{}. {}", print_msg, err);
                     }
                     ServerMessage::Done => {}
                     _ => {}

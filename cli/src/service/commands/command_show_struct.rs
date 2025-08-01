@@ -3,7 +3,9 @@ use std::env::current_dir;
 use async_trait::async_trait;
 use colored::Colorize;
 use tokio::net::TcpStream;
+use walkdir::WalkDir;
 use jam_ready::utils::local_archive::LocalArchive;
+use jam_ready::utils::text_process::process_path_text;
 use crate::data::database::Database;
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::member::Member;
@@ -89,6 +91,15 @@ impl Command for ShowFileStructCommand {
                 }
                 paths.push(info)
             }
+
+            for path in get_all_file_paths() {
+                if path.starts_with(env!("PATH_WORKSPACE_ROOT")) { continue }
+                if let None = local.file_uuids.get(&path) {
+                    let mut info = format!("{}", &path);
+                    info = format!("{} {}", info, "[Untracked]".red());
+                    paths.push(info);
+                }
+            }
         }
 
         // 显示
@@ -167,4 +178,21 @@ fn show_tree(paths: Vec<String>) -> String {
 
     // 从根节点的子节点开始生成
     generate_tree_lines(&root.children, "").join("\n")
+}
+
+fn get_all_file_paths() -> Vec<String> {
+    WalkDir::new(".")
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| e.file_type().is_file())
+        .map(|e| {
+            e.path()
+                .strip_prefix(".")
+                .unwrap()
+                .to_string_lossy()
+                .trim_start_matches('/')
+                .to_string()
+        })
+        .map(process_path_text)
+        .collect()
 }
