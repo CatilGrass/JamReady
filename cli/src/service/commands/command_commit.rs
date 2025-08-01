@@ -5,6 +5,7 @@ use crate::data::workspace::Workspace;
 use crate::service::commands::database_sync::{sync_local, sync_remote};
 use crate::service::jam_command::Command;
 use async_trait::async_trait;
+use colored::Colorize;
 use log::{info};
 use jam_ready::utils::local_archive::LocalArchive;
 use tokio::net::TcpStream;
@@ -52,11 +53,18 @@ impl Command for CommitCommand {
                     continue;
                 }
 
+                print!("Found {}. Local: ", format!("\"{}\"", &file.path()).cyan());
+
                 // 获取文件本地路径
                 let client_path = match local.file_to_path(&database, file) {
                     Some(path) if path.exists() => path,
-                    _ => continue,
+                    _ => {
+                        print!("{}", "Not Found.\n".red());
+                        continue
+                    },
                 };
+
+                print!("{}, Changed: ", "Exist".green());
 
                 // 计算当前文件 MD5
                 let current_md5 = match md5_digest(client_path.clone()) {
@@ -79,7 +87,12 @@ impl Command for CommitCommand {
                     _ => false,
                 };
 
-                if !can_commit { continue; }
+                if !can_commit {
+                    print!("{}.\n", "No".red());
+                    continue;
+                } else {
+                    print!("{}, Uploading ...\n", "Changed".green());
+                }
 
                 all_count += 1;
                 let record_file_path = process_path_text(client_path.display().to_string());
