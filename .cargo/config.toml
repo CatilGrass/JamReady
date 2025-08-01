@@ -27,15 +27,14 @@ DEFAULT_SERVER_PORT = { value = "5011" }
 # 路径
 PATH_WORKSPACE_ROOT = { value = ".jam/" }
 PATH_PARAMETERS = { value = ".jam/param/" }
-PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/database_histories/" }
+PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/db_histories/" }
 PATH_DATABASE = { value = "" }
 
 # 文件
-FILE_DATABASE = { value = ".jam/database.yaml" }
-FILE_LOCAL_FILE_MAP = { value = ".jam/files.yaml" }
-FILE_LOCAL_FOLDER_MAP = { value = ".jam/folders.yaml" }
+FILE_DATABASE = { value = ".jam/db.yaml" }
+FILE_LOCAL_FILE_MAP = { value = ".jam/local.yaml" }
+FILE_LOCAL_FOLDER_MAP = { value = ".jam/struct.yaml" }
 FILE_WORKSPACE_SERVER_DATA = { value = ".jam/workspace.yaml" }
-FILE_WORKSPACE_USER_DATA = { value = ".jam/user.yaml" }
 
 # ----- 工作区设置 -----
 

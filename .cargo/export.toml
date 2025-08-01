@@ -10,9 +10,12 @@ gui_executable_files = { raw = "./app/JamReadyApp/JamReadyWorkspace/bin/Release/
 installation_scripts = { raw = "./.cargo/scripts/installation/", target = "./scripts/", files = [
 
     # Windows
+    "_INSTALL_WIN.ps1",
+    "_UNINSTALL_WIN.ps1",
+
+    "completion_script_jam.ps1",
     "install_completions.ps1",
-    "install_cli.ps1",
-    "uninstall_cli.ps1"
+    "install_cli.ps1"
 ] }
 
 # 调试脚本
