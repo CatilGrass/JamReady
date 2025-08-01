@@ -10,7 +10,7 @@ use jam_ready::utils::address_str_parser::parse_address_v4_str;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::parse_colored_text;
-use std::env::args;
+use std::env::{args, current_dir};
 use std::ops::Add;
 
 /// 客户端命令行
@@ -481,6 +481,7 @@ pub async fn client_workspace_main() {
 async fn client_clone() {
     let database = Database::read();
     for file in database.files() {
+        println!("Checking {}", format!("\"{}\"", file.path()).cyan());
         client_execute_command(vec!["view".to_string(), file.path()]).await
     }
 }
@@ -541,12 +542,39 @@ fn client_query(command: ClientQueryCommands) {
         // 列出某个目录下的结构
         ClientQueryCommands::ListDirectory(args) => {
             let folder_map = LocalFolderMap::read();
-            let list = folder_map.folder_files.get(
-                args.value
-                    .trim()
-                    .trim_start_matches("./")
-                    .trim_start_matches("/")
-            );
+            let database = Database::read();
+            let current = args.value
+                .trim()
+                .trim_start_matches("./")
+                .trim_start_matches("/");
+            let list = folder_map.folder_files.get(current);
+            if let Ok(current_dir) = current_dir() {
+                let current_folder = current_dir.join(current);
+                if current_folder.exists() {
+                    if let Ok(dir) = current_folder.read_dir() {
+                        for dir in dir.into_iter() {
+                            if dir.is_err() { continue; }
+                            let dir = dir.unwrap().path();
+                            if let Some(os_name) = dir.file_name() {
+                                if let Some(name) = os_name.to_str() {
+                                    let mut path = format!("{}{}", current, name);
+                                    if dir.is_dir() {
+                                        path = format!("{}/", path);
+                                        if path == env!("PATH_WORKSPACE_ROOT") { continue }
+                                        if ! folder_map.folder_files.contains_key(&path) {
+                                            println!("{}/", name);
+                                        }
+                                    } else {
+                                        if ! database.contains_path(&path) {
+                                            println!("{}", name);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if let Some(list) = list {
                 let mut result_file = "".to_string();
                 let mut result_dir = "".to_string();
