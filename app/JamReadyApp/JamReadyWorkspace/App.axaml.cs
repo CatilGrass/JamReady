@@ -1,10 +1,11 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using JamReadyWorkspace.AppWindows;
 
 namespace JamReadyWorkspace;
 
-public partial class App : Application
+public class App : Application
 {
     public override void Initialize()
     {

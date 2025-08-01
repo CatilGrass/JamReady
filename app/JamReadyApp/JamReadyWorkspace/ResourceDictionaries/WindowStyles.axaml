@@ -1,0 +1,21 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <Style x:Key="DefaultWindowStyle" Selector="Window">
+        <Setter Property="ExtendClientAreaToDecorationsHint" Value="True"></Setter>
+        <Setter Property="ExtendClientAreaChromeHints" Value="NoChrome"></Setter>
+        <Setter Property="ExtendClientAreaTitleBarHeightHint" Value="-1"></Setter>
+        <Setter Property="SystemDecorations" Value="None"></Setter>
+        <Setter Property="Background">
+            <Setter.Value>
+                <SolidColorBrush Color="White" Opacity="0"></SolidColorBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Template>
+                <ContentPresenter/>
+            </Template>
+        </Setter>
+    </Style>
+    
+</ResourceDictionary>
