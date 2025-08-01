@@ -5,7 +5,7 @@ Set-Location ".\debug"
 
 # 启动客户端命令行
 Set-Location ".\client"
-Start-Process cmd.exe
+Start-Process powershell.exe
 
 # 启动服务端
 Set-Location "..\server"
