@@ -15,7 +15,7 @@ release = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "-
 # ------ 项目设置 ------
 
 # 项目版本
-PROJECT_VERSION = { value = "0.1.0" }
+PROJECT_VERSION = { value = "0.1.1" }
 
 # ----- 服务器设置 -----
 

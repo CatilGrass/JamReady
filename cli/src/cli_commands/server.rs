@@ -182,41 +182,41 @@ pub async fn server_workspace_main() {
 
         ServerOperationCommands::Add(op) => {
             match op {
-                ServerOperationTargetCommands::Member(args) => server_add_member(args.member),
-                ServerOperationTargetCommands::Duty(args) => server_add_duty_to_member(args.duties, args.member),
+                ServerOperationTargetCommands::Member(args) => server_add_member(args.member).await,
+                ServerOperationTargetCommands::Duty(args) => server_add_duty_to_member(args.duties, args.member).await,
                 ServerOperationTargetCommands::Debug => {
-                    let mut workspace = Workspace::read();
+                    let mut workspace = Workspace::read().await;
                     if let Some(server) = &mut workspace.server {
                         server.enable_debug_logger = true
                     }
-                    Workspace::update(&workspace);
+                    Workspace::update(&workspace).await;
                 }
             }
         }
         ServerOperationCommands::Remove(op) => {
             match op {
-                ServerOperationTargetCommands::Member(args) => server_remove_member(args.member),
-                ServerOperationTargetCommands::Duty(args) => server_remove_duty_from_member(args.duties, args.member),
+                ServerOperationTargetCommands::Member(args) => server_remove_member(args.member).await,
+                ServerOperationTargetCommands::Duty(args) => server_remove_duty_from_member(args.duties, args.member).await,
                 ServerOperationTargetCommands::Debug => {
-                    let mut workspace = Workspace::read();
+                    let mut workspace = Workspace::read().await;
                     if let Some(server) = &mut workspace.server {
                         server.enable_debug_logger = false
                     }
-                    Workspace::update(&workspace);
+                    Workspace::update(&workspace).await;
                 }
             }
         }
         ServerOperationCommands::List(op) => {
             match op {
-                ServerListCommands::Member => server_list_members()
+                ServerListCommands::Member => server_list_members().await
             }
         }
         ServerOperationCommands::Query(op) => {
             match op {
-                ServerQueryCommands::Duty(args) => server_query_duties_of_member(args.member),
-                ServerQueryCommands::Uuid(args) => server_query_uuid_of_member(args.member),
-                ServerQueryCommands::LoginCode(args) => server_query_login_code(args.member),
-                ServerQueryCommands::Workspace => server_query_workspace(),
+                ServerQueryCommands::Duty(args) => server_query_duties_of_member(args.member).await,
+                ServerQueryCommands::Uuid(args) => server_query_uuid_of_member(args.member).await,
+                ServerQueryCommands::LoginCode(args) => server_query_login_code(args.member).await,
+                ServerQueryCommands::Workspace => server_query_workspace().await,
                 ServerQueryCommands::LocalAddress => print!("{}", get_self_address())
             }
         }
@@ -224,8 +224,8 @@ pub async fn server_workspace_main() {
             match op {
                 ServerSetCommands::Member(op) => {
                     match op {
-                        ServerSetMemberCommands::Duties(args) => server_set_duties_to_member(args.member, args.duties),
-                        ServerSetMemberCommands::Name(args) => server_set_member_name(args)
+                        ServerSetMemberCommands::Duties(args) => server_set_duties_to_member(args.member, args.duties).await,
+                        ServerSetMemberCommands::Name(args) => server_set_member_name(args).await
                     }
                 }
             }
@@ -238,9 +238,9 @@ async fn server_run(args: RunArgs) {
 }
 
 /// 添加成员
-fn server_add_member (member_name: String) {
+async fn server_add_member (member_name: String) {
     let member_name = process_id_text(member_name);
-    let mut workspace = Workspace::read();
+    let mut workspace = Workspace::read().await;
     if let Some(server) = &mut workspace.server {
         for (_uuid, member) in server.members.iter() {
             if member.member_name.trim() == member_name.trim() {
@@ -266,7 +266,7 @@ fn server_add_member (member_name: String) {
             uuid
         );
         println!("Member \"{}\" has been added to the workspace, login code: {}", member_name, login_code);
-        Workspace::update(&mut workspace);
+        Workspace::update(&mut workspace).await;
     }
 }
 
@@ -289,9 +289,9 @@ fn generate_login_code() -> String {
 }
 
 /// 移除成员
-fn server_remove_member(member_name: String) {
+async fn server_remove_member(member_name: String) {
     let member_name = process_id_text(member_name);
-    let mut workspace = Workspace::read();
+    let mut workspace = Workspace::read().await;
     if let Some(server) = &mut workspace.server {
         let mut found = false;
         let mut uuid_to_remove = None;
@@ -317,7 +317,7 @@ fn server_remove_member(member_name: String) {
             let _ = server.member_uuids.remove(&member_name);
             if server.members.remove(&uuid).is_some() {
                 println!("Member \"{}\" has been removed from the workspace", member_name);
-                Workspace::update(&mut workspace);
+                Workspace::update(&mut workspace).await;
             } else {
                 eprintln!("Failed to remove member \"{}\"", member_name);
             }
@@ -328,9 +328,9 @@ fn server_remove_member(member_name: String) {
 }
 
 /// 添加成员职责
-fn server_add_duty_to_member (duty_name: String, member_name: String) {
+async fn server_add_duty_to_member (duty_name: String, member_name: String) {
     let member_name = process_id_text(member_name);
-    let mut workspace = Workspace::read();
+    let mut workspace = Workspace::read().await;
     if let Some(server) = &mut workspace.server {
         for (_, member) in &mut server.members {
             if member.member_name.trim() == member_name.trim() {
@@ -340,7 +340,7 @@ fn server_add_duty_to_member (duty_name: String, member_name: String) {
                         if ! member.member_duties.contains(&duty) {
                             member.add_duty(duty.clone());
                             println!("Added duty \"{:?}\" for member \"{}\"", duty.clone(), member_name);
-                            Workspace::update(&mut workspace);
+                            Workspace::update(&mut workspace).await;
                             return;
                         }
                     }
@@ -355,8 +355,8 @@ fn server_add_duty_to_member (duty_name: String, member_name: String) {
 }
 
 /// 设置成员的职责
-fn server_set_duties_to_member (member_name: String, duties_str: String) {
-    let mut workspace = Workspace::read();
+async fn server_set_duties_to_member (member_name: String, duties_str: String) {
+    let mut workspace = Workspace::read().await;
     if let Some(server) = &mut workspace.server {
 
         // 清除成员职责
@@ -365,25 +365,25 @@ fn server_set_duties_to_member (member_name: String, duties_str: String) {
                 member.member_duties.clear();
             }
         }
-        Workspace::update(&mut workspace);
+        Workspace::update(&mut workspace).await;
     }
 
     // 遍历添加
     for duty_str in duties_str.split(",") {
         let duty_str = duty_str.trim();
-        server_add_duty_to_member(duty_str.to_string(), member_name.clone());
+        server_add_duty_to_member(duty_str.to_string(), member_name.clone()).await;
     }
 }
 
 /// 设置成员的名称
-fn server_set_member_name(args: MemberRenameArgs) {
+async fn server_set_member_name(args: MemberRenameArgs) {
     let old_name = process_id_text(args.old_name);
     let new_name = process_id_text(args.new_name);
     if new_name.is_empty() {
         return;
     }
 
-    let mut workspace = Workspace::read();
+    let mut workspace = Workspace::read().await;
     let mut found_uuid = None;
     if let Some(server) = &mut workspace.server {
 
@@ -409,14 +409,14 @@ fn server_set_member_name(args: MemberRenameArgs) {
         if let Some(uuid) = found_uuid {
             server.member_uuids.insert(new_name, uuid);
         }
-        Workspace::update(&mut workspace);
+        Workspace::update(&mut workspace).await;
     }
 }
 
 /// 移除成员职责
-fn server_remove_duty_from_member (duty_name: String, member_name: String) {
+async fn server_remove_duty_from_member (duty_name: String, member_name: String) {
     let member_name = process_id_text(member_name);
-    let mut workspace = Workspace::read();
+    let mut workspace = Workspace::read().await;
     if let Some(server) = &mut workspace.server {
         for (_, member) in &mut server.members {
             if member.member_name.trim() == member_name.trim() {
@@ -426,7 +426,7 @@ fn server_remove_duty_from_member (duty_name: String, member_name: String) {
                         if member.member_duties.contains(&duty) {
                             member.remove_duty(duty.clone());
                             println!("Removed duty \"{:?}\" from member \"{}\"", duty.clone(), member_name);
-                            Workspace::update(&mut workspace);
+                            Workspace::update(&mut workspace).await;
                             return;
                         }
                     }
@@ -477,8 +477,8 @@ fn search_duty_by_str (input: String) -> Result<MemberDuty, Option<MemberDuty>> 
 }
 
 /// 列出成员
-fn server_list_members () {
-    let workspace = Workspace::read();
+async fn server_list_members () {
+    let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {
         let mut result : String = "".to_string();
         for (_uuid, member) in server.members {
@@ -489,9 +489,9 @@ fn server_list_members () {
 }
 
 /// 列出成员的职责
-fn server_query_duties_of_member (member_name: String) {
+async fn server_query_duties_of_member (member_name: String) {
     let member_name = process_id_text(member_name);
-    let workspace = Workspace::read();
+    let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {
         for (_uuid, member) in server.members {
             if member.member_name.trim() == member_name {
@@ -507,9 +507,9 @@ fn server_query_duties_of_member (member_name: String) {
 }
 
 /// 查询成员的 Uuid
-fn server_query_uuid_of_member (member_name: String) {
+async fn server_query_uuid_of_member (member_name: String) {
     let member_name = process_id_text(member_name);
-    let workspace = Workspace::read();
+    let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {
         for (uuid, member) in server.members {
             if member.member_name.trim() == member_name {
@@ -521,9 +521,9 @@ fn server_query_uuid_of_member (member_name: String) {
 }
 
 /// 查询成员的 登录代码
-fn server_query_login_code(member_name: String) {
+async fn server_query_login_code(member_name: String) {
     let member_name = process_id_text(member_name);
-    let workspace = Workspace::read();
+    let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {
         for (code, uuid) in server.login_code_map {
             if let Some(member_uuid) = server.member_uuids.get(&member_name) {
@@ -536,8 +536,8 @@ fn server_query_login_code(member_name: String) {
 }
 
 /// 查询工作区名称
-fn server_query_workspace() {
-    let workspace = Workspace::read();
+async fn server_query_workspace() {
+    let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {
         print!("{}", server.workspace_name);
     }

@@ -4,6 +4,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::net::TcpStream;
+use tokio::time::Instant;
 
 const CHUNK_SIZE: usize = 8 * 1024;
 
@@ -49,6 +50,9 @@ pub async fn send_file(
     let mut reader = BufReader::with_capacity(CHUNK_SIZE, &mut file);
     let mut bytes_sent = 0;
 
+    let mut last_update = Instant::now();
+    let mut last_bytes = 0;
+
     while bytes_sent < file_size {
         let buffer = reader.fill_buf().await?;
         if buffer.is_empty() { break; }
@@ -58,7 +62,14 @@ pub async fn send_file(
         reader.consume(chunk_size);
 
         bytes_sent += chunk_size as u64;
-        progress_bar.set_position(bytes_sent);
+
+        if bytes_sent - last_bytes >= 256 * 1024 ||
+            last_update.elapsed() >= Duration::from_millis(350)
+        {
+            progress_bar.set_position(bytes_sent);
+            last_bytes = bytes_sent;
+            last_update = Instant::now();
+        }
     }
 
     // 完整性检查
@@ -138,31 +149,37 @@ pub async fn read_file(
     // 接收文件内容
     let mut buffer = vec![0u8; CHUNK_SIZE];
     let mut bytes_received = 0;
+    let mut buffered_bytes = 0;
+    let mut last_update = Instant::now();
+    let mut last_bytes = 0;
 
     while bytes_received < file_size {
-        // 计算读取的大小
         let read_size = std::cmp::min(
             buffer.len(),
             (file_size - bytes_received) as usize
         );
-
-        // 读取指定大小的数据
         stream.read_exact(&mut buffer[..read_size]).await?;
 
-        // 写入文件
         writer.write_all(&buffer[..read_size]).await?;
         bytes_received += read_size as u64;
-        progress_bar.set_position(bytes_received);
+        buffered_bytes += read_size;
 
-        // 刷新缓冲区
-        if bytes_received % (CHUNK_SIZE as u64 * 10) == 0 {
+        if buffered_bytes >= 256 * 1024 {
             writer.flush().await?;
+            buffered_bytes = 0;
+        }
+
+        if bytes_received - last_bytes >= 256 * 1024 ||
+            last_update.elapsed() >= Duration::from_millis(500)
+        {
+            progress_bar.set_position(bytes_received);
+            last_bytes = bytes_received;
+            last_update = Instant::now();
         }
     }
 
-    // 同步到磁盘
     writer.flush().await?;
-    let file = writer.into_inner(); // 取出内部文件
+    let file = writer.into_inner();
     file.sync_all().await?;
 
     // 完整性检查

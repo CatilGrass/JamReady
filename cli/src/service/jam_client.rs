@@ -13,7 +13,7 @@ use crate::service::service_utils::{read_msg, send_msg};
 
 /// 执行命令
 pub async fn execute(command_input: Vec<String>) {
-    let mut workspace = Workspace::read();
+    let mut workspace = Workspace::read().await;
 
     if let Some(client) = &mut workspace.client {
 
@@ -48,7 +48,7 @@ pub async fn execute(command_input: Vec<String>) {
         }
     }
 
-    Workspace::update(&workspace);
+    Workspace::update(&workspace).await;
 }
 
 async fn try_verify_connection(addr: SocketAddr, client: &mut ClientWorkspace) -> Option<TcpStream> {

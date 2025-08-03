@@ -10,6 +10,7 @@ $AllCommands = @(
     'add','new','create',
     'remove','rm','delete','del',
     'move','mv','rename',
+    'rollback', 'rb', 'restore'
     'get','g','lock',
     'throw','t','unlock','release',
     'view','v','download','dl',
@@ -22,7 +23,8 @@ $VFCommands = @(
     'get','g','lock',
     'throw','t','unlock','release',
     'view','v','download','dl',
-    'move','mv','rename'
+    'move','mv','rename',
+    'rollback', 'rb', 'restore'
 )
 
 $PArgCommands = @('param','set')
@@ -33,7 +35,7 @@ function Get-JamVFCompletions {
         [string] $fragment
     )
 
-    $psi = [System.Diagnostics.ProcessStartInfo]::new('jam.exe', "query ll `"$prefix`"")
+    $psi = [System.Diagnostics.ProcessStartInfo]::new('jam.exe', "query list `"$prefix`"")
     $psi.RedirectStandardOutput    = $true
     $psi.UseShellExecute           = $false
     $psi.StandardOutputEncoding    = [System.Text.Encoding]::UTF8

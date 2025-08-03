@@ -348,6 +348,20 @@ impl VirtualFile {
     }
 
     /// 获得对应的服务端文件
+    pub fn server_path_version(&self, version: u32) -> Option<PathBuf> {
+        match current_dir() {
+            Ok(current) => {
+                if let Some(real) = self.real_histories.get(&version) {
+                    let current = current.join(env!("PATH_DATABASE")).join(real);
+                    return Some(current);
+                }
+                None
+            }
+            Err(_) => None
+        }
+    }
+
+    /// 获得对应的服务端文件
     pub fn server_path_temp(&self, temp_real: String) -> Option<PathBuf> {
         match current_dir() {
             Ok(current) => {
@@ -372,9 +386,25 @@ impl VirtualFile {
         self.real = new_real_path;
     }
 
+    /// 回滚至指定版本
+    pub fn rollback_to_version(&mut self, version: u32) -> bool {
+        if let Some(old_real) = self.real_histories.get(&version) {
+            self.version = version;
+            self.real = old_real.clone();
+
+            // 若不是长期锁，则直接丢弃
+            if !self.is_longer_lock_unchecked() {
+                self.throw_locker();
+            }
+
+            return true;
+        }
+        false
+    }
+
     /// 尝试给成员获得锁 (通过 Uuid)
-    pub fn give_uuid_locker(&mut self, member_uuid: String, longer: bool) -> bool {
-        let workspace = Workspace::read();
+    pub async fn give_uuid_locker(&mut self, member_uuid: String, longer: bool) -> bool {
+        let workspace = Workspace::read().await;
         if let Some(server) = workspace.server {
 
             // 自身为空闲
@@ -400,8 +430,8 @@ impl VirtualFile {
     }
 
     /// 尝试给成员获得锁 (通过 Uuid)
-    pub fn give_locker(&mut self, member: &Member, longer: bool) -> bool {
-        let workspace = Workspace::read();
+    pub async fn give_locker(&mut self, member: &Member, longer: bool) -> bool {
+        let workspace = Workspace::read().await;
         if let Some(server) = workspace.server {
 
             // 自身为空闲
@@ -439,9 +469,9 @@ impl VirtualFile {
     }
 
     /// 获得锁的主人
-    pub fn get_locker_owner(&self) -> Option<(String, Member)> {
+    pub async fn get_locker_owner(&self) -> Option<(String, Member)> {
         if let Lock(uuid) = &self.state {
-            let workspace = Workspace::read();
+            let workspace = Workspace::read().await;
             if let Some(mut server) = workspace.server {
                 if let Some(member) = server.members.remove(uuid.trim()) {
                     return Some((uuid.clone(), member));

@@ -1,75 +1,74 @@
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use tokio::fs;
+use tokio::io::{AsyncReadExt};
 use std::env::current_dir;
-use std::fs::{create_dir_all, File};
-use std::io::{BufReader, Write};
 
+#[async_trait]
 pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
-    type DataType: Serialize + for<'a> Deserialize<'a> + Default;
+    type DataType: Serialize + for<'a> Deserialize<'a> + Default + Send + Sync;
 
     fn relative_path() -> String;
 
     /// 加载
-    fn read() -> Self::DataType where Self: Sized {
-        Self::read_from(Self::relative_path())
+    async fn read() -> Self::DataType
+    where
+        Self: Sized + Send + Sync,
+    {
+        Self::read_from(Self::relative_path()).await
     }
 
-    fn read_from(path: String) -> Self::DataType where Self: Sized {
+    async fn read_from(path: String) -> Self::DataType
+    where
+        Self: Sized + Send + Sync,
+    {
+        let file_path = current_dir().unwrap().join(&path);
 
-        let file = current_dir().unwrap().join(path);
+        // 检查文件是否存在
+        match fs::metadata(&file_path).await {
+            Ok(_) => {
+                // 打开文件
+                let mut file = fs::File::open(&file_path).await.unwrap();
+                let mut contents = String::new();
 
-        // 文件不存在
-        if !file.exists() {
+                // 读取内容
+                file.read_to_string(&mut contents).await.unwrap();
 
-            // 创建新的结构
-            let data = Self::DataType::default();
-
-            // 此处不应当创建目录，应当放入 update 方法
-            // 创建需要的目录
-            // create_paths();
-
-            // 此处不应当写入磁盘，而是直接返回新的值，写入磁盘的操作应放入 update 方法中
-            // // 序列化并写入磁盘
-            // let content = serde_yaml::to_string(&data).unwrap();
-            // if let Ok(mut created) = File::create(&file) {
-            //     created.write_all(content.as_bytes()).unwrap();
-            // }
-
-            // 返回新的值
-            data
-        } else {
-
-            // 文件存在
-            // 加载文件
-            let file = File::open(&file).unwrap();
-            let reader = BufReader::new(file);
-
-            // 反序列化并返回
-            serde_yaml::from_reader(reader).unwrap_or(Self::DataType::default())
+                // 反序列化
+                serde_yaml::from_str(&contents).unwrap_or_default()
+            }
+            Err(_) => {
+                // 文件不存在时返回默认值
+                Self::DataType::default()
+            }
         }
     }
 
-    /// 更新工作区
-    fn update(val: &Self::DataType) where Self: Sized {
-        Self::update_to(val, Self::relative_path())
+    /// 更新
+    async fn update(val: &Self::DataType)
+    where
+        Self: Sized + Send + Sync,
+    {
+        Self::update_to(val, Self::relative_path()).await
     }
 
-    /// 更新工作区
-    fn update_to(val: &Self::DataType, path: String) where Self: Sized {
+    async fn update_to(val: &Self::DataType, path: String)
+    where
+        Self: Sized + Send + Sync,
+    {
+        // 确保目录存在
+        create_paths().await;
 
-        // 加载文件，并序列化成文本
-        let file = current_dir().unwrap().join(path);
-        let content = serde_yaml::to_string(&val).unwrap();
+        let file_path = current_dir().unwrap().join(&path);
+        let contents = serde_yaml::to_string(val).unwrap();
 
-        // 创建需要的目录
-        create_paths();
-
-        // 将序列化的结果存入磁盘
-        let _ = File::create(file).unwrap().write_all(content.as_bytes());
+        // 写入文件
+        fs::write(&file_path, contents).await.unwrap();
     }
 }
 
-/// 创建需要的目录
-fn create_paths () {
+/// 异步创建目录
+async fn create_paths() {
     let paths = vec![
         env!("PATH_WORKSPACE_ROOT"),
         env!("PATH_PARAMETERS"),
@@ -78,6 +77,6 @@ fn create_paths () {
 
     for path in paths {
         let dir = current_dir().unwrap().join(path);
-        create_dir_all(dir).unwrap_or_default();
+        fs::create_dir_all(dir).await.unwrap_or_default();
     }
 }

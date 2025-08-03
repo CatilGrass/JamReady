@@ -5,7 +5,6 @@ authors = [
     "Weicao-CatilGrass (Github)",
     "overlord48677 (Github)"
 ]
-version = "0.1.0"
 edition = "2024"
 
 homepage = "https://github.com/CatilGrass/JamReady"
@@ -26,6 +25,7 @@ toml = "0.9.0"
 
 # 网络、异步
 tokio = { version = "1.46.1", features = ["full"] }
+async-trait = "0.1.88"
 
 # 日志
 log = "0.4.27"
@@ -39,7 +39,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 
 [profile.release]
 opt-level = "z"

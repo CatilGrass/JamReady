@@ -5,8 +5,11 @@ use crate::service::commands::duty_verifier::{verify, verify_duty};
 use crate::service::jam_command::Command;
 use async_trait::async_trait;
 use jam_ready::utils::local_archive::LocalArchive;
+use jam_ready::entry_mutex_async;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tokio::net::TcpStream;
+use tokio::sync::Mutex;
 
 pub struct ArchiveCommand;
 
@@ -22,7 +25,7 @@ impl Command for ArchiveCommand {
 
     async fn remote(
         &self, stream: &mut TcpStream, _args: Vec<&str>,
-        (_uuid, member): (String, &Member), database: &mut Database)
+        (_uuid, member): (String, &Member), database: Arc<Mutex<Database>>)
         -> bool {
 
         // 验证对方是否为 Leader
@@ -39,8 +42,11 @@ impl Command for ArchiveCommand {
 
             // 备份当前版本
             if let Some(path) = path.to_str() {
-                Database::update_to(database, path.to_string());
-                database.clean_histories();
+                entry_mutex_async!(database, |guard| {
+                    Database::update_to(guard, path.to_string()).await;
+                    guard.clean_histories();
+                });
+
                 break;
             }
         }

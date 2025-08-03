@@ -105,6 +105,13 @@ enum ClientCommands {
         about = "[gray](Try to get lock?)[/] Rename, move, or restore virtual file.")]
     Move(MoveArgs),
 
+    // 移动、重命名、或为文件重建映射
+    #[command(
+        visible_alias = "rb",
+        visible_alias = "restore",
+        about = "[gray](Try to get lock?)[/] Rollback virtual file.")]
+    Rollback(RollbackArgs),
+
     // 拿到文件的锁
     #[command(
         visible_alias = "g",
@@ -125,8 +132,8 @@ enum ClientCommands {
         visible_alias = "v",
         visible_alias = "download",
         visible_alias = "dl",
-        about = "Download and view virtual file.")]
-    View(SearchArgs),
+        about = "[gray](Try to get lock?)[/] Download and view virtual file.")]
+    View(ViewArgs),
 
     // 下载所有文件
     #[command(
@@ -295,6 +302,21 @@ struct SearchArgs {
 }
 
 #[derive(Args, Debug)]
+struct ViewArgs {
+
+    // 搜索
+    search: String,
+
+    // 指定查看的版本
+    #[arg(short, long)]
+    version: Option<u32>,
+
+    // 尝试拿到锁定
+    #[arg(long, short = 'g', alias = "lock", alias = "l")]
+    get: bool
+}
+
+#[derive(Args, Debug)]
 struct GetArgs {
 
     // 搜索
@@ -322,6 +344,25 @@ struct MoveArgs {
     // 自动同步工作区
     #[arg(long, short = 'u', alias = "update")]
     update: bool
+}
+
+/// 回滚参数
+#[derive(Args, Debug)]
+struct RollbackArgs {
+
+    // 搜索
+    search: String,
+
+    // 回滚的版本
+    version: u32,
+
+    // 尝试拿到锁定
+    #[arg(long, short = 'g', alias = "lock")]
+    get: bool,
+
+    // 完成后将该文件回滚到老版本
+    #[arg(long, short = 'b')]
+    back: bool,
 }
 
 #[derive(Args, Debug)]
@@ -373,7 +414,7 @@ pub async fn client_workspace_main() {
         ClientCommands::Help => client_print_helps(),
 
         // 查询
-        ClientCommands::Query(command) => client_query(command),
+        ClientCommands::Query(command) => client_query(command).await,
 
         // 重定向至工作区
         ClientCommands::Redirect(args) => client_redirect(args).await,
@@ -430,6 +471,20 @@ pub async fn client_workspace_main() {
             }
         },
 
+        // 回滚文件
+        ClientCommands::Rollback(args) => {
+            if args.get {
+                // 获得文件的锁
+                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
+            }
+            // 回滚版本
+            client_execute_command(vec!["file".to_string(), "rollback".to_string(), (&args.search).clone(), (&args.version).to_string()]).await;
+
+            if args.back {
+                client_execute_command(vec!["view".to_string(), args.search, args.version.to_string()]).await;
+            }
+        }
+
         // 获得锁
         ClientCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
 
@@ -437,7 +492,18 @@ pub async fn client_workspace_main() {
         ClientCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
 
         // 查看锁
-        ClientCommands::View(args) => client_execute_command(vec!["view".to_string(), args.search]).await,
+        ClientCommands::View(args) => {
+            if let Some(version) = args.version {
+                client_execute_command(vec!["view".to_string(), (&args.search).clone(), version.to_string()]).await;
+            } else {
+                client_execute_command(vec!["view".to_string(), (&args.search).clone()]).await;
+            }
+
+            if args.get {
+                // 获得文件的锁
+                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
+            }
+        },
 
         // 参数
         ClientCommands::Param(args) => {
@@ -479,7 +545,7 @@ pub async fn client_workspace_main() {
 
 /// 将所有文件克隆到本地
 async fn client_clone() {
-    let database = Database::read();
+    let database = Database::read().await;
     for file in database.files() {
         println!("Checking {}", format!("\"{}\"", file.path()).cyan());
         client_execute_command(vec!["view".to_string(), file.path()]).await
@@ -488,7 +554,7 @@ async fn client_clone() {
 
 /// 重定向
 async fn client_redirect(args: RedirectArgs) {
-    let mut workspace = Workspace::read();
+    let mut workspace = Workspace::read().await;
 
     if let Some(client) = &mut workspace.client {
 
@@ -508,7 +574,7 @@ async fn client_redirect(args: RedirectArgs) {
                 println!("Changed target address to {}", &client.target_addr);
 
                 // 并保存工作区信息
-                Workspace::update(&workspace);
+                Workspace::update(&workspace).await;
                 return;
             }
             // 失败则继续工作区的查询
@@ -528,7 +594,7 @@ async fn client_redirect(args: RedirectArgs) {
             println!("Redirected {} to {}.", client.workspace_name, addr);
 
             // 并保存工作区信息
-            Workspace::update(&workspace);
+            Workspace::update(&workspace).await;
             return;
         }
     }
@@ -536,13 +602,13 @@ async fn client_redirect(args: RedirectArgs) {
 }
 
 /// 客户端查询
-fn client_query(command: ClientQueryCommands) {
+async fn client_query(command: ClientQueryCommands) {
     match command {
 
         // 列出某个目录下的结构
         ClientQueryCommands::ListDirectory(args) => {
-            let folder_map = LocalFolderMap::read();
-            let database = Database::read();
+            let folder_map = LocalFolderMap::read().await;
+            let database = Database::read().await;
             let current = args.value
                 .trim()
                 .trim_start_matches("./")
@@ -598,7 +664,7 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询虚拟文件的Uuid
         ClientQueryCommands::FileUuid(args) => {
-            let database = Database::read();
+            let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(uuid) = database.uuid_of_path(file.path()) {
                     println!("{}", uuid);
@@ -608,7 +674,7 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询虚拟文件的版本
         ClientQueryCommands::FileVersion(args) => {
-            let database = Database::read();
+            let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 println!("{}", file.version())
             }
@@ -616,7 +682,7 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询虚拟文件的路径
         ClientQueryCommands::FilePath(args) => {
-            let database = Database::read();
+            let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 println!("{}", file.path())
             }
@@ -624,7 +690,7 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询虚拟文件的名称
         ClientQueryCommands::FileName(args) => {
-            let database = Database::read();
+            let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 println!("{}", process_path(file.path().as_str()))
             }
@@ -632,8 +698,8 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询虚拟文件的锁定状态
         ClientQueryCommands::FileLockStatus(args) => {
-            let database = Database::read();
-            let workspace = Workspace::read();
+            let database = Database::read().await;
+            let workspace = Workspace::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(locker_owner) = file.get_locker_owner_uuid() {
                     if locker_owner == workspace.client.unwrap().uuid {
@@ -657,23 +723,23 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询自己的Uuid
         ClientQueryCommands::SelfUuid => {
-            println!("{}", Workspace::read().client.unwrap().uuid);
+            println!("{}", Workspace::read().await.client.unwrap().uuid);
         }
 
         // 查询目标工作区地址
         ClientQueryCommands::TargetAddress => {
-            println!("{}", Workspace::read().client.unwrap().target_addr);
+            println!("{}", Workspace::read().await.client.unwrap().target_addr);
         }
 
         // 查询目标工作区名称
         ClientQueryCommands::Workspace => {
-            println!("{}", Workspace::read().client.unwrap().workspace_name);
+            println!("{}", Workspace::read().await.client.unwrap().workspace_name);
         }
 
         // 查询虚拟文件是否在本地
         ClientQueryCommands::ContainLocal(args) => {
-            let database = Database::read();
-            let local = LocalFileMap::read();
+            let database = Database::read().await;
+            let local = LocalFileMap::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(uuid) = database.uuid_of_path(file.path()) {
                     if let Some(_) = local.file_paths.get(uuid.as_str()) {
@@ -687,8 +753,8 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询本地文件映射的虚拟文件
         ClientQueryCommands::LocalToRemote(args) => {
-            let database = Database::read();
-            let local = LocalFileMap::read();
+            let database = Database::read().await;
+            let local = LocalFileMap::read().await;
             if let Some(uuid) = local.local_path_to_uuid(args.value.trim().to_string()) {
                 if let Some(file) = database.search_file(uuid.trim().to_string()) {
                     if file.path().is_empty() {
@@ -702,8 +768,8 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询虚拟文件映射的本地文件
         ClientQueryCommands::RemoteToLocal(args) => {
-            let database = Database::read();
-            let local = LocalFileMap::read();
+            let database = Database::read().await;
+            let local = LocalFileMap::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(local_file) = local.search_to_local(&database, file.path()) {
                     println!("{}", local_file.local_path)
@@ -713,8 +779,8 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询本地文件是否被更改
         ClientQueryCommands::Changed(args) => {
-            let database = Database::read();
-            let local = LocalFileMap::read();
+            let database = Database::read().await;
+            let local = LocalFileMap::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(local_file) = local.search_to_local(&database, file.path()) {
                     let local_digest = &local_file.local_digest;
@@ -740,8 +806,8 @@ fn client_query(command: ClientQueryCommands) {
 
         // 查询本地文件的版本号
         ClientQueryCommands::LocalVersion(args) => {
-            let database = Database::read();
-            let local = LocalFileMap::read();
+            let database = Database::read().await;
+            let local = LocalFileMap::read().await;
             if let Some(local_file) = local.search_to_local(&database, args.value.trim().to_string()) {
                 println!("{}", local_file.local_version);
             }
