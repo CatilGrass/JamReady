@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 use std::env::current_dir;
+use std::sync::Arc;
 use async_trait::async_trait;
 use colored::Colorize;
 use tokio::net::TcpStream;
+use tokio::sync::Mutex;
 use walkdir::WalkDir;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::process_path_text;
@@ -24,11 +26,11 @@ impl Command for ShowFileStructCommand {
         sync_local(stream).await;
 
         // 读取本地同步的树
-        let database = Database::read();
-        let local = LocalFileMap::read();
+        let database = Database::read().await;
+        let local = LocalFileMap::read().await;
         let mut paths = Vec::new();
 
-        if let Some(client) = Workspace::read().client {
+        if let Some(client) = Workspace::read().await.client {
             for file in database.files() {
 
                 // 本地文件
@@ -94,9 +96,20 @@ impl Command for ShowFileStructCommand {
 
             for path in get_all_file_paths() {
                 if path.starts_with(env!("PATH_WORKSPACE_ROOT")) { continue }
-                if let None = local.file_uuids.get(&path) {
-                    let mut info = format!("{}", &path);
-                    info = format!("{} {}", info, "[Untracked]".red());
+                if let Some(uuid) = local.file_uuids.get(&path) {
+                    if let Some(file) = database.file_with_uuid(uuid.clone()) {
+                        if file.path() != path {
+                            if file.path() == "" {
+                                let info = format!("{} {} {}", &path, "[Removed]".red(), uuid.red());
+                                paths.push(info);
+                                continue;
+                            }
+                            let info = format!("{} {}", &path, "[Moved]".yellow());
+                            paths.push(info);
+                        }
+                    }
+                } else {
+                    let info = format!("{} {}", &path, "[Untracked]".cyan());
                     paths.push(info);
                 }
             }
@@ -106,10 +119,10 @@ impl Command for ShowFileStructCommand {
         print!("{}", show_tree(paths));
     }
 
-    async fn remote(&self, stream: &mut TcpStream, _args: Vec<&str>, _member: (String, &Member), database: &mut Database) -> bool {
+    async fn remote(&self, stream: &mut TcpStream, _args: Vec<&str>, _member: (String, &Member), _database: Arc<Mutex<Database>>) -> bool {
 
         // 发送数据
-        sync_remote(stream, database).await;
+        sync_remote(stream).await;
         false
     }
 }

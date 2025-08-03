@@ -101,7 +101,7 @@ where for<'a> Message: Serialize + Deserialize<'a> + Default + Debug
 pub async fn read_large_msg<Message>(
     stream: &mut TcpStream,
     progress_bar: Option<ProgressBar>
-) -> Result<Message, Box<dyn std::error::Error>>
+) -> Result<Message, Box<dyn std::error::Error + Send>>
 where
         for<'a> Message: Serialize + Deserialize<'a> + Default + Debug
 {

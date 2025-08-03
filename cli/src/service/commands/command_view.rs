@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
 use crate::data::database::Database;
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
@@ -11,6 +12,7 @@ use async_trait::async_trait;
 use jam_ready::utils::local_archive::LocalArchive;
 use tokio::net::TcpStream;
 use tokio::select;
+use tokio::sync::Mutex;
 use tokio::time::sleep;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::text_process::process_path_text;
@@ -26,13 +28,16 @@ impl Command for ViewCommand {
 
         // 同步数据库
         sync_local(stream).await;
-        let database = Database::read();
+        let database = Database::read().await;
 
         // 加载本地映射表
-        let mut local = LocalFileMap::read();
+        let mut local = LocalFileMap::read().await;
 
         // 检查参数数量
         if args.len() < 2 { return; } // <搜索>
+
+        // 检查是否存在指定版本号 <搜索> <版本>
+        let view_version = if args.len() < 3 { "0" } else { args[2] };
 
         // 成功状态
         let mut success = false;
@@ -48,10 +53,12 @@ impl Command for ViewCommand {
                 // 是否准备就绪
                 let mut ready = true;
 
-                // 如果文件存在且版本大于或等于服务端的版本，则不下载
+                // 如果文件存在且版本大于或等于服务端的版本，且指定版本为 0 (最新版)，则不下载
                 if let Some(local_uuid) = database.uuid_of_path(file.path()) {
                     if let Some(local_file) = local.file_paths.get(&local_uuid) {
-                        if local_file.local_version >= file.version() && client_path.exists() {
+                        if local_file.local_version >= file.version() && client_path.exists()
+                            && view_version == "0" {
+
                             // 发送 "未就绪"
                             send_msg(stream, &ClientMessage::NotReady).await;
                             ready = false;
@@ -81,7 +88,11 @@ impl Command for ViewCommand {
                             if let Some(uuid) = database.uuid_of_path(file.path()) {
                                 local.file_paths.insert(uuid.clone(), LocalFile {
                                     local_path: local_path_str.clone(),
-                                    local_version: file.version(),
+                                    local_version: if let Ok(version) = u32::from_str(view_version) {
+                                        if version == 0 { file.version() } else { version }
+                                    } else {
+                                        file.version()
+                                    },
                                     local_digest: md5_digest(client_path).unwrap_or("".to_string()),
                                 });
                                 local.file_uuids.insert(local_path_str, uuid.clone());
@@ -119,16 +130,21 @@ impl Command for ViewCommand {
             eprintln!("Err: {}", print_msg);
         }
 
-        LocalFileMap::update(&local);
+        LocalFileMap::update(&local).await;
     }
 
-    async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, (_uuid, _member): (String, &Member), database: &mut Database) -> bool {
+    async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, (_uuid, _member): (String, &Member), _database: Arc<Mutex<Database>>) -> bool {
 
         // 首先同步数据库
-        sync_remote(stream, database).await;
+        sync_remote(stream).await;
+
+        let database = Database::read().await;
 
         // 检查参数数量
         if args.len() < 2 { return false; } // <搜索>
+
+        // 检查是否存在指定版本号 <搜索> <版本>
+        let view_version = if args.len() < 3 { "0" } else { args[2] };
 
         // 确认客户端的准备状态
         let read_message: ClientMessage = read_msg(stream).await;
@@ -139,11 +155,24 @@ impl Command for ViewCommand {
 
         match read_message {
             ClientMessage::Ready => {
+
                 // 文件路径
                 let file_path_str = args[1].to_string();
                 let file = database.search_file(file_path_str.clone());
                 if let Some(file) = file {
-                    if let Some(server_path) = file.server_path() {
+
+                    // 获得文件的实际地址
+                    let real = if view_version == "0" {
+                        file.server_path()
+                    } else {
+                        if let Ok(version) = u32::from_str(view_version) {
+                            file.server_path_version(version)
+                        } else {
+                            None
+                        }
+                    };
+
+                    if let Some(server_path) = real {
                         match send_file(stream, server_path).await {
                             Ok(_) => {
                                 success = true;

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 use crate::data::database::Database;
 use crate::data::member::Member;
@@ -10,6 +11,7 @@ use log::{info};
 use jam_ready::utils::local_archive::LocalArchive;
 use tokio::net::TcpStream;
 use tokio::select;
+use tokio::sync::Mutex;
 use tokio::time::sleep;
 use uuid::Uuid;
 use jam_ready::utils::file_digest::md5_digest;
@@ -28,8 +30,8 @@ impl Command for CommitCommand {
     async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) {
         // 同步数据库
         sync_local(stream).await;
-        let database = Database::read();
-        let mut local = LocalFileMap::read();
+        let database = Database::read().await;
+        let mut local = LocalFileMap::read().await;
 
         // 计数器
         let mut all_count = 0;
@@ -40,7 +42,7 @@ impl Command for CommitCommand {
         let mut failed_files = Vec::new();
 
         // 加载工作区
-        let workspace = Workspace::read();
+        let workspace = Workspace::read().await;
         if let Some(client) = workspace.client {
             // 寻找数据库内自己锁定的文件
             for file in database.files() {
@@ -120,7 +122,7 @@ impl Command for CommitCommand {
                                     });
                                     local.file_uuids.insert(file.path().to_string(), uuid);
                                 }
-                                LocalFileMap::update(&local);
+                                LocalFileMap::update(&local).await;
                             }
                         } else {
                             failed_files.push(record_file_path);
@@ -166,18 +168,18 @@ impl Command for CommitCommand {
         stream: &mut TcpStream,
         args: Vec<&str>,
         (uuid, _member): (String, &Member),
-        database: &mut Database
+        _database: Arc<Mutex<Database>>
     ) -> bool {
         let mut changed = false;
         let commit_description = args.get(1).unwrap_or(&"Update");
 
         // 同步数据库
-        sync_remote(stream, database).await;
+        sync_remote(stream).await;
 
         loop {
             select! {
-                // 3秒超时
-                _ = sleep(Duration::from_secs(3)) => break,
+                // 60 秒超时
+                _ = sleep(Duration::from_secs(60)) => break,
 
                 // 处理消息
                 msg = read_msg::<ClientMessage>(stream) => {
@@ -186,8 +188,10 @@ impl Command for CommitCommand {
                     }
 
                     if let Text(path) = msg {
+
                         // 查找文件
-                        if let Some(file) = database.file_mut(path) {
+                        if let Some(file) = Database::read().await.file_mut(path) {
+
                             // 检查锁定状态
                             let is_locked_by_client = file.get_locker_owner_uuid()
                                 .map(|owner| owner.trim() == uuid.trim())

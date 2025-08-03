@@ -29,7 +29,7 @@ pub async fn jam_server_entry(
 ) {
 
     // 构建日志，尝试获得工作区名称
-    let workspace = Workspace::read();
+    let workspace = Workspace::read().await;
     let mut workspace_name = "Workspace";
 
     if let Some(server) = &workspace.server {
@@ -56,7 +56,7 @@ pub async fn jam_server_entry(
     let commands = Arc::new(commands);
 
     // 构建数据库
-    let database = Arc::new(Mutex::new(Database::read()));
+    let database = Arc::new(Mutex::new(Database::read().await));
     info!("Database loaded!");
 
     // 构建信号
@@ -104,7 +104,7 @@ pub async fn jam_server_entry(
             Some(result) = write_rx.recv() => {
                 if result {
                     entry_mutex_async!(database_write, |guard| {
-                        Database::update(guard);
+                        Database::update(guard).await;
                     });
                 }
             }
@@ -142,7 +142,7 @@ async fn process_connection (
     if let Verify(login_code) = message {
 
         // 尝试拿到工作区数据
-        let workspace = Workspace::read();
+        let workspace = Workspace::read().await;
         if let Some(server) = workspace.server {
 
             // 通过 登录代码 拿到 Uuid
@@ -201,12 +201,9 @@ async fn process_member_command (
     if let ClientMessage::Command(args_input) = command {
         let args: Vec<&str> = args_input.iter().map(String::as_str).collect();
 
-        // 进入命令
-        entry_mutex_async!(database, |database_guard| {
-            let changed = execute_remote_command(command_registry.as_ref(), stream, args, (uuid, member), database_guard).await;
-            if changed {
-                let _ = sender.send(true);
-            }
-        })
+        let changed = execute_remote_command(command_registry.as_ref(), stream, args, (uuid, member), database.clone()).await;
+        if changed {
+            let _ = sender.send(true);
+        }
     }
 }

@@ -10,7 +10,9 @@ use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 use std::env::current_dir;
+use std::sync::Arc;
 use tokio::net::TcpStream;
+use tokio::sync::Mutex;
 
 pub struct UpdateCommand;
 
@@ -24,7 +26,7 @@ impl Command for UpdateCommand {
         println!("Ok: Sync database.");
 
         // 将本地文件结构和远程同步
-        Self::sync_file_struct();
+        Self::sync_file_struct().await;
         println!("Ok: Sync file struct.");
 
         // 删除本地目录下所有的空文件夹
@@ -40,10 +42,10 @@ impl Command for UpdateCommand {
     async fn remote(
         &self,
         stream: &mut TcpStream, _args: Vec<&str>,
-        (_uuid, _member): (String, &Member), database: &mut Database) -> bool {
+        (_uuid, _member): (String, &Member), _database: Arc<Mutex<Database>>) -> bool {
 
         // 同步数据库
-        sync_remote_with_progress(stream, database).await;
+        sync_remote_with_progress(stream).await;
         false
     }
 }
@@ -51,11 +53,11 @@ impl Command for UpdateCommand {
 impl UpdateCommand {
 
     /// 将本地文件结构和远程同步
-    fn sync_file_struct() {
+    async fn sync_file_struct() {
 
         // 本地文件和数据库
-        let database = Database::read();
-        let mut local = LocalFileMap::read();
+        let database = Database::read().await;
+        let mut local = LocalFileMap::read().await;
 
         // 标记成功的 Uuid
         let mut success_uuid = Vec::new();
@@ -125,7 +127,7 @@ impl UpdateCommand {
             }
         }
 
-        LocalFileMap::update(&local);
+        LocalFileMap::update(&local).await;
     }
 
     fn move_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
