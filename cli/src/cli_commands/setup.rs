@@ -174,10 +174,10 @@ async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace)
     println!("Client workspace has been established");
 
     // 写入
-    Workspace::update(&mut workspace);
+    Workspace::update(&mut workspace).await;
 
     // 开始构建本地映射表
-    LocalFileMap::update(&LocalFileMap::read());
+    LocalFileMap::update(&LocalFileMap::read().await).await;
 
     // 隐藏 .jam 文件夹
     let jam_folder = current_dir().unwrap().join(env!("PATH_WORKSPACE_ROOT"));
@@ -201,7 +201,7 @@ async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace)
     println!("Server workspace has been established");
 
     // 写入
-    Workspace::update(&mut workspace);
+    Workspace::update(&mut workspace).await;
 
     // 隐藏 .jam 文件夹
     let jam_folder = current_dir().unwrap().join(env!("PATH_WORKSPACE_ROOT"));
@@ -211,7 +211,7 @@ async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace)
 pub async fn cli_entry() {
 
     // 加载工作区
-    let workspace = Workspace::read();
+    let workspace = Workspace::read().await;
 
     // 初始化颜色库
     colored::control::set_virtual_terminal(true).unwrap();
