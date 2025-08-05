@@ -13,6 +13,8 @@ use std::env::current_dir;
 use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
+use jam_ready::entry_mutex_async;
+use jam_ready::utils::file_operation::move_file;
 
 pub struct UpdateCommand;
 
@@ -42,11 +44,12 @@ impl Command for UpdateCommand {
     async fn remote(
         &self,
         stream: &mut TcpStream, _args: Vec<&str>,
-        (_uuid, _member): (String, &Member), _database: Arc<Mutex<Database>>) -> bool {
+        (_uuid, _member): (String, &Member), database: Arc<Mutex<Database>>) {
 
         // 同步数据库
-        sync_remote_with_progress(stream).await;
-        false
+        entry_mutex_async!(database, |guard| {
+            sync_remote_with_progress(stream, guard).await;
+        });
     }
 }
 
@@ -81,7 +84,7 @@ impl UpdateCommand {
                         let to_str = process_path_text(to.display().to_string());
 
                         // 开始处理文件移动
-                        match Self::move_file(&from, &to) {
+                        match move_file(&from, &to) {
                             Ok(_) => {
                                 println!("Ok: Move {} to {}", from_str, to_str);
                                 success_uuid.push(uuid.clone());
@@ -128,36 +131,6 @@ impl UpdateCommand {
         }
 
         LocalFileMap::update(&local).await;
-    }
-
-    fn move_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
-        // 检查源文件是否存在
-        if !from.exists() {
-            return Err(Error::new(
-                ErrorKind::NotFound,
-                format!("Source file '{}' does not exist", from.display())
-            ));
-        }
-
-        // 检查目标文件是否已存在
-        if to.exists() {
-            return Err(Error::new(
-                ErrorKind::AlreadyExists,
-                format!("Destination file '{}' already exists", to.display())
-            ));
-        }
-
-        // 确保目标目录存在，如果不存在则创建
-        if let Some(parent) = to.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)?;
-            }
-        }
-
-        // 执行文件移动
-        fs::rename(&from, &to)?;
-
-        Ok(())
     }
 
     /// 删除所有空文件夹

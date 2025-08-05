@@ -25,11 +25,10 @@ impl Command for ArchiveCommand {
 
     async fn remote(
         &self, stream: &mut TcpStream, _args: Vec<&str>,
-        (_uuid, member): (String, &Member), database: Arc<Mutex<Database>>)
-        -> bool {
+        (_uuid, member): (String, &Member), database: Arc<Mutex<Database>>) {
 
         // 验证对方是否为 Leader
-        if ! verify_duty(stream, member, Leader).await { return false; }
+        if ! verify_duty(stream, member, Leader).await { return; }
 
         // 服务端直接执行归档
         let mut i = 0;
@@ -51,6 +50,8 @@ impl Command for ArchiveCommand {
             }
         }
 
-        true
+        entry_mutex_async!(database, |guard| {
+            Database::update(guard).await;
+        });
     }
 }

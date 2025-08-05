@@ -14,6 +14,7 @@ use tokio::select;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 use uuid::Uuid;
+use jam_ready::entry_mutex_async;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::text_process::process_path_text;
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
@@ -168,13 +169,15 @@ impl Command for CommitCommand {
         stream: &mut TcpStream,
         args: Vec<&str>,
         (uuid, _member): (String, &Member),
-        _database: Arc<Mutex<Database>>
-    ) -> bool {
+        database: Arc<Mutex<Database>>
+    ) {
         let mut changed = false;
         let commit_description = args.get(1).unwrap_or(&"Update");
 
         // 同步数据库
-        sync_remote(stream).await;
+        entry_mutex_async!(database, |guard| {
+            sync_remote(stream, guard).await;
+        });
 
         loop {
             select! {
@@ -189,8 +192,14 @@ impl Command for CommitCommand {
 
                     if let Text(path) = msg {
 
+                        let pack;
+
                         // 查找文件
-                        if let Some(file) = Database::read().await.file_mut(path) {
+                        entry_mutex_async!(database, |guard| {
+                            let Some(file) = guard.file_mut(path.clone()) else {
+                                send_msg(stream, &Deny("Virtual file not found.".to_string())).await;
+                                continue;
+                            };
 
                             // 检查锁定状态
                             let is_locked_by_client = file.get_locker_owner_uuid()
@@ -206,11 +215,25 @@ impl Command for CommitCommand {
                             let real_file_uuid = Uuid::new_v4().to_string();
 
                             // 获取服务器路径
-                            if let Some(real_path) = file.server_path_temp(real_file_uuid.clone()) {
+                            if let Some(path) = file.server_path_temp(real_file_uuid.clone()) {
                                 send_msg(stream, &Pass).await;
+                                pack = Some((path.clone(), real_file_uuid.clone()));
+                            } else {
+                                send_msg(stream, &Deny("Cannot get server file path.".to_string())).await;
+                                continue;
+                            }
+                        });
 
-                                // 接收文件
-                                if read_file(stream, real_path.clone()).await.is_ok() {
+                        if let Some((real_path, real_file_uuid)) = pack {
+
+                            // 接收文件
+                            if read_file(stream, real_path.clone()).await.is_ok() {
+
+                                entry_mutex_async!(database, |guard| {
+                                    let Some(file) = guard.file_mut(path) else {
+                                        continue;
+                                    };
+
                                     // 更新文件
                                     file.update(real_file_uuid, commit_description.to_string());
                                     info!("Update file {}: \"{}\"", file.path(), commit_description);
@@ -219,10 +242,10 @@ impl Command for CommitCommand {
                                     if !file.is_longer_lock_unchecked() {
                                         file.throw_locker();
                                     }
+                                });
 
-                                    changed = true;
-                                    continue;
-                                }
+                                changed = true;
+                                continue;
                             }
                         }
 
@@ -233,6 +256,10 @@ impl Command for CommitCommand {
             }
         }
 
-        changed
+        if changed {
+            entry_mutex_async!(database, |guard| {
+                Database::update(guard).await;
+            });
+        }
     }
 }
