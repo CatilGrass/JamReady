@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::io::ErrorKind;
 use indicatif::{ProgressBar, ProgressStyle};
-use log::{error, info, trace, warn};
+use log::{error, trace, warn};
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use tokio::io;
@@ -283,9 +283,6 @@ pub fn get_self_address_with_port_str(port: &str) -> String {
     let mut address: String = format!("127.0.0.1:{}", &port);
     if let Some(ip) = local_ipaddress::get() {
         address = format!("{}:{}", ip, &port);
-        info!("Bind address: {}", &address);
-    } else {
-        info!("Bind address: 127.0.0.1:{}", &port);
     }
     address
 }
