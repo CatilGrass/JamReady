@@ -5,8 +5,12 @@ version.workspace = true
 
 [dependencies]
 jam_ready = { path = "../../JamReady" }
+clearscreen = "4.0.2"
 colored = "3.0.0"
 walkdir = "2.5.0"
+
+# 系统信息
+sysinfo = "0.36.1"
 
 # 命令行
 clap = { version = "4.5.38", features = ["derive"] }
