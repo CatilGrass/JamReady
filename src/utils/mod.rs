@@ -8,3 +8,4 @@ pub mod marcos;
 pub mod service_runner;
 pub mod file_digest;
 pub mod hide_folder;
+pub mod file_operation;
