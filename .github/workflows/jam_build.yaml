@@ -15,29 +15,30 @@ jobs:
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: jam-x86_64-pc-windows-msvc.exe
+            ext: .exe
           - os: windows-latest
             target: aarch64-pc-windows-msvc
-            artifact_name: jam-aarch64-pc-windows-msvc.exe
+            ext: .exe
 
           # Linux
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            artifact_name: jam-x86_64-unknown-linux-musl
+            ext: ""
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            artifact_name: jam-aarch64-unknown-linux-musl
+            ext: ""
 
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: jam-x86_64-apple-darwin
+            ext: ""
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: jam-aarch64-apple-darwin
+            ext: ""
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -46,28 +47,23 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Install musl-tools (Linux)
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Install musl-tools (Linux only)
         if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Rename binary
         run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools
-          rustup target add ${{ matrix.target }}
+          BINARY_NAME="jam${{ matrix.ext }}"
+          mv target/${{ matrix.target }}/release/$BINARY_NAME jam-${{ matrix.target }}${{ matrix.ext }}
 
-      - name: Build with release profile
-        run: cargo build --workspace --profile release --target ${{ matrix.target }}
-
-      - name: Rename Windows executables
-        if: ${{ contains(matrix.target, 'windows') }}
-        run: |
-          mv target/${{ matrix.target }}/release/jam.exe "${{ matrix.artifact_name }}"
-
-      - name: Rename non-Windows executables
-        if: ${{ !contains(matrix.target, 'windows') }}
-        run: |
-          mv target/${{ matrix.target }}/release/jam "${{ matrix.artifact_name }}"
-
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}
+          name: jam-${{ matrix.target }}${{ matrix.ext }}
+          path: jam-${{ matrix.target }}${{ matrix.ext }}
