@@ -63,7 +63,7 @@ jobs:
           mv target/${{ matrix.target }}/release/$BINARY_NAME jam-${{ matrix.target }}${{ matrix.ext }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: jam-${{ matrix.target }}${{ matrix.ext }}
           path: jam-${{ matrix.target }}${{ matrix.ext }}
