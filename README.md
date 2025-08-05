@@ -85,7 +85,7 @@ jam set jump_beh "Scripts/CharacterMovement/JumpBehaviour.cs"
 jam v jump_beh? -v 1
 
 # 将远端版本回滚至更早的版本
-jam rb jump_beh 1 -g
+jam rb jump_beh? 1 -g
 ```
 
 
