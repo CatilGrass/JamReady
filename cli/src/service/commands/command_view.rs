@@ -14,6 +14,7 @@ use tokio::net::TcpStream;
 use tokio::select;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
+use jam_ready::entry_mutex_async;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::text_process::process_path_text;
 use crate::service::messages::{ClientMessage, ServerMessage};
@@ -53,10 +54,10 @@ impl Command for ViewCommand {
                 // 是否准备就绪
                 let mut ready = true;
 
-                // 如果文件存在且版本大于或等于服务端的版本，且指定版本为 0 (最新版)，则不下载
+                // 如果文件存在且版本与服务端的版本匹配，且指定版本为 0 (最新版)，则不下载
                 if let Some(local_uuid) = database.uuid_of_path(file.path()) {
                     if let Some(local_file) = local.file_paths.get(&local_uuid) {
-                        if local_file.local_version >= file.version() && client_path.exists()
+                        if local_file.local_version == file.version() && client_path.exists()
                             && view_version == "0" {
 
                             // 发送 "未就绪"
@@ -133,15 +134,17 @@ impl Command for ViewCommand {
         LocalFileMap::update(&local).await;
     }
 
-    async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, (_uuid, _member): (String, &Member), _database: Arc<Mutex<Database>>) -> bool {
+    async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, (_uuid, _member): (String, &Member), database: Arc<Mutex<Database>>) {
 
         // 首先同步数据库
-        sync_remote(stream).await;
+        entry_mutex_async!(database, |guard| {
+            sync_remote(stream, guard).await;
+        });
 
         let database = Database::read().await;
 
         // 检查参数数量
-        if args.len() < 2 { return false; } // <搜索>
+        if args.len() < 2 { return; } // <搜索>
 
         // 检查是否存在指定版本号 <搜索> <版本>
         let view_version = if args.len() < 3 { "0" } else { args[2] };
@@ -193,6 +196,5 @@ impl Command for ViewCommand {
         } else {
             send_msg(stream, &ServerMessage::Deny(return_message.to_string())).await;
         }
-        false
     }
 }

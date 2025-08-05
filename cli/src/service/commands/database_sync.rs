@@ -17,8 +17,8 @@ pub async fn sync_local(stream: &mut TcpStream) {
 }
 
 /// 发送同步信息
-pub async fn sync_remote(stream: &mut TcpStream) {
-    let database = Sync(Database::read().await);
+pub async fn sync_remote(stream: &mut TcpStream, database: &Database) {
+    let database = Sync(database.clone());
     let progress_bar = None;
     let _ = send_large_msg(stream, &database, progress_bar).await;
 }
@@ -35,8 +35,8 @@ pub async fn sync_local_with_progress(stream: &mut TcpStream) {
 }
 
 /// 发送同步信息
-pub async fn sync_remote_with_progress(stream: &mut TcpStream) {
-    let database = Sync(Database::read().await);
+pub async fn sync_remote_with_progress(stream: &mut TcpStream, database: &Database) {
+    let database = Sync(database.clone());
     let progress_bar = Some(ProgressBar::new(0));
     let _ = send_large_msg(stream, &database, progress_bar).await;
 }

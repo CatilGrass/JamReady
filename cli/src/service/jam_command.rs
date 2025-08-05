@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use async_trait::async_trait;
-use colored::Colorize;
+use colored::{ColoredString, Colorize};
 use log::info;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
@@ -17,7 +17,7 @@ pub trait Command {
     async fn local(&self, stream: &mut TcpStream, args: Vec<&str>);
 
     /// 服务器上的操作 (返回是否修改过数据库)
-    async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, member: (String, &Member), database: Arc<Mutex<Database>>) -> bool;
+    async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, member: (String, &Member), database: Arc<Mutex<Database>>);
 }
 
 /// 执行本地命令
@@ -45,20 +45,30 @@ pub async fn execute_remote_command(
     args: Vec<&str>,
     (uuid, member): (String, &Member),
     database: Arc<Mutex<Database>>
-) -> bool {
-    info!("{} Exec {}", &member.member_name.yellow(), format!("{:?}", &args).cyan());
+){
+    info!("{}: {}", &member.member_name.yellow(), display_args(&args));
 
     if let Some(command_name) = args.get(0) {
         let command_name = command_name.trim().to_lowercase();
         if let Some(command) = registry.get(command_name.as_str()) {
-
             // 执行命令
-            let changed = command.remote(stream, args, (uuid, member), database.clone()).await;
-            return changed
+            command.remote(stream, args, (uuid, member), database.clone()).await;
         } else {
             eprintln!("Unknown command: {}", command_name);
-            return false
         }
     }
-    false
+}
+
+fn display_args(args: &Vec<&str>) -> ColoredString {
+    let mut result = String::default();
+
+    for arg in args {
+        if arg.contains(" ") {
+            result = format!("{} \"{}\"", result, arg);
+        } else {
+            result = format!("{} {}", result, arg);
+        }
+    }
+
+    format!("{}", result.trim()).cyan()
 }

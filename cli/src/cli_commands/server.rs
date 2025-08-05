@@ -1,13 +1,18 @@
+use crate::data::database::Database;
 use crate::data::member::{Member, MemberDuty};
 use crate::data::workspace::Workspace;
-use crate::service::jam_server::jam_server_entry;
+use crate::service::jam_server::{jam_server_entry, refresh_monitor};
 use crate::service::service_utils::get_self_address;
 use clap::{Args, Parser, Subcommand};
 use jam_ready::utils::levenshtein_distance::levenshtein_distance;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::process_id_text;
 use rand::Rng;
+use std::sync::Arc;
 use strum::IntoEnumIterator;
+use tokio::join;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use tokio::sync::Mutex;
 
 /// 服务端命令行
 #[derive(Parser, Debug)]
@@ -234,7 +239,14 @@ pub async fn server_workspace_main() {
 }
 
 async fn server_run(args: RunArgs) {
-    jam_server_entry(args.full_logger).await
+
+    // 构建数据库
+    let database = Arc::new(Mutex::new(Database::read().await));
+
+    // 信号
+    let (write_tx, write_rx) : (UnboundedSender<bool>, UnboundedReceiver<bool>) = unbounded_channel();
+
+    join!(jam_server_entry(args.full_logger, database.clone(), write_tx.clone()), refresh_monitor(database.clone(), write_rx));
 }
 
 /// 添加成员

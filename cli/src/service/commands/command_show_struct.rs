@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::env::current_dir;
 use std::sync::Arc;
 use async_trait::async_trait;
@@ -6,8 +5,9 @@ use colored::Colorize;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use walkdir::WalkDir;
+use jam_ready::entry_mutex_async;
 use jam_ready::utils::local_archive::LocalArchive;
-use jam_ready::utils::text_process::process_path_text;
+use jam_ready::utils::text_process::{process_path_text, show_tree};
 use crate::data::database::Database;
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::member::Member;
@@ -55,10 +55,13 @@ impl Command for ShowFileStructCommand {
                                 // 本地版本
                                 let local_version = local_file.local_version;
 
-                                // 对比版本
+                                // 对比版本 (无论新旧，只要文件版本不匹配则无法提交)
                                 if local_version < file.version() {
                                     // 本地文件更旧，显示需要更新
                                     info = format!("{} {}", info, format!("[v{}↓]", local_version).bright_red());
+                                } else if local_version > file.version() {
+                                    // 本地文件更新，说明文件已回滚
+                                    info = format!("{} {}", info, format!("[v{}↑]", local_version).bright_red());
                                 } else {
 
                                     // 本地文件版本同步
@@ -119,78 +122,13 @@ impl Command for ShowFileStructCommand {
         print!("{}", show_tree(paths));
     }
 
-    async fn remote(&self, stream: &mut TcpStream, _args: Vec<&str>, _member: (String, &Member), _database: Arc<Mutex<Database>>) -> bool {
+    async fn remote(&self, stream: &mut TcpStream, _args: Vec<&str>, _member: (String, &Member), database: Arc<Mutex<Database>>) {
 
         // 发送数据
-        sync_remote(stream).await;
-        false
+        entry_mutex_async!(database, |guard| {
+            sync_remote(stream, guard).await;
+        });
     }
-}
-
-/// 显示文件树
-fn show_tree(paths: Vec<String>) -> String {
-    #[derive(Default)]
-    struct Node {
-        is_file: bool,
-        children: BTreeMap<String, Node>,
-    }
-
-    let mut root = Node::default();
-
-    for path in paths {
-        let parts: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-        let mut current = &mut root;
-
-        // 遍历路径
-        for (i, part) in parts.iter().enumerate() {
-
-            // 判断是否为路径的最后一部分
-            let is_file = i == parts.len() - 1;
-            let child = current.children.entry((*part).to_string())
-                .or_insert_with(Node::default);
-
-            // 如果是文件
-            if is_file {
-
-                // 标记为文件
-                child.is_file = true;
-            }
-            current = child;
-        }
-    }
-
-    // 生成树形结构的文本
-    fn generate_tree_lines(children: &BTreeMap<String, Node>, prefix: &str) -> Vec<String> {
-        let mut lines = Vec::new();
-        let last_index = children.len().saturating_sub(1);
-
-        let child_prefix = format!("{}│   ", prefix);
-
-        for (index, (name, node)) in children.iter().enumerate() {
-            let is_last_child = index == last_index;
-            let connector = if is_last_child { "└── " } else { "├── " };
-
-            if !node.children.is_empty() {
-                lines.push(format!("{}{}{}/", prefix, connector, name));
-
-                if !node.children.is_empty() {
-                    let child_lines = generate_tree_lines(
-                        &node.children,
-                        &child_prefix
-                    );
-                    lines.extend(child_lines);
-                }
-            } else {
-                // 文件
-                lines.push(format!("{}{}{}", prefix, connector, name));
-            }
-        }
-
-        lines
-    }
-
-    // 从根节点的子节点开始生成
-    generate_tree_lines(&root.children, "").join("\n")
 }
 
 fn get_all_file_paths() -> Vec<String> {

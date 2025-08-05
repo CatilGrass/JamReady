@@ -83,11 +83,11 @@ impl Command for FileOperationCommand {
         args: Vec<&str>,
         (uuid, _member): (String, &Member),
         database: Arc<Mutex<Database>>
-    ) -> bool {
+    ) {
         // 参数校验
         if args.len() < 3 {
             send_msg(stream, &Deny("Insufficient arguments".to_string())).await;
-            return false;
+            return;
         }
 
         let operation = args[1].to_lowercase();
@@ -99,18 +99,17 @@ impl Command for FileOperationCommand {
                 entry_mutex_async!(database, |guard| {
                     if guard.search_file(input.to_string()).is_some() {
                         send_msg(stream, &Deny(format!("File '{}' already exists", input))).await;
-                        return false;
+                        return;
                     }
 
                     match guard.insert_virtual_file(VirtualFile::new(input.to_string())) {
                         Ok(true) => {
                             send_msg(stream, &Text(format!("Created virtual file '{}'", input))).await;
-                            sync_remote(stream).await;
-                            true
+                            sync_remote(stream, guard).await;
+                            Database::update(guard).await;
                         }
                         _ => {
                             send_msg(stream, &Deny("Failed to create virtual file".to_string())).await;
-                            false
                         }
                     }
                 })
@@ -122,22 +121,21 @@ impl Command for FileOperationCommand {
                     let path = process_path_text(input.to_string());
                     let Some(file) = guard.search_file_mut(input.to_string()) else {
                         send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return false;
+                        return;
                     };
 
                     if !is_available(file, stream, uuid.clone()).await {
-                        return false;
+                        return;
                     }
 
                     match guard.remove_file_map(path) {
                         Ok(_) => {
                             send_msg(stream, &Text(format!("Removed virtual file '{}'", input))).await;
-                            sync_remote(stream).await;
-                            true
+                            sync_remote(stream, guard).await;
+                            Database::update(guard).await;
                         }
                         Err(_) => {
                             send_msg(stream, &Deny(format!("Failed to remove '{}'", input))).await;
-                            false
                         }
                     }
                 })
@@ -147,17 +145,17 @@ impl Command for FileOperationCommand {
             "move" => {
                 if args.len() < 4 {
                     send_msg(stream, &Deny("Missing destination path".to_string())).await;
-                    return false;
+                    return;
                 }
 
                 entry_mutex_async!(database, |guard| {
                     let Some(file) = guard.search_file_mut(input.to_string()) else {
                         send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return false;
+                        return;
                     };
 
                     if !is_available(file, stream, uuid.clone()).await {
-                        return false;
+                        return;
                     }
 
                     let dest = process_path_text(args[3].to_string());
@@ -165,19 +163,18 @@ impl Command for FileOperationCommand {
                     // 尝试路径移动
                     if guard.move_file(input.to_string(), dest.clone()).is_ok() {
                         send_msg(stream, &Text(format!("Moved '{}' to '{}'", input, args[3]))).await;
-                        sync_remote(stream).await;
-                        return true;
+                        sync_remote(stream, guard).await;
+                        Database::update(guard).await;
                     }
 
                     // 尝试UUID移动
                     if guard.move_file_with_uuid(input.to_string(), dest).is_ok() {
                         send_msg(stream, &Text(format!("Moved UUID '{}' to '{}'", input, args[3]))).await;
-                        sync_remote(stream).await;
-                        return true;
+                        sync_remote(stream, guard).await;
+                        Database::update(guard).await;
                     }
 
                     send_msg(stream, &Deny(format!("Failed to move '{}'", input))).await;
-                    false
                 })
             }
 
@@ -185,34 +182,34 @@ impl Command for FileOperationCommand {
             "rollback" => {
                 if args.len() < 4 {
                     send_msg(stream, &Deny("Missing destination path".to_string())).await;
-                    return false;
+                    return;
                 }
 
                 entry_mutex_async!(database, |guard| {
                     // 文件
                     let Some(file) = guard.search_file_mut(input.to_string()) else {
                         send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return false;
+                        return;
                     };
 
                     if !is_available(file, stream, uuid.clone()).await {
-                        return false;
+                        return;
                     }
 
                     // 回滚的版本
                     let Ok(rollback_version) = u32::from_str(args[3].to_string().trim()) else {
                         send_msg(stream, &Deny(format!("Invalid version number '{}' ", args[3]))).await;
-                        return false;
+                        return;
                     };
 
                     // 回滚
                     if file.rollback_to_version(rollback_version) {
                         send_msg(stream, &Text(format!("Rollback to '{}'", rollback_version))).await;
-                        sync_remote(stream).await;
-                        true
+
+                        sync_remote(stream, guard).await;
+                        Database::update(guard).await;
                     } else {
                         send_msg(stream, &Deny(format!("Rollback to '{}' failed", rollback_version))).await;
-                        false
                     }
                 })
             }
@@ -224,7 +221,7 @@ impl Command for FileOperationCommand {
                 entry_mutex_async!(database, |guard| {
                     let Some(file) = guard.search_file_mut(input.to_string()) else {
                         send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return false;
+                        return;
                     };
 
                     if file.give_uuid_locker(uuid.clone(), is_long).await {
@@ -232,11 +229,10 @@ impl Command for FileOperationCommand {
                         send_msg(stream, &Text(format!("Acquired {} on '{}'", action, input))).await;
                         let _ = file;
 
-                        sync_remote(stream).await;
-                        true
+                        sync_remote(stream, guard).await;
+                        Database::update(guard).await;
                     } else {
                         send_msg(stream, &Deny("Failed to acquire lock".to_string())).await;
-                        false
                     }
                 })
             }
@@ -247,7 +243,7 @@ impl Command for FileOperationCommand {
                 entry_mutex_async!(database, |guard| {
                     let Some(file) = guard.search_file_mut(input.to_string()) else {
                         send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return false;
+                        return;
                     };
 
                     match file.get_locker_owner().await {
@@ -256,16 +252,14 @@ impl Command for FileOperationCommand {
                             send_msg(stream, &Text(format!("Released lock on '{}'", input))).await;
                             let _ = file;
 
-                            sync_remote(stream).await;
-                            true
+                            sync_remote(stream, guard).await;
+                            Database::update(guard).await;
                         }
                         Some(_) => {
                             send_msg(stream, &Deny("File locked by another member".to_string())).await;
-                            false
                         }
                         None => {
                             send_msg(stream, &Deny("File is not locked".to_string())).await;
-                            false
                         }
                     }
                 })
@@ -274,7 +268,6 @@ impl Command for FileOperationCommand {
             // 未知操作
             _ => {
                 send_msg(stream, &Deny(format!("Unknown operation '{}'", operation))).await;
-                false
             }
         }
     }

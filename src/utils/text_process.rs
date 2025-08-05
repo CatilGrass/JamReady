@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::vec;
 use colored::Colorize;
 use regex::Regex;
@@ -125,4 +126,72 @@ pub fn parse_colored_text(text: &str) -> String {
     }
     result.push_str(&text[last_pos..]);
     result
+}
+
+/// 显示文件树
+pub fn show_tree(paths: Vec<String>) -> String {
+    #[derive(Default)]
+    struct Node {
+        is_file: bool,
+        children: BTreeMap<String, Node>,
+    }
+
+    let mut root = Node::default();
+
+    for path in paths {
+        let parts: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+        let mut current = &mut root;
+
+        for (i, part) in parts.iter().enumerate() {
+            let is_file = i == parts.len() - 1;
+            let child = current.children.entry((*part).to_string())
+                .or_insert_with(Node::default);
+
+            if is_file {
+                child.is_file = true;
+            }
+            current = child;
+        }
+    }
+
+    // 生成树形结构的文本
+    fn generate_tree_lines(children: &BTreeMap<String, Node>, prefix: &str) -> Vec<String> {
+        // 将子节点分组：目录在前，文件在后，每组按名称排序
+        let mut dirs = Vec::new();
+        let mut files = Vec::new();
+
+        for (name, node) in children {
+            if node.children.is_empty() {
+                files.push((name, node));
+            } else {
+                dirs.push((name, node));
+            }
+        }
+
+        // 分别按名称排序
+        dirs.sort_by_key(|(name, _)| *name);
+        files.sort_by_key(|(name, _)| *name);
+        let child_nodes = dirs.into_iter().chain(files.into_iter()).collect::<Vec<_>>();
+
+        let mut lines = Vec::new();
+        let last_index = child_nodes.len().saturating_sub(1);
+        let child_prefix = format!("{}│   ", prefix);
+
+        for (index, (name, node)) in child_nodes.into_iter().enumerate() {
+            let is_last = index == last_index;
+            let connector = if is_last { "└── " } else { "├── " };
+
+            if !node.children.is_empty() {
+                lines.push(format!("{}{}{}/", prefix, connector, name));
+                let child_lines = generate_tree_lines(&node.children, &child_prefix);
+                lines.extend(child_lines);
+            } else {
+                lines.push(format!("{}{}{}", prefix, connector, name));
+            }
+        }
+
+        lines
+    }
+
+    generate_tree_lines(&root.children, "").join("\n")
 }

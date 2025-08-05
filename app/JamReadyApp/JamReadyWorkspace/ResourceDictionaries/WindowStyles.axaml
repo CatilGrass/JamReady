@@ -13,7 +13,9 @@
         </Setter>
         <Setter Property="Template">
             <Template>
-                <ContentPresenter/>
+                <ControlTemplate>
+                    <ContentPresenter/>
+                </ControlTemplate>
             </Template>
         </Setter>
     </Style>

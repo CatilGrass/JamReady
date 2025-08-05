@@ -28,7 +28,7 @@ DEFAULT_SERVER_PORT = { value = "5011" }
 PATH_WORKSPACE_ROOT = { value = ".jam/" }
 PATH_PARAMETERS = { value = ".jam/param/" }
 PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/db_histories/" }
-PATH_DATABASE = { value = "" }
+PATH_DATABASE = { value = "storage/" }
 
 # 文件
 FILE_DATABASE = { value = ".jam/db.yaml" }

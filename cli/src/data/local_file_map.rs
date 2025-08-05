@@ -56,6 +56,21 @@ impl LocalFileMap {
         None
     }
 
+    /// 从数据库的搜索中获得本地文件的 LocalFile (可变)
+    pub fn search_to_local_mut(&mut self, database: &Database, search: String) -> Option<&mut LocalFile> {
+
+        // 尝试拿到 VirtualFile
+        let file = database.search_file(search);
+        if file.is_none() { return None; }
+        let file = file.unwrap();
+
+        // 从 VirtualFile 中拿到 LocalFile
+        if let Some(uuid) = database.uuid_of_path(file.path()) {
+            return self.file_paths.get_mut(&uuid);
+        }
+        None
+    }
+
     /// 从数据库的搜索中获得本地文件的 PathBuf
     pub fn search_to_path(&self, database: &Database, search: String) -> Option<PathBuf> {
         let result = self.search_to_local(database, search);
