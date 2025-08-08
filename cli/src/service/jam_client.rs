@@ -65,12 +65,7 @@ async fn try_verify_connection(addr: SocketAddr, client: &mut ClientWorkspace) -
 
             // 收到 Uuid 表示验证成功
             Uuid(uuid) => {
-
-                // 若 Uuid 字符串字数不够
-                if client.uuid.trim().len() < 32 {
-                    client.uuid = uuid;
-                }
-
+                client.uuid = uuid;
                 Some(stream)
             }
             ServerMessage::Deny(error) => {
