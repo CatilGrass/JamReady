@@ -24,7 +24,8 @@ $VFCommands = @(
     'throw','t','unlock','release',
     'view','v','download','dl',
     'move','mv','rename',
-    'rollback', 'rb', 'restore'
+    'rollback', 'rb', 'restore',
+    'query', 'q'
 )
 
 $PArgCommands = @('param','set')

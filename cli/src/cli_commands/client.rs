@@ -51,7 +51,7 @@ enum ClientCommands {
         visible_alias = "list",
         visible_alias = "ls",
         about = "List the file struct of the workspace.\n\nLocal file operation commands")]
-    Struct,
+    Struct(StructArgs),
 
     // ---------------------------
     // 工作区相关
@@ -383,6 +383,55 @@ struct ParamArgs {
     value: Option<String>
 }
 
+#[derive(Args, Debug)]
+struct StructArgs {
+
+    // 显示本地文件
+    #[arg(long)]
+    local: bool,
+
+    // 显示远程文件
+    #[arg(long)]
+    remote: bool,
+
+    // -- 仅远程
+
+    // 显示空文件
+    #[arg(long = "zero", short = 'z', alias = "empty", alias = "new")]
+    remote_zero: bool,
+
+    // 显示更新的文件
+    #[arg(long = "updated", short = 'u')]
+    remote_updated: bool,
+
+    // 显示持有的文件
+    #[arg(long = "held", short = 'h')]
+    remote_held: bool,
+
+    // 显示锁定的文件
+    #[arg(long = "lock", short = 'g')]
+    remote_locked: bool,
+
+    // 显示其他文件
+    #[arg(long = "other", short = 'e')]
+    remote_other: bool,
+
+    // -- 仅本地
+
+    // 显示删除(但本地仍存在)的文件
+    #[arg(long = "removed", short = 'd')]
+    local_removed: bool,
+
+    // 显示删除的文件
+    #[arg(long = "untracked", short = 'n')]
+    local_untracked: bool,
+
+    // -- 通用
+
+    // 显示移动的文件 (根据 remote 和 local 的开关选择显示侧)
+    #[arg(long = "moved", short = 'm')]
+    moved: bool,
+}
 
 #[derive(Args, Debug)]
 struct RedirectArgs {
@@ -433,7 +482,30 @@ pub async fn client_workspace_main() {
         }
 
         // 列出结构
-        ClientCommands::Struct => client_execute_command(vec!["struct".to_string()]).await,
+        ClientCommands::Struct(args) => {
+            let mut env = String::new();
+            let mut switches = String::new();
+
+            if args.local { env.push_str("l"); }
+            if args.remote { env.push_str("r"); }
+            if env.is_empty() {
+                env = "lr".to_string();
+            }
+
+            if args.remote_zero { switches.push_str("z"); }
+            if args.remote_held { switches.push_str("h"); }
+            if args.remote_updated { switches.push_str("u"); }
+            if args.local_untracked { switches.push_str("n"); }
+            if args.local_removed { switches.push_str("d"); }
+            if args.remote_locked { switches.push_str("g"); }
+            if args.moved { switches.push_str("m"); }
+            if args.remote_other { switches.push_str("e"); }
+            if switches.is_empty() {
+                switches = "zhundgme".to_string();
+            }
+
+            client_execute_command(vec!["struct".to_string(), env, switches]).await;
+        },
 
         // 归档
         ClientCommands::Archive => client_execute_command(vec!["archive".to_string()]).await,
