@@ -8,12 +8,23 @@ use walkdir::WalkDir;
 use jam_ready::entry_mutex_async;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::{process_path_text, show_tree};
-use crate::data::database::Database;
+use crate::data::database::{Database, VirtualFile};
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::member::Member;
-use crate::data::workspace::Workspace;
+use crate::data::workspace::{ClientWorkspace, Workspace};
 use crate::service::commands::database_sync::{sync_local, sync_remote};
 use crate::service::jam_command::Command;
+
+const REMOTE_ENV_FLAG: char = 'r';
+const LOCAL_ENV_FLAG: char = 'l';
+const ZERO_VERSION_FLAG: char = 'z';
+const UPDATED_FLAG: char = 'u';
+const OTHER_FLAG: char = 'e';
+const MOVED_FLAG: char = 'm';
+const HELD_FLAG: char = 'h';
+const OTHER_LOCK_FLAG: char = 'g';
+const UNTRACKED_FLAG: char = 'n';
+const REMOVED_FLAG: char = 'd';
 
 pub struct ShowFileStructCommand;
 
@@ -22,191 +33,193 @@ impl Command for ShowFileStructCommand {
 
     async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) {
 
-        // 从服务端接收最新的同步
+        // 参数检查
+        if args.len() < 3 {
+            return;
+        }
+
         sync_local(stream).await;
 
-        // 读取本地同步的树
         let database = Database::read().await;
         let local = LocalFileMap::read().await;
+        let env = args[1];
+        let switches = args[2];
         let mut paths = Vec::new();
 
-        // 检查参数数量
-        if args.len() < 3 { return; } // <环境> <开关>
-        let env = args[1].to_string();
-        let switches = args[2].to_string();
-
         if let Some(client) = Workspace::read().await.client {
-            if env.contains("r") {
+
+            let show_remote = env.contains(REMOTE_ENV_FLAG);
+            let show_local = env.contains(LOCAL_ENV_FLAG);
+
+            let show_empty = switches.contains(ZERO_VERSION_FLAG);
+            let show_updates = switches.contains(UPDATED_FLAG);
+            let show_synced = switches.contains(OTHER_FLAG);
+            let show_moves = switches.contains(MOVED_FLAG);
+            let show_self_lock = switches.contains(HELD_FLAG);
+            let show_other_lock = switches.contains(OTHER_LOCK_FLAG);
+            let show_untracked = switches.contains(UNTRACKED_FLAG);
+            let show_removed = switches.contains(REMOVED_FLAG);
+
+            // 处理工作区文件
+            if show_remote {
                 for file in database.files() {
-
-                    // 可否添加到列表
-                    let mut can_push = false;
-
-                    // 本地文件
-                    let local_file = local.search_to_local(&database, file.path());
-
-                    // 起始的
-                    let mut info = format!("{}", &file.path());
-
-                    // 是否为空
-                    if file.real_path().is_empty() {
-
-                        // 显示空版本
-                        if switches.contains("z") {
-                            info = format!("{} {}", info, "[Empty]".truecolor(128, 128, 128));
-                        }
-
-                    } else {
-
-                        // 若存在本地文件，且允许显示本地信息，则开始渲染版本
-                        if env.contains("l") {
-                            if let Some(local_file) = local_file {
-
-                                if let Ok(current) = current_dir() {
-                                    let local_file_path_buf = current.join(&local_file.local_path);
-                                    if local_file_path_buf.exists() {
-
-                                        // 本地版本
-                                        let local_version = local_file.local_version;
-
-                                        // 对比版本 (无论新旧，只要文件版本不匹配则无法提交)
-                                        if local_version < file.version() {
-
-                                            // 显示更新版本
-                                            if switches.contains("u") {
-
-                                                // 本地文件更旧，显示需要更新
-                                                info = format!("{} {}", info, format!("[v{}↓]", local_version).bright_red());
-                                                can_push = true;
-                                            }
-
-                                        } else if local_version > file.version() {
-
-                                            // 显示回滚版本
-                                            if switches.contains("u") {
-
-                                                // 本地文件更新，说明文件已回滚
-                                                info = format!("{} {}", info, format!("[v{}↑]", local_version).bright_red());
-                                                can_push = true;
-                                            }
-
-                                        } else {
-
-                                            // 显示其他文件
-                                            if switches.contains("e") {
-
-                                                // 本地文件版本同步
-                                                info = format!("{} {}", info, format!("[v{}]", local_version).bright_green());
-                                                can_push = true;
-                                            }
-                                        }
-
-                                        // 若本地路径和原始路径不同，则显示差异
-                                        if local_file.local_path != file.path() && switches.contains("m") {
-                                            info = format!("{} {}", info, format!("-> {}", local_file.local_path.replace("/", "\\")).truecolor(128, 128, 128));
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            can_push = true;
-                        }
-                    }
-
-                    // 锁定状态
-                    if let Some(uuid) = file.get_locker_owner_uuid() {
-                        let longer_lock = file.is_longer_lock_unchecked();
-                        // 自己锁定
-                        if uuid == client.uuid.trim() {
-
-                            // 显示自己锁定的文件
-                            if switches.contains("h") {
-
-                                if longer_lock {
-                                    // 自己的长锁
-                                    info = format!("{} {}", info, "[HELD]".bright_green());
-                                } else {
-                                    // 自己的短锁
-                                    info = format!("{} {}", info, "[held]".green());
-                                }
-                                can_push = true;
-                            }
-                        } else {
-
-                            // 显示他人锁定的文件
-                            if switches.contains("g") {
-
-                                if longer_lock {
-                                    // 他人的长锁
-                                    info = format!("{} {}", info, "[LOCKED]".bright_red());
-                                } else {
-                                    // 他人的短锁
-                                    info = format!("{} {}", info, "[locked]".bright_yellow());
-                                }
-                                can_push = true;
-                            }
-                        }
-                    }
-                    if can_push {
-                        paths.push(info)
+                    if let Some(info) = build_remote_file_info(
+                        &file, &database, &local, &client,
+                        show_empty, show_updates, show_synced, show_moves,
+                        show_self_lock, show_other_lock
+                    ) {
+                        paths.push(info);
                     }
                 }
             }
 
-            if env.contains("l") {
-                for path in get_all_file_paths() {
-                    if path.starts_with(env!("PATH_WORKSPACE_ROOT")) { continue }
-                    if let Some(uuid) = local.file_uuids.get(&path) {
-                        if let Some(file) = database.file_with_uuid(uuid.clone()) {
-                            if file.path() != path {
-                                if file.path() == "" {
-
-                                    // 显示移除文件
-                                    if switches.contains("d") {
-                                        // 被移除的文件
-                                        let info = format!("{} {} {}", &path, "[Removed]".red(), uuid.red());
-                                        paths.push(info);
-                                    }
-
-                                    continue;
-                                }
-
-                                // 不显示移动文件则跳过
-                                if switches.contains("m") {
-
-                                    // 被移动的文件
-                                    let mut info = format!("{} {}", &path, "[Moved]".yellow());
-                                    info = format!("{} {}", info, format!("-> {}", file.path().replace("/", "\\")).truecolor(128, 128, 128));
-
-                                    // 移动的文件需要显示原始的地址
-                                    paths.push(info);
-                                }
-                            }
-                        }
-                    } else {
-
-                        // 显示未追踪的文件
-                        if switches.contains("n") {
-                            // 未追踪的文件
-                            let info = format!("{} {}", &path, "[Untracked]".cyan());
-                            paths.push(info);
-                        }
-                    }
-                }
+            // 处理本地文件
+            if show_local {
+                paths.extend(get_local_file_info(
+                    &local, &database,
+                    show_moves, show_removed, show_untracked
+                ));
             }
         }
 
-        // 显示
         print!("{}", show_tree(paths));
     }
 
     async fn remote(&self, stream: &mut TcpStream, _args: Vec<&str>, _member: (String, &Member), database: Arc<Mutex<Database>>) {
-
-        // 发送数据
         entry_mutex_async!(database, |guard| {
             sync_remote(stream, guard).await;
         });
     }
+}
+
+fn build_remote_file_info(
+    file: &VirtualFile,
+    database: &Database,
+    local: &LocalFileMap,
+    client: &ClientWorkspace,
+    show_empty: bool,
+    show_updates: bool,
+    show_synced: bool,
+    show_moves: bool,
+    show_self_lock: bool,
+    show_other_lock: bool
+) -> Option<String> {
+    let mut info = file.path().to_string();
+    let mut should_display = false;
+    let local_file = local.search_to_local(database, file.path());
+
+    // 空文件
+    if file.real_path().is_empty() {
+        if show_empty {
+            info.push_str(&format!(" {}", "[Empty]".truecolor(128, 128, 128)));
+            should_display = true;
+        }
+    }
+    // 本地文件存在
+    else if let (Ok(current_dir), Some(local_file)) = (current_dir(), local_file) {
+        let local_path = current_dir.join(&local_file.local_path);
+
+        if local_path.exists() {
+            let local_version = local_file.local_version;
+            let file_version = file.version();
+
+            // 版本
+            match local_version.cmp(&file_version) {
+                std::cmp::Ordering::Less if show_updates => {
+                    info.push_str(&format!(" {}", format!("[v{}↓]", local_version).bright_red()));
+                    should_display = true;
+                },
+                std::cmp::Ordering::Greater if show_updates => {
+                    info.push_str(&format!(" {}", format!("[v{}↑]", local_version).bright_red()));
+                    should_display = true;
+                },
+                std::cmp::Ordering::Equal if show_synced => {
+                    info.push_str(&format!(" {}", format!("[v{}]", local_version).bright_green()));
+                    should_display = true;
+                },
+                _ => {}
+            }
+
+            // 文件移动
+            if show_moves && local_file.local_path != file.path() {
+                let formatted_path = local_file.local_path.replace("/", "\\");
+                info.push_str(&format!(" {}", format!("-> {}", formatted_path).truecolor(128, 128, 128)));
+            }
+        }
+    }
+
+    // 文件锁定
+    if let Some(locker_uuid) = file.get_locker_owner_uuid() {
+        let is_long_lock = file.is_longer_lock_unchecked();
+        let is_own_lock = locker_uuid == client.uuid.trim();
+
+        if is_own_lock && show_self_lock {
+            let lock_tag = if is_long_lock { "[HELD]".bright_green() } else { "[held]".green() };
+            info.push_str(&format!(" {}", lock_tag));
+            should_display = true;
+        } else if show_other_lock {
+            let lock_tag = if is_long_lock { "[LOCKED]".bright_red() } else { "[locked]".bright_yellow() };
+            info.push_str(&format!(" {}", lock_tag));
+            should_display = true;
+        }
+    }
+
+    if should_display { Some(info) } else { None }
+}
+
+fn get_local_file_info(
+    local: &LocalFileMap,
+    database: &Database,
+    show_moves: bool,
+    show_removed: bool,
+    show_untracked: bool
+) -> Vec<String> {
+    let mut paths : Vec<String> = Vec::new();
+    let workspace_root = env!("PATH_WORKSPACE_ROOT");
+
+    for path in get_all_file_paths() {
+
+        // 跳过工作区配置目录
+        if path.starts_with(workspace_root) {
+            continue;
+        }
+
+        match local.file_uuids.get(&path) {
+            Some(uuid) => {
+                if let Some(file) = database.file_with_uuid(uuid.clone()) {
+                    // 文件移动
+                    if file.path() != path && show_moves {
+                        let moved_info = format!(
+                            "{} {} {}",
+                            path,
+                            "[Moved]".yellow(),
+                            format!("-> {}", file.path().replace("/", "\\")).truecolor(128, 128, 128)
+                        );
+                        paths.push(format!("{}", moved_info));
+                    }
+                } else if show_removed {
+                    // 文件移除
+                    paths.push(format!(
+                        "{} {} {}",
+                        path,
+                        "[Removed]".red(),
+                        uuid.red()
+                    ));
+                }
+            }
+            None if show_untracked => {
+                // 未追踪
+                paths.push(format!(
+                    "{} {}",
+                    path,
+                    "[Untracked]".cyan()
+                ));
+            }
+            _ => {}
+        }
+    }
+
+    paths
 }
 
 fn get_all_file_paths() -> Vec<String> {

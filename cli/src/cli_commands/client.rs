@@ -483,28 +483,28 @@ pub async fn client_workspace_main() {
 
         // 列出结构
         ClientCommands::Struct(args) => {
-            let mut env = String::new();
-            let mut switches = String::new();
+            let mut env_flags = String::new();
+            let mut flags = String::new();
 
-            if args.local { env.push_str("l"); }
-            if args.remote { env.push_str("r"); }
-            if env.is_empty() {
-                env = "lr".to_string();
+            if args.local { env_flags.push_str("l"); }
+            if args.remote { env_flags.push_str("r"); }
+            if env_flags.is_empty() {
+                env_flags = "lr".to_string();
             }
 
-            if args.remote_zero { switches.push_str("z"); }
-            if args.remote_held { switches.push_str("h"); }
-            if args.remote_updated { switches.push_str("u"); }
-            if args.local_untracked { switches.push_str("n"); }
-            if args.local_removed { switches.push_str("d"); }
-            if args.remote_locked { switches.push_str("g"); }
-            if args.moved { switches.push_str("m"); }
-            if args.remote_other { switches.push_str("e"); }
-            if switches.is_empty() {
-                switches = "zhundgme".to_string();
+            if args.remote_zero { flags.push_str("z"); }
+            if args.remote_held { flags.push_str("h"); }
+            if args.remote_updated { flags.push_str("u"); }
+            if args.local_untracked { flags.push_str("n"); }
+            if args.local_removed { flags.push_str("d"); }
+            if args.remote_locked { flags.push_str("g"); }
+            if args.moved { flags.push_str("m"); }
+            if args.remote_other { flags.push_str("e"); }
+            if flags.is_empty() {
+                flags = "zhundgme".to_string();
             }
 
-            client_execute_command(vec!["struct".to_string(), env, switches]).await;
+            client_execute_command(vec!["struct".to_string(), env_flags, flags]).await;
         },
 
         // 归档
