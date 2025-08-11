@@ -50,7 +50,7 @@ pub fn main() {
     let branch = if version.eq("dev") { "debug" } else { "release" };
 
     let target_dir =
-        root.join(".cargo").join("shared").join("target").join(branch).join("deps");
+        root.join(".cargo").join("shared").join("target").join(branch);
 
     // 清理目录
     let _ = remove_dir_all(&export_version_dir);
@@ -117,7 +117,7 @@ fn copy_files(raw: &PathBuf, target: &PathBuf, file_names: Vec<String>) {
                 eprintln!("Error copying directory contents: {:?} -> {:?}: {}", source_path, target, e);
             }
         } else {
-            eprintln!("Warning: Path is neither file nor directory: {:?}", source_path);
+            // eprintln!("Warning: Path is neither file nor directory: {:?}", source_path);
         }
     }
 }
