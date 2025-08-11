@@ -82,7 +82,7 @@ impl Command for ShowFileStructCommand {
             }
         }
 
-        print!("{}", show_tree(paths));
+        println!("{}", show_tree(paths));
     }
 
     async fn remote(&self, stream: &mut TcpStream, _args: Vec<&str>, _member: (String, &Member), database: Arc<Mutex<Database>>) {

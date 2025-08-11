@@ -222,7 +222,7 @@ pub async fn server_workspace_main() {
                 ServerQueryCommands::Uuid(args) => server_query_uuid_of_member(args.member).await,
                 ServerQueryCommands::LoginCode(args) => server_query_login_code(args.member).await,
                 ServerQueryCommands::Workspace => server_query_workspace().await,
-                ServerQueryCommands::LocalAddress => print!("{}", get_self_address())
+                ServerQueryCommands::LocalAddress => println!("{}", get_self_address())
             }
         }
         ServerOperationCommands::Set(op) => {
@@ -496,7 +496,7 @@ async fn server_list_members () {
         for (_uuid, member) in server.members {
             result += format!("{}, ", member.member_name).as_str();
         }
-        print!("{}", result.trim().trim_end_matches(","))
+        println!("{}", result.trim().trim_end_matches(","))
     }
 }
 
@@ -511,7 +511,7 @@ async fn server_query_duties_of_member (member_name: String) {
                 for member_duty in member.member_duties {
                     result += format!("{:?}, ", member_duty).as_str();
                 }
-                print!("{}", result.trim().trim_end_matches(","));
+                println!("{}", result.trim().trim_end_matches(","));
                 break
             }
         }
@@ -525,7 +525,7 @@ async fn server_query_uuid_of_member (member_name: String) {
     if let Some(server) = workspace.server {
         for (uuid, member) in server.members {
             if member.member_name.trim() == member_name {
-                print!("{}", uuid);
+                println!("{}", uuid);
                 break
             }
         }
@@ -540,7 +540,7 @@ async fn server_query_login_code(member_name: String) {
         for (code, uuid) in server.login_code_map {
             if let Some(member_uuid) = server.member_uuids.get(&member_name) {
                 if member_uuid.trim() == uuid.trim() {
-                    print!("{}", code);
+                    println!("{}", code);
                 }
             }
         }
@@ -551,6 +551,6 @@ async fn server_query_login_code(member_name: String) {
 async fn server_query_workspace() {
     let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {
-        print!("{}", server.workspace_name);
+        println!("{}", server.workspace_name);
     }
 }

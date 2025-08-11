@@ -21,7 +21,9 @@ installation_scripts_win = { raw = "./.cargo/scripts/installation/", target = ".
 installation_scripts_linux = { raw = "./.cargo/scripts/installation/", target = "./scripts/linux/", files = [
 
     # Linux
-
+    "completion_script_jam.sh",
+    "install_completions.sh",
+    "uninstall_completions.sh",
 ] }
 
 # 调试脚本 (Windows)
