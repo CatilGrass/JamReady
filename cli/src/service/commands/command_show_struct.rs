@@ -51,11 +51,11 @@ impl Command for ShowFileStructCommand {
             let show_remote = env.contains(REMOTE_ENV_FLAG);
             let show_local = env.contains(LOCAL_ENV_FLAG);
 
-            let show_empty = switches.contains(ZERO_VERSION_FLAG);
-            let show_updates = switches.contains(UPDATED_FLAG);
-            let show_synced = switches.contains(OTHER_FLAG);
-            let show_moves = switches.contains(MOVED_FLAG);
-            let show_self_lock = switches.contains(HELD_FLAG);
+            let show_zero_version = switches.contains(ZERO_VERSION_FLAG);
+            let show_updated = switches.contains(UPDATED_FLAG);
+            let show_other = switches.contains(OTHER_FLAG);
+            let show_moved = switches.contains(MOVED_FLAG);
+            let show_held = switches.contains(HELD_FLAG);
             let show_other_lock = switches.contains(OTHER_LOCK_FLAG);
             let show_untracked = switches.contains(UNTRACKED_FLAG);
             let show_removed = switches.contains(REMOVED_FLAG);
@@ -65,8 +65,8 @@ impl Command for ShowFileStructCommand {
                 for file in database.files() {
                     if let Some(info) = build_remote_file_info(
                         &file, &database, &local, &client,
-                        show_empty, show_updates, show_synced, show_moves,
-                        show_self_lock, show_other_lock
+                        show_zero_version, show_updated, show_other, show_moved,
+                        show_held, show_other_lock
                     ) {
                         paths.push(info);
                     }
@@ -77,7 +77,7 @@ impl Command for ShowFileStructCommand {
             if show_local {
                 paths.extend(get_local_file_info(
                     &local, &database,
-                    show_moves, show_removed, show_untracked
+                    show_moved, show_removed, show_untracked
                 ));
             }
         }
@@ -97,11 +97,11 @@ fn build_remote_file_info(
     database: &Database,
     local: &LocalFileMap,
     client: &ClientWorkspace,
-    show_empty: bool,
-    show_updates: bool,
-    show_synced: bool,
-    show_moves: bool,
-    show_self_lock: bool,
+    show_zero_version: bool,
+    show_updated: bool,
+    show_other: bool,
+    show_moved: bool,
+    show_held: bool,
     show_other_lock: bool
 ) -> Option<String> {
     let mut info = file.path().to_string();
@@ -110,7 +110,7 @@ fn build_remote_file_info(
 
     // 空文件
     if file.real_path().is_empty() {
-        if show_empty {
+        if show_zero_version {
             info.push_str(&format!(" {}", "[Empty]".truecolor(128, 128, 128)));
             should_display = true;
         }
@@ -125,15 +125,15 @@ fn build_remote_file_info(
 
             // 版本
             match local_version.cmp(&file_version) {
-                std::cmp::Ordering::Less if show_updates => {
+                std::cmp::Ordering::Less if show_updated => {
                     info.push_str(&format!(" {}", format!("[v{}↓]", local_version).bright_red()));
                     should_display = true;
                 },
-                std::cmp::Ordering::Greater if show_updates => {
+                std::cmp::Ordering::Greater if show_updated => {
                     info.push_str(&format!(" {}", format!("[v{}↑]", local_version).bright_red()));
                     should_display = true;
                 },
-                std::cmp::Ordering::Equal if show_synced => {
+                std::cmp::Ordering::Equal if show_other => {
                     info.push_str(&format!(" {}", format!("[v{}]", local_version).bright_green()));
                     should_display = true;
                 },
@@ -141,23 +141,31 @@ fn build_remote_file_info(
             }
 
             // 文件移动
-            if show_moves && local_file.local_path != file.path() {
+            if show_moved && local_file.local_path != file.path() {
                 let formatted_path = local_file.local_path.replace("/", "\\");
                 info.push_str(&format!(" {}", format!("-> {}", formatted_path).truecolor(128, 128, 128)));
             }
+        }
+    }
+    // 本地文件不存在
+    else {
+        if show_other {
+            should_display = true;
         }
     }
 
     // 文件锁定
     if let Some(locker_uuid) = file.get_locker_owner_uuid() {
         let is_long_lock = file.is_longer_lock_unchecked();
-        let is_own_lock = locker_uuid == client.uuid.trim();
+        let is_held = locker_uuid == client.uuid.trim();
+        let is_other_lock = locker_uuid != client.uuid.trim();
 
-        if is_own_lock && show_self_lock {
+        if is_held && show_held {
             let lock_tag = if is_long_lock { "[HELD]".bright_green() } else { "[held]".green() };
             info.push_str(&format!(" {}", lock_tag));
             should_display = true;
-        } else if show_other_lock {
+        }
+        if is_other_lock && show_other_lock {
             let lock_tag = if is_long_lock { "[LOCKED]".bright_red() } else { "[locked]".bright_yellow() };
             info.push_str(&format!(" {}", lock_tag));
             should_display = true;
@@ -170,7 +178,7 @@ fn build_remote_file_info(
 fn get_local_file_info(
     local: &LocalFileMap,
     database: &Database,
-    show_moves: bool,
+    show_moved: bool,
     show_removed: bool,
     show_untracked: bool
 ) -> Vec<String> {
@@ -187,24 +195,30 @@ fn get_local_file_info(
         match local.file_uuids.get(&path) {
             Some(uuid) => {
                 if let Some(file) = database.file_with_uuid(uuid.clone()) {
-                    // 文件移动
-                    if file.path() != path && show_moves {
-                        let moved_info = format!(
-                            "{} {} {}",
-                            path,
-                            "[Moved]".yellow(),
-                            format!("-> {}", file.path().replace("/", "\\")).truecolor(128, 128, 128)
-                        );
-                        paths.push(format!("{}", moved_info));
+                    // 路径变动时
+                    if file.path() != path {
+                        // 路径不为空且显示移动
+                        if !file.path().is_empty() && show_moved {
+                            // 文件移动
+                            let moved_info = format!(
+                                "{} {} {}",
+                                path,
+                                "[Moved]".yellow(),
+                                format!("-> {}", file.path().replace("/", "\\")).truecolor(128, 128, 128)
+                            );
+                            paths.push(format!("{}", moved_info));
+                        }
+                        // 路径为空且显示移除
+                        if file.path().is_empty() && show_removed {
+                            // 文件移除
+                            paths.push(format!(
+                                "{} {} {}",
+                                path,
+                                "[Removed]".red(),
+                                uuid.red()
+                            ));
+                        }
                     }
-                } else if show_removed {
-                    // 文件移除
-                    paths.push(format!(
-                        "{} {} {}",
-                        path,
-                        "[Removed]".red(),
-                        uuid.red()
-                    ));
                 }
             }
             None if show_untracked => {
