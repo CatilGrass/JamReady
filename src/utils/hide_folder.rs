@@ -3,6 +3,7 @@ use std::io;
 
 #[cfg(windows)]
 use std::os::windows::ffi::OsStrExt;
+#[cfg(windows)]
 use winapi::um::fileapi::{GetFileAttributesW, SetFileAttributesW, INVALID_FILE_ATTRIBUTES};
 
 pub fn hide_folder(path: &PathBuf) -> io::Result<()> {
