@@ -214,6 +214,7 @@ pub async fn cli_entry() {
     let workspace = Workspace::read().await;
 
     // 初始化颜色库
+    #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
 
     // 若未初始化工作区，则引导用户初始化

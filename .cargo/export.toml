@@ -6,10 +6,9 @@ gui_executable_files = { raw = "./app/JamReadyApp/JamReadyWorkspace/bin/Release/
     "publish/"
 ] }
 
-# 安装脚本
-installation_scripts = { raw = "./.cargo/scripts/installation/", target = "./scripts/", files = [
+# 安装脚本 (Windows)
+installation_scripts_win = { raw = "./.cargo/scripts/installation/", target = "./scripts/win/", files = [
 
-    # Windows
     "_INSTALL_WIN.ps1",
     "_UNINSTALL_WIN.ps1",
 
@@ -18,10 +17,16 @@ installation_scripts = { raw = "./.cargo/scripts/installation/", target = "./scr
     "install_cli.ps1"
 ] }
 
-# 调试脚本
-debug_scripts = { raw = "./.cargo/scripts/debug/", target = "./scripts/", files = [
+# 安装脚本 (Linux)
+installation_scripts_linux = { raw = "./.cargo/scripts/installation/", target = "./scripts/linux/", files = [
 
-    # Windows
+    # Linux
+
+] }
+
+# 调试脚本 (Windows)
+debug_scripts = { raw = "./.cargo/scripts/debug/", target = "./scripts/win/", files = [
+
     "debug_deploy.ps1",
     "debug_test.ps1"
 ] }
@@ -33,7 +38,10 @@ debug_scripts = { raw = "./.cargo/scripts/debug/", target = "./scripts/", files 
 executable_files = { raw = "./", target = "./bin", files = [
 
     # Windows
-    "jam.exe"
+    "jam.exe",
+
+    # Linux / Unix
+    "jam"
 ] }
 
 # 从 “项目文件夹” 部署到 “项目文件夹”
