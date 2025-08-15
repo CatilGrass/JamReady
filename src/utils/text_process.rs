@@ -5,7 +5,7 @@ use regex::Regex;
 
 /// 处理文本
 pub fn process_text(input: String) -> String {
-    let s = input.trim().to_lowercase();
+    let s = input.trim();
     let mut result = String::new();
     for c in s.chars() {
         match c {
