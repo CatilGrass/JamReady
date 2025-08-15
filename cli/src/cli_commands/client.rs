@@ -710,7 +710,7 @@ async fn client_clone() {
     let mut result = ClientResult::result().await;
     let database = Database::read().await;
     for file in database.files() {
-        println!("Checking {}", format!("\"{}\"", file.path()).cyan());
+        result.log(format!("Checking {}", format!("\"{}\"", file.path()).cyan()).as_str());
         result.combine_unchecked(exec(vec!["view".to_string(), file.path()]).await);
     }
     result.end_print();
@@ -718,6 +718,7 @@ async fn client_clone() {
 
 /// 重定向
 async fn client_redirect(args: RedirectArgs) {
+    let mut result = ClientResult::result().await;
     let mut workspace = Workspace::read().await;
 
     if let Some(client) = &mut workspace.client {
@@ -725,7 +726,7 @@ async fn client_redirect(args: RedirectArgs) {
         // 重定向账户
         if let Some(login_code) = args.login_code {
             client.login_code = login_code;
-            println!("Trying to change login code to {}", client.login_code);
+            result.log(format!("Trying to change login code to {}", client.login_code).as_str());
         }
 
         // 此处：若同时指定工作区名称和地址，仅更新地址
@@ -735,7 +736,7 @@ async fn client_redirect(args: RedirectArgs) {
             if let Ok(addr) = parse_address_v4_str(target_addr).await {
                 client.target_addr = addr;
 
-                println!("Changed target address to {}", &client.target_addr);
+                result.log(format!("Changed target address to {}", &client.target_addr).as_str());
 
                 // 并保存工作区信息
                 Workspace::update(&workspace).await;
@@ -755,14 +756,15 @@ async fn client_redirect(args: RedirectArgs) {
         if let Ok(addr) = search_workspace_lan(client.workspace_name.clone()).await {
             client.target_addr = addr;
 
-            println!("Redirected {} to {}.", client.workspace_name, addr);
+            result.log(format!("Redirected {} to {}.", client.workspace_name, addr).as_str());
 
             // 并保存工作区信息
             Workspace::update(&workspace).await;
             return;
         }
     }
-    println!("Redirect failed.");
+    result.err("Redirect failed.");
+    result.end_print();
 }
 
 /// 客户端查询
