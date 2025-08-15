@@ -16,28 +16,34 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
+use crate::data::client_result::ClientResult;
 
 pub struct FileOperationCommand;
 
 #[async_trait]
 impl Command for FileOperationCommand {
 
-    async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) {
+    async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) -> Option<ClientResult> {
+
         // 参数校验
-        if args.len() < 3 { return; }
+        if args.len() < 3 { return None; }
+
+        let mut command_result = ClientResult::result().await;
 
         // 此命令的所有操作均在服务端完成，客户端仅处理服务端的响应
         // 处理服务器响应
         match read_msg(stream).await {
             Text(msg) => {
                 sync_local(stream).await;
-                println!("Ok: {}", msg)
+                command_result.log(msg.as_str());
             }
             Deny(msg) => {
-                eprintln!("Err: {}", msg);
-                return;
+                command_result.err(msg.as_str());
+                return Some(command_result);
             }
-            _ => return,
+            _ => {
+                return Some(command_result);
+            },
         }
 
         // 若操作成功，则会开始处理客户端的后续逻辑
@@ -67,14 +73,16 @@ impl Command for FileOperationCommand {
                 }
                 else {
                     // 否则，提示成员该文件应当被存储的地址
-                    println!("Virtual file created but missing locally.");
-                    println!("Save completed file to:");
-                    println!("{}", local_file_path_buf.display().to_string().green());
+                    command_result.warn("Virtual file created but missing locally.");
+                    command_result.log("Save completed file to:");
+                    command_result.log(format!("{}", local_file_path_buf.display().to_string().green()).as_str());
                 }
             }
 
             LocalFileMap::update(&local).await;
         }
+
+        Some(command_result)
     }
 
     async fn remote(

@@ -10,17 +10,25 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
+use crate::data::client_result::ClientResult;
 
 pub struct ArchiveCommand;
 
 #[async_trait]
 impl Command for ArchiveCommand {
 
-    async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) {
+    async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) -> Option<ClientResult> {
+
+        let mut command_result = ClientResult::result().await;
 
         // 验证 Leader 身份通过
-        if ! verify(stream).await { return; }
-        println!("Ok: Archive successfully.");
+        if ! verify(stream).await {
+            command_result.err("You are not the leader and cannot execute this command.");
+            return Some(command_result);
+        }
+
+        command_result.log("Archive Success.");
+        Some(command_result)
     }
 
     async fn remote(

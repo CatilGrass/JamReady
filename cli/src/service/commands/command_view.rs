@@ -17,6 +17,7 @@ use tokio::time::sleep;
 use jam_ready::entry_mutex_async;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::text_process::process_path_text;
+use crate::data::client_result::ClientResult;
 use crate::service::messages::{ClientMessage, ServerMessage};
 use crate::service::service_utils::{read_msg, send_msg};
 
@@ -25,7 +26,9 @@ pub struct ViewCommand;
 #[async_trait]
 impl Command for ViewCommand {
 
-    async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) {
+    async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) -> Option<ClientResult> {
+
+        let mut command_result = ClientResult::result().await;
 
         // 同步数据库
         sync_local(stream).await;
@@ -35,7 +38,7 @@ impl Command for ViewCommand {
         let mut local = LocalFileMap::read().await;
 
         // 检查参数数量
-        if args.len() < 2 { return; } // <搜索>
+        if args.len() < 2 { return None; } // <搜索>
 
         // 检查是否存在指定版本号 <搜索> <版本>
         let view_version = if args.len() < 3 { "0" } else { args[2] };
@@ -126,12 +129,13 @@ impl Command for ViewCommand {
         }
 
         if success {
-            println!("Ok: {}", print_msg);
+            command_result.log(print_msg.as_str());
         } else {
-            eprintln!("Err: {}", print_msg);
+            command_result.err(print_msg.as_str());
         }
 
         LocalFileMap::update(&local).await;
+        Some(command_result)
     }
 
     async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, (_uuid, _member): (String, &Member), database: Arc<Mutex<Database>>) {

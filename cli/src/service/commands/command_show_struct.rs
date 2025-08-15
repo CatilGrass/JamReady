@@ -8,6 +8,7 @@ use walkdir::WalkDir;
 use jam_ready::entry_mutex_async;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::{process_path_text, show_tree};
+use crate::data::client_result::{ClientResult, ClientResultQueryProcess};
 use crate::data::database::{Database, VirtualFile};
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::member::Member;
@@ -31,12 +32,14 @@ pub struct ShowFileStructCommand;
 #[async_trait]
 impl Command for ShowFileStructCommand {
 
-    async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) {
+    async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) -> Option<ClientResult> {
 
         // 参数检查
         if args.len() < 3 {
-            return;
+            return None;
         }
+
+        let mut command_result = ClientResult::query(ClientResultQueryProcess::direct).await;
 
         sync_local(stream).await;
 
@@ -82,7 +85,8 @@ impl Command for ShowFileStructCommand {
             }
         }
 
-        println!("{}", show_tree(paths));
+        command_result.log(show_tree(paths).as_str());
+        Some(command_result)
     }
 
     async fn remote(&self, stream: &mut TcpStream, _args: Vec<&str>, _member: (String, &Member), database: Arc<Mutex<Database>>) {
@@ -142,8 +146,8 @@ fn build_remote_file_info(
 
             // 文件移动
             if show_moved && local_file.local_path != file.path() {
-                let formatted_path = local_file.local_path.replace("/", "\\");
-                info.push_str(&format!(" {}", format!("-> {}", formatted_path).truecolor(128, 128, 128)));
+                let formatted_path = local_file.local_path.replace("/", "\\s");
+                info.push_str(&format!(" {}", format!("<- {}", formatted_path).truecolor(128, 128, 128)));
             }
         }
     }
@@ -204,7 +208,7 @@ fn get_local_file_info(
                                 "{} {} {}",
                                 path,
                                 "[Moved]".yellow(),
-                                format!("-> {}", file.path().replace("/", "\\")).truecolor(128, 128, 128)
+                                format!("-> {}", file.path().replace("/", "\\s")).truecolor(128, 128, 128)
                             );
                             paths.push(format!("{}", moved_info));
                         }

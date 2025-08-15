@@ -1,44 +1,54 @@
+use crate::data::client_result::ClientResult;
 use crate::data::database::Database;
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::member::Member;
-use crate::service::commands::database_sync::{sync_local_with_progress, sync_remote_with_progress};
+use crate::service::commands::database_sync::{sync_local, sync_local_with_progress, sync_remote_with_progress};
 use crate::service::jam_command::Command;
 use async_trait::async_trait;
-use jam_ready::utils::local_archive::LocalArchive;
-use jam_ready::utils::text_process::process_path_text;
-use std::io::{Error, ErrorKind};
-use std::path::{Path, PathBuf};
-use std::{fs, io};
-use std::env::current_dir;
-use std::sync::Arc;
-use tokio::net::TcpStream;
-use tokio::sync::Mutex;
 use jam_ready::entry_mutex_async;
 use jam_ready::utils::file_operation::move_file;
+use jam_ready::utils::local_archive::LocalArchive;
+use jam_ready::utils::text_process::process_path_text;
+use std::env::current_dir;
+use std::io::{Error, ErrorKind};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::{fs, io};
+use tokio::net::TcpStream;
+use tokio::sync::Mutex;
 
 pub struct UpdateCommand;
 
 #[async_trait]
 impl Command for UpdateCommand {
 
-    async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) {
+    async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) -> Option<ClientResult> {
 
+        let debug = ClientResult::debug_mode().await;
+        let mut command_result = ClientResult::result().await;
+
+        command_result.log("Step1: Sync Database.");
         // 同步数据库
-        sync_local_with_progress(stream).await;
-        println!("Ok: Sync database.");
+        if debug {
+            sync_local(stream).await;
+        } else {
+            sync_local_with_progress(stream).await;
+        }
+        command_result.log("Ok");
 
         // 将本地文件结构和远程同步
+        command_result.log("Step2: Sync File Struct.");
         Self::sync_file_struct().await;
-        println!("Ok: Sync file struct.");
+        command_result.log("Ok");
 
         // 删除本地目录下所有的空文件夹
+        command_result.log("Step3: Remove Empty Directories.");
         if let Ok(current) = current_dir() {
             let _ = Self::remove_unused_directory(current);
         }
-        println!("Ok: Removed empty directories.");
+        command_result.log("Ok");
 
-        // TODO :: 同步关联、关注 （待制作）
-        println!("Ok: Done.");
+        Some(command_result)
     }
 
     async fn remote(
