@@ -11,6 +11,9 @@ pub struct LocalFolderMap {
 
     /// 目录完整路径和其中的文件信息映射
     pub folder_files: HashMap<String, Vec<Node>>,
+
+    /// 简化的文件搜索
+    pub short_file_map: HashMap<String, String>,
 }
 
 /// 节点
@@ -88,7 +91,10 @@ impl From<&Database> for LocalFolderMap {
             }
         }
 
-        Self { folder_files }
+        Self {
+            folder_files,
+            short_file_map: generation(database.files().iter().map(|f| f.path()).collect()),
+        }
     }
 }
 
@@ -108,4 +114,52 @@ fn get_parent_dir(dir_path: &str) -> Option<String> {
         // 顶级目录的父目录是根目录
         Some("".to_string())
     }
+}
+
+fn generation(virtual_file_paths: Vec<String>) -> HashMap<String, String> {
+    // 构建后缀频率的映射表
+    let mut freq_map = HashMap::new();
+    for path in &virtual_file_paths {
+        let comps: Vec<_> = path.split('/').collect();
+        let mut suffix = String::new();
+
+        // 生成所有可能存在的后缀
+        for i in (0..comps.len()).rev() {
+            suffix = if suffix.is_empty() {
+                comps[i].to_string()
+            } else {
+                format!("{}/{}", comps[i], suffix)
+            };
+            *freq_map.entry(suffix.clone()).or_insert(0) += 1;
+        }
+    }
+
+    // 为每个路径找到唯一的最短后缀
+    let mut result = HashMap::new();
+    for path in virtual_file_paths {
+        let comps: Vec<_> = path.split('/').collect();
+        let mut suffix = String::new();
+
+        // 生成后缀列表
+        let mut suffixes = Vec::new();
+        for i in (0..comps.len()).rev() {
+            suffix = if suffix.is_empty() {
+                comps[i].to_string()
+            } else {
+                format!("{}/{}", comps[i], suffix)
+            };
+            suffixes.push(suffix.clone());
+        }
+
+        for candidate in &suffixes {
+            if freq_map.get(candidate).copied() == Some(1) {
+                // 若键值相同，则跳过
+                if candidate != &path {
+                    result.insert(format!("{}", candidate.clone()), path.clone());
+                }
+                break;
+            }
+        }
+    }
+    result
 }
