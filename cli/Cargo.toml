@@ -9,6 +9,7 @@ jam_ready = { path = "../../JamReady" }
 # 终端
 clearscreen = "4.0.2"
 colored = "3.0.0"
+strip-ansi-escapes = "0.2.1"
 walkdir = "2.5.0"
 
 # 系统信息
