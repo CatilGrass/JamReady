@@ -12,18 +12,23 @@ pub struct ClientResult {
     // 所有消息
 
     /// 错误信息
+    #[serde(rename = "ErrMsg")]
     err_msg: Vec<String>,
 
     /// 警告消息
+    #[serde(rename = "WarnMsg")]
     warn_msg: Vec<String>,
 
     /// 消息
+    #[serde(rename = "InfoMsg")]
     info_msg: Vec<String>,
 
     /// 元数据
+    #[serde(rename = "Metadata")]
     metadata: HashMap<String, String>,
 
     /// 错误类型
+    #[serde(rename = "ResultType")]
     result_type: ClientResultType,
 
     /// 原始消息处理函数 (原始内容，剩余数量) -> 输出内容
@@ -39,18 +44,27 @@ pub struct ClientResult {
 pub enum ClientResultType {
 
     /// 查询
+    #[serde(rename = "Query")]
     Query,
 
     /// 失败
+    #[serde(rename = "Fail")]
     Fail,
 
     /// 成功
+    #[serde(rename = "Success")]
     Success
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct QueryResult {
+
+    /// 查询
+    #[serde(rename = "Query")]
     query: Vec<String>,
+
+    /// 元数据
+    #[serde(rename = "Metadata")]
     metadata: HashMap<String, String>,
 }
 
@@ -141,10 +155,10 @@ impl ClientResult {
         if self.debug {
             if self.result_type == ClientResultType::Query {
                 let result = serde_json::to_string(&QueryResult::from(self)).unwrap_or("{}".to_string());
-                println!("{}", &result);
+                println!("query:{}", &result);
             } else {
                 let result = serde_json::to_string(&self).unwrap_or("{}".to_string());
-                println!("{}", &result);
+                println!("result:{}", &result);
             }
         } else {
             // 否则，根据条件输出
