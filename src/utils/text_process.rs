@@ -3,6 +3,22 @@ use std::vec;
 use colored::Colorize;
 use regex::Regex;
 
+/// 处理文本
+pub fn process_text(input: String) -> String {
+    let s = input.trim().to_lowercase();
+    let mut result = String::new();
+    for c in s.chars() {
+        match c {
+            '\n' => result.push_str("\\n"),
+            '\t' => result.push_str("\\t"),
+            '\r' => result.push_str("\\r"),
+            '\"' => result.push_str("\\\""),
+            _ => result.push(c),
+        }
+    }
+    result.chars().collect()
+}
+
 /// 处理 ID 文本
 pub fn process_id_text(input: String) -> String {
     let s = input.trim().to_lowercase();
@@ -39,13 +55,11 @@ pub fn process_path_text(path: String) -> String {
     let mut result = String::with_capacity(path.len());
     let mut chars = path.chars();
 
-    // 处理可能的盘符
     if let (Some(first), Some(second)) = (chars.next(), chars.next()) {
         if first.is_ascii_alphabetic() && second == ':' {
             result.push(first);
             result.push(second);
         } else {
-            // 创建 Boxed 迭代器组合
             return process_iterator(
                 vec![first, second].into_iter().chain(chars),
                 result
@@ -68,7 +82,6 @@ fn process_iterator<I: Iterator<Item = char>>(chars: I, mut result: String) -> S
         }
     }
 
-    // 清理结果
     let mut cleaned = result.trim().to_string();
     while cleaned.ends_with('/') {
         cleaned.pop();
@@ -156,7 +169,7 @@ pub fn show_tree(paths: Vec<String>) -> String {
 
     // 生成树形结构的文本
     fn generate_tree_lines(children: &BTreeMap<String, Node>, prefix: &str) -> Vec<String> {
-        // 将子节点分组：目录在前，文件在后，每组按名称排序
+        // 将子节点分组，目录在前，文件在后，每组按名称排序
         let mut dirs = Vec::new();
         let mut files = Vec::new();
 
@@ -180,6 +193,8 @@ pub fn show_tree(paths: Vec<String>) -> String {
         for (index, (name, node)) in child_nodes.into_iter().enumerate() {
             let is_last = index == last_index;
             let connector = if is_last { "└── " } else { "├── " };
+
+            let name = name.replace("\\s", "/");
 
             if !node.children.is_empty() {
                 lines.push(format!("{}{}{}/", prefix, connector, name));
