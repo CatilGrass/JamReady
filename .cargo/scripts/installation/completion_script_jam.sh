@@ -72,7 +72,7 @@ _jam_completion() {
 
         if command -v jam &>/dev/null; then
             local suggestions
-            suggestions=$(jam query list "$prefix" 2>/dev/null)
+            suggestions=$(jam query list -i "$prefix" -i 2>/dev/null)
 
             local completions=()
             while IFS= read -r line; do

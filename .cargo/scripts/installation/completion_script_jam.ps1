@@ -36,7 +36,7 @@ function Get-JamVFCompletions {
         [string] $fragment
     )
 
-    $psi = [System.Diagnostics.ProcessStartInfo]::new('jam.exe', "query list `"$prefix`"")
+    $psi = [System.Diagnostics.ProcessStartInfo]::new('jam.exe', "query list -i `"$prefix`"")
     $psi.RedirectStandardOutput    = $true
     $psi.UseShellExecute           = $false
     $psi.StandardOutputEncoding    = [System.Text.Encoding]::UTF8
