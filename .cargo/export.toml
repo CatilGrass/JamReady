@@ -37,7 +37,7 @@ debug_scripts = { raw = "./.cargo/scripts/debug/", target = "./scripts/win/", fi
 [release.deps]
 
 # 可执行文件
-executable_files = { raw = "./", target = "./bin", files = [
+executable_files = { raw = "./", target = "./bin/", files = [
 
     # Windows
     "jam.exe",
@@ -51,3 +51,15 @@ executable_files = { raw = "./", target = "./bin", files = [
 
 # 从 “编译文件夹” 部署到 “项目文件夹”
 [release.deploy_deps]
+
+# 可执行文件
+deploy_executable_files = { raw = "./", target = "./app/JamReadyApp/JamReadyAppUtils/bin/Debug/net9.0/Binaries/", files = [
+
+    # Windows
+    "jam.exe",
+
+    # Linux / Unix
+    "jam"
+] }
+
+
