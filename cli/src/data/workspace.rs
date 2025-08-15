@@ -50,6 +50,9 @@ pub struct ClientWorkspace {
 
     /// 成员自身的 Uuid
     pub uuid: String,
+
+    /// 调试输出
+    pub debug: bool,
 }
 
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
