@@ -32,7 +32,7 @@ enum ServerOperationCommands {
 
     /// 启动服务器，并监听客户端消息
     #[command(about = "Run server")]
-    Run(RunArgs),
+    Run,
 
     /// 添加
     #[command(subcommand, about = "Add something")]
@@ -53,15 +53,6 @@ enum ServerOperationCommands {
     /// 设置
     #[command(subcommand, about = "Set something")]
     Set(ServerSetCommands),
-}
-
-/// 服务器运行参数
-#[derive(Args, Debug)]
-struct RunArgs {
-
-    /// 完整的 Logger
-    #[arg(short = 'f', long = "full-logger")]
-    full_logger: bool
 }
 
 /// 服务端操作指向
@@ -183,7 +174,7 @@ pub async fn server_workspace_main() {
 
     match cmd.command {
 
-        ServerOperationCommands::Run(args) => server_run(args).await,
+        ServerOperationCommands::Run => server_run().await,
 
         ServerOperationCommands::Add(op) => {
             match op {
@@ -238,7 +229,7 @@ pub async fn server_workspace_main() {
     }
 }
 
-async fn server_run(args: RunArgs) {
+async fn server_run() {
 
     // 构建数据库
     let database = Arc::new(Mutex::new(Database::read().await));
@@ -246,7 +237,7 @@ async fn server_run(args: RunArgs) {
     // 信号
     let (write_tx, write_rx) : (UnboundedSender<bool>, UnboundedReceiver<bool>) = unbounded_channel();
 
-    join!(jam_server_entry(args.full_logger, database.clone(), write_tx.clone()), refresh_monitor(database.clone(), write_rx));
+    join!(jam_server_entry(database.clone(), write_tx.clone()), refresh_monitor(database.clone(), write_rx));
 }
 
 /// 添加成员

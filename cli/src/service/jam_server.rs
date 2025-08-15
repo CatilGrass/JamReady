@@ -36,7 +36,6 @@ const MAX_BUFFER_SIZE: usize = 1024;
 
 /// 服务器入口
 pub async fn jam_server_entry(
-    full_logger: bool,
     database: Arc<Mutex<Database>>,
     sender: UnboundedSender<bool>
 ) {
@@ -52,7 +51,7 @@ pub async fn jam_server_entry(
 
         // 设置 Logger
         if server.enable_debug_logger {
-            logger_build(Info, !full_logger);
+            logger_build(Info);
         }
     }
 

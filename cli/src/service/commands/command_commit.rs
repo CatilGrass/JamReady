@@ -17,6 +17,7 @@ use uuid::Uuid;
 use jam_ready::entry_mutex_async;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::text_process::process_path_text;
+use crate::data::client_result::ClientResult;
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::service::commands::file_transmitter::{read_file, send_file};
 use crate::service::messages::ClientMessage::{Done, Text, Unknown};
@@ -28,7 +29,10 @@ pub struct CommitCommand;
 
 #[async_trait]
 impl Command for CommitCommand {
-    async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) {
+    async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) -> Option<ClientResult> {
+
+        let mut command_result = ClientResult::result().await;
+
         // 同步数据库
         sync_local(stream).await;
         let database = Database::read().await;
@@ -45,8 +49,10 @@ impl Command for CommitCommand {
         // 加载工作区
         let workspace = Workspace::read().await;
         if let Some(client) = workspace.client {
+
             // 寻找数据库内自己锁定的文件
             for file in database.files() {
+
                 // 检查文件是否被当前成员锁定
                 let is_locked_by_me = file.get_locker_owner_uuid()
                     .map(|owner_uuid| owner_uuid.trim() == client.uuid.trim())
@@ -56,18 +62,18 @@ impl Command for CommitCommand {
                     continue;
                 }
 
-                print!("Found {}. Local: ", format!("\"{}\"", &file.path()).cyan());
+                command_result.log(format!("Checking {}", format!("\"{}\"", &file.path()).cyan()).as_str());
 
                 // 获取文件本地路径
                 let client_path = match local.file_to_path(&database, file) {
                     Some(path) if path.exists() => path,
                     _ => {
-                        print!("{}", "Not Found.\n".red());
+                        command_result.warn("File Not Found.");
                         continue
                     },
                 };
 
-                print!("{}, Changed: ", "Exist".green());
+                command_result.log("File Found, Checking Modified");
 
                 // 计算当前文件 MD5
                 let current_md5 = match md5_digest(client_path.clone()) {
@@ -80,21 +86,24 @@ impl Command for CommitCommand {
                     &database.uuid_of_path(file.path()).unwrap_or_default()
                 );
 
-                let can_commit = match (local_file, file.version()) {
+                let modified = match (local_file, file.version()) {
+
                     // 远程版本为 0 则允许提交 （新文件）
                     (_, 0) => true,
+
                     // 本地有记录且版本匹配但 MD5 不同（已修改）
                     (Some(local_file), _) if local_file.local_version == file.version()
                         && local_file.local_digest != current_md5 => true,
+
                     // 其他情况不允许提交
                     _ => false,
                 };
 
-                if !can_commit {
-                    print!("{}.\n", "No".red());
+                if !modified {
+                    command_result.warn("File Not Modified.");
                     continue;
                 } else {
-                    print!("{}, Uploading ...\n", "Changed".green());
+                    command_result.log("File Modified, Start Uploading ...");
                 }
 
                 all_count += 1;
@@ -104,6 +113,7 @@ impl Command for CommitCommand {
                 send_msg(stream, &Text(file.path())).await;
                 match read_msg::<ServerMessage>(stream).await {
                     Pass => {
+
                         // 上传文件
                         if send_file(stream, client_path.clone()).await.is_ok() {
                             success_count += 1;
@@ -137,31 +147,33 @@ impl Command for CommitCommand {
 
             // 打印提交结果
             if all_count == 0 {
-                eprintln!("Err: No files committed.");
+                command_result.err("No File Committed.");
             } else if success_count == all_count {
-                println!("Ok: Commited {} files", all_count);
+                command_result.log(format!("Committed {} file(s).", all_count).as_str());
             } else {
-                eprintln!("Err: Commited {} files, Success {} files.", all_count, success_count);
+                command_result.warn(format!("Committed {} file(s).", all_count).as_str());
             }
 
             // 打印成功和失败的文件列表
             if !success_files.is_empty() {
-                println!("Success:");
+                command_result.log("Success file(s):");
                 for file in success_files {
-                    println!("{}", file);
+                    command_result.log(format!("{}", file).as_str());
                 }
             }
 
             if !failed_files.is_empty() {
-                eprintln!("Failed:");
+                command_result.log("Failed file(s):");
                 for file in failed_files {
-                    eprintln!("{}", file);
+                    command_result.log(format!("{}", file).as_str());
                 }
             }
 
             // 发送完成消息
-            send_msg(stream, &Done).await
+            send_msg(stream, &Done).await;
+            return Some(command_result)
         }
+        None
     }
 
     async fn remote(

@@ -5,6 +5,7 @@ use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::net::TcpStream;
 use tokio::time::Instant;
+use crate::data::client_result::ClientResult;
 
 const CHUNK_SIZE: usize = 8 * 1024;
 
@@ -13,6 +14,9 @@ pub async fn send_file(
     stream: &mut TcpStream,
     file: impl AsRef<Path>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+
+    let debug = ClientResult::debug_mode().await;
+
     let file_path = file.as_ref();
 
     // 文件检查
@@ -35,12 +39,14 @@ pub async fn send_file(
 
     // 进度条初始化
     let progress_bar = ProgressBar::new(file_size);
-    progress_bar.set_style(
-        ProgressStyle::default_bar()
-            .template("{spinner:.blue} [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({percent}%) {eta_precise}")
-            .expect("Valid style")
-            .progress_chars("■■■")
-    );
+    if !debug {
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .template("{spinner:.blue} [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({percent}%) {eta_precise}")
+                .expect("Valid style")
+                .progress_chars("■■■")
+        );
+    }
 
     // 发送文件大小
     stream.write_all(&1u64.to_be_bytes()).await?;
@@ -66,7 +72,9 @@ pub async fn send_file(
         if bytes_sent - last_bytes >= 256 * 1024 ||
             last_update.elapsed() >= Duration::from_millis(350)
         {
-            progress_bar.set_position(bytes_sent);
+            if ! debug {
+                progress_bar.set_position(bytes_sent);
+            }
             last_bytes = bytes_sent;
             last_update = Instant::now();
         }
@@ -90,7 +98,10 @@ pub async fn send_file(
         return Err("Receiver verification failed".into());
     }
 
-    progress_bar.finish_with_message(format!("Sent {} bytes", bytes_sent));
+    if ! debug {
+        progress_bar.finish_with_message(format!("Sent {} bytes", bytes_sent));
+    }
+
     Ok(())
 }
 
@@ -99,6 +110,9 @@ pub async fn read_file(
     stream: &mut TcpStream,
     save_to: impl AsRef<Path>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+
+    let debug = ClientResult::debug_mode().await;
+
     let save_path = save_to.as_ref();
 
     // 检查目录存在
@@ -139,12 +153,14 @@ pub async fn read_file(
 
     // 进度条初始化
     let progress_bar = ProgressBar::new(file_size);
-    progress_bar.set_style(
-        ProgressStyle::default_bar()
-            .template("{spinner:.green} [{bar:40.green/yellow}] {bytes}/{total_bytes} ({percent}%) {eta_precise}")
-            .expect("Valid style")
-            .progress_chars("■■■")
-    );
+    if ! debug {
+        progress_bar.set_style(
+            ProgressStyle::default_bar()
+                .template("{spinner:.green} [{bar:40.green/yellow}] {bytes}/{total_bytes} ({percent}%) {eta_precise}")
+                .expect("Valid style")
+                .progress_chars("■■■")
+        );
+    }
 
     // 接收文件内容
     let mut buffer = vec![0u8; CHUNK_SIZE];
@@ -172,7 +188,9 @@ pub async fn read_file(
         if bytes_received - last_bytes >= 256 * 1024 ||
             last_update.elapsed() >= Duration::from_millis(500)
         {
-            progress_bar.set_position(bytes_received);
+            if ! debug {
+                progress_bar.set_position(bytes_received);
+            }
             last_bytes = bytes_received;
             last_update = Instant::now();
         }
@@ -195,6 +213,8 @@ pub async fn read_file(
     stream.write_all(&[1]).await?;
     stream.flush().await?;
 
-    progress_bar.finish_with_message(format!("Received {} bytes", bytes_received));
+    if ! debug {
+        progress_bar.finish_with_message(format!("Received {} bytes", bytes_received));
+    }
     Ok(())
 }

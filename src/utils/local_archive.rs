@@ -67,7 +67,7 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
     }
 }
 
-/// 异步创建目录
+/// 创建目录
 async fn create_paths() {
     let paths = vec![
         env!("PATH_WORKSPACE_ROOT"),

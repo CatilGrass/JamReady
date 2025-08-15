@@ -13,6 +13,7 @@ use jam_ready::utils::text_process::{parse_colored_text, process_path_text};
 use std::env::{args, current_dir};
 use std::ops::Add;
 use jam_ready::utils::file_operation::move_file;
+use crate::data::client_result::{ClientResult, ClientResultQueryProcess};
 
 /// 客户端命令行
 #[derive(Parser, Debug)]
@@ -165,7 +166,7 @@ enum ClientQueryCommands {
         visible_alias = "list",
         visible_alias = "ll",
         about = "List the structure under a specific directory")]
-    ListDirectory(StringArgs),
+    ListDirectory(ListDirectoryArgs),
 
     // 查询虚拟文件的 Uuid
     #[command(
@@ -265,9 +266,18 @@ enum ClientQueryCommands {
 #[derive(Args, Debug)]
 struct StringArgs {
 
-    // 目录
     #[arg(default_value = "")]
-    value: String
+    value: String,
+}
+
+#[derive(Args, Debug)]
+struct ListDirectoryArgs {
+
+    #[arg(default_value = "")]
+    value: String,
+
+    #[arg(long, short = 'i')]
+    completion_mode: bool
 }
 
 /// 新建目录
@@ -470,14 +480,16 @@ pub async fn client_workspace_main() {
         ClientCommands::Redirect(args) => client_redirect(args).await,
 
         // 更新
-        ClientCommands::Update => client_execute_command(vec!["update".to_string()]).await,
+        ClientCommands::Update => {
+            print_client_result(exec(vec!["update".to_string()]).await);
+        }
 
         // 提交
         ClientCommands::Commit(args) => {
             if let Some(log) = args.log {
-                client_execute_command(vec!["commit".to_string(), log]).await
+                print_client_result(exec(vec!["commit".to_string(), log]).await);
             } else {
-                client_execute_command(vec!["commit".to_string()]).await
+                print_client_result(exec(vec!["commit".to_string()]).await);
             }
         }
 
@@ -504,82 +516,109 @@ pub async fn client_workspace_main() {
                 flags = "zhundgme".to_string();
             }
 
-            client_execute_command(vec!["struct".to_string(), env_flags, flags]).await;
+            print_client_result(exec(vec!["struct".to_string(), env_flags, flags]).await);
         },
 
         // 归档
-        ClientCommands::Archive => client_execute_command(vec!["archive".to_string()]).await,
+        ClientCommands::Archive => {
+            print_client_result(exec(vec!["archive".to_string()]).await);
+        }
 
         // 添加文件
         ClientCommands::Add(args) => {
+            let mut result = ClientResult::result().await;
+
             // 添加文件
-            client_execute_command(vec!["file".to_string(), "add".to_string(), args.path.clone()]).await;
+            result.combine_unchecked(exec(vec!["file".to_string(), "add".to_string(), args.path.clone()]).await);
             if args.get {
                 // 获得文件的锁
-                client_execute_command(vec!["file".to_string(), "get".to_string(), args.path]).await;
+                result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), args.path]).await);
             }
+
+            result.end_print();
         },
 
         // 移除文件
         ClientCommands::Remove(args) => {
+            let mut result = ClientResult::result().await;
+
             if args.get {
                 // 获得文件的锁
-                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
+                result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await);
             }
             // 移除文件
-            client_execute_command(vec!["file".to_string(), "remove".to_string(), args.search]).await;
+            result.combine_unchecked(exec(vec!["file".to_string(), "remove".to_string(), args.search]).await);
+
+            result.end_print();
         },
 
         // 移动文件
         ClientCommands::Move(args) => {
+            let mut result = ClientResult::result().await;
+
             if args.get {
                 // 获得文件的锁
-                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.from_search).clone()]).await;
+                result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), (&args.from_search).clone()]).await);
             }
 
             if args.local {
                 // 移动本地文件
-                client_move_local_file(args).await;
+                result.combine_unchecked(client_move_local_file(args).await);
 
             } else {
 
                 // 移动远程文件
-                client_execute_command(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await;
+                result.combine_unchecked(exec(vec!["file".to_string(), "move".to_string(), args.from_search, args.to_path]).await);
             }
+
+            result.end_print();
         },
 
         // 回滚文件
         ClientCommands::Rollback(args) => {
+            let mut result = ClientResult::result().await;
+
             if args.get {
                 // 获得文件的锁
-                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
+                result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await);
             }
             // 回滚版本
-            client_execute_command(vec!["file".to_string(), "rollback".to_string(), (&args.search).clone(), (&args.version).to_string()]).await;
+            result.combine_unchecked(exec(vec!["file".to_string(), "rollback".to_string(), (&args.search).clone(), (&args.version).to_string()]).await);
 
+            // 直接重新下载文件
             if args.back {
-                client_execute_command(vec!["view".to_string(), args.search, args.version.to_string()]).await;
+                result.combine_unchecked(exec(vec!["view".to_string(), args.search, args.version.to_string()]).await);
             }
+
+            result.end_print();
         }
 
         // 获得锁
-        ClientCommands::Get(args) => client_execute_command(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await,
+        ClientCommands::Get(args) => {
+            print_client_result(exec(vec!["file".to_string(), if args.longer { "get_longer".to_string() } else { "get".to_string() }, args.search]).await);
+        }
 
         // 丢掉锁
-        ClientCommands::Throw(args) => client_execute_command(vec!["file".to_string(), "throw".to_string(), args.search]).await,
+        ClientCommands::Throw(args) => {
+            print_client_result(exec(vec!["file".to_string(), "throw".to_string(), args.search]).await);
+        }
 
         // 查看锁
         ClientCommands::View(args) => {
+            let mut result = ClientResult::result().await;
+
             if let Some(version) = args.version {
-                client_execute_command(vec!["view".to_string(), (&args.search).clone(), version.to_string()]).await;
+                result.combine_unchecked(exec(vec!["view".to_string(), (&args.search).clone(), version.to_string()]).await);
             } else {
-                client_execute_command(vec!["view".to_string(), (&args.search).clone()]).await;
+                result.combine_unchecked(exec(vec!["view".to_string(), (&args.search).clone()]).await);
             }
 
             if args.get {
                 // 获得文件的锁
-                client_execute_command(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await;
+                result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), (&args.search).clone()]).await);
             }
+
+            result.end_print();
         },
 
         // 参数
@@ -594,21 +633,23 @@ pub async fn client_workspace_main() {
                     }
                 }
             } else {
+                let mut result = ClientResult::query(ClientResultQueryProcess::line_by_line).await;
                 for parameter in parameters() {
                     let parameter = parameter
                         .split("/")
                         .last().unwrap_or("")
                         .to_string();
                     if parameter.is_empty() { continue }
-                    println!("{} = \"{}\"",
+                    result.log(format!("{} = \"{}\"",
                              parameter.clone(),
                              read_parameter(parameter)
                                  .unwrap_or("".to_string())
                                  .replace("\n", "\\n")
                                  .replace("\t", "\\t")
                                  .replace("\r", "\\r")
-                    );
+                    ).as_str());
                 }
+                result.end_print();
             }
         }
 
@@ -621,14 +662,16 @@ pub async fn client_workspace_main() {
 }
 
 /// 移动本地文件
-async fn client_move_local_file(mv: MoveArgs) {
+async fn client_move_local_file(mv: MoveArgs) -> Option<ClientResult> {
+    let mut result = ClientResult::result().await;
+
     let mut local = LocalFileMap::read().await;
     let database = Database::read().await;
     let Some(local_file_mut) = local.search_to_local_mut(&database, mv.from_search.clone()) else {
-        eprintln!("Fail to move local file: '{}'", &mv.from_search);
-        return;
+        result.err(format!("Fail to move local file: '{}'", &mv.from_search).as_str());
+        return Some(result);
     };
-    let Ok(current_dir) = current_dir() else { return; };
+    let Ok(current_dir) = current_dir() else { return None; };
 
     let raw_path = current_dir.join(&local_file_mut.local_path);
     let target_path = current_dir.join(mv.to_path.clone());
@@ -641,7 +684,7 @@ async fn client_move_local_file(mv: MoveArgs) {
         local_file_mut.local_path = new_path.clone();
 
         // 移除 Uuid
-        let Some(uuid) = local.file_uuids.remove(&old_path) else { return; };
+        let Some(uuid) = local.file_uuids.remove(&old_path) else { return None; };
 
         // 重新绑定 Uuid 到新地址
         local.file_uuids.insert(new_path, uuid);
@@ -651,21 +694,26 @@ async fn client_move_local_file(mv: MoveArgs) {
 
             // 移动文件成功后，更新配置
             LocalFileMap::update(&local).await;
-            println!("Moved local file '{}' to '{}'", raw_path.display(), target_path.display());
+            result.log(format!("Moved local file '{}' to '{}'", raw_path.display(), target_path.display()).as_str());
+            return Some(result)
         }
 
     } else {
-        eprintln!("Cannot move file: file '{}' exists.", target_path.display());
+        result.err(format!("Cannot move file: file '{}' exists.", target_path.display()).as_str());
+        return Some(result)
     }
+    None
 }
 
 /// 将所有文件克隆到本地
 async fn client_clone() {
+    let mut result = ClientResult::result().await;
     let database = Database::read().await;
     for file in database.files() {
         println!("Checking {}", format!("\"{}\"", file.path()).cyan());
-        client_execute_command(vec!["view".to_string(), file.path()]).await
+        result.combine_unchecked(exec(vec!["view".to_string(), file.path()]).await);
     }
+    result.end_print();
 }
 
 /// 重定向
@@ -723,13 +771,16 @@ async fn client_query(command: ClientQueryCommands) {
 
         // 列出某个目录下的结构
         ClientQueryCommands::ListDirectory(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::line_by_line).await;
+            if args.completion_mode { result.set_debug(false); }
             let folder_map = LocalFolderMap::read().await;
             let database = Database::read().await;
             let current = args.value
                 .trim()
                 .trim_start_matches("./")
                 .trim_start_matches("/");
-            let list = folder_map.folder_files.get(current);
+
+            // 本地文件
             if let Ok(current_dir) = current_dir() {
                 let current_folder = current_dir.join(current);
                 if current_folder.exists() {
@@ -744,11 +795,11 @@ async fn client_query(command: ClientQueryCommands) {
                                         path = format!("{}/", path);
                                         if path == env!("PATH_WORKSPACE_ROOT") { continue }
                                         if ! folder_map.folder_files.contains_key(&path) {
-                                            println!("{}/", name);
+                                            result.log(format!("{}/", name).as_str());
                                         }
                                     } else {
                                         if ! database.contains_path(&path) {
-                                            println!("{}", name);
+                                            result.log(format!("{}", name).as_str());
                                         }
                                     }
                                 }
@@ -757,144 +808,176 @@ async fn client_query(command: ClientQueryCommands) {
                     }
                 }
             }
+
+            // 远程文件
+            let list = folder_map.folder_files.get(current);
             if let Some(list) = list {
-                let mut result_file = "".to_string();
-                let mut result_dir = "".to_string();
                 for item in list {
                     match item {
                         Node::Jump(directory_str) => {
                             let v = process_path(directory_str.trim().trim_end_matches('/'))
                                 .to_string().add("/");
-                            result_dir = format!("{}\n{}", result_dir, v);
+                            result.log(v.as_str());
                         }
                         Node::File(virtual_file_path_str) => {
                             let v = process_path(virtual_file_path_str);
-                            result_file = format!("{}\n{}", result_file, v);
+                            result.log(v.as_str());
                         }
                         _ => { continue; }
                     }
                 }
-                println!("{}", format!("{}\n{}", result_dir.trim(), result_file.trim()).trim());
             }
+            
+            // 短名称
+            if args.completion_mode {
+                for (k, _v) in folder_map.short_file_map {
+                    result.log(format!(":{}", k).as_str());
+                }
+            }
+            
+            result.end_print();
         }
 
         // 查询虚拟文件的Uuid
         ClientQueryCommands::FileUuid(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(uuid) = database.uuid_of_path(file.path()) {
-                    println!("{}", uuid);
+                    result.log(uuid.as_str());
+                    result.end_print();
                 }
             }
         }
 
         // 查询虚拟文件的版本
         ClientQueryCommands::FileVersion(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
-                println!("{}", file.version())
+                result.log(format!("{}", file.version()).as_str());
+                result.end_print();
             }
         }
 
         // 查询虚拟文件的路径
         ClientQueryCommands::FilePath(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
-                println!("{}", file.path())
+                result.log(format!("{}", file.path()).as_str());
+                result.end_print();
             }
         }
 
         // 查询虚拟文件的名称
         ClientQueryCommands::FileName(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
-                println!("{}", process_path(file.path().as_str()))
+                result.log(format!("{}", process_path(file.path().as_str())).as_str());
+                result.end_print();
             }
         }
 
         // 查询虚拟文件的锁定状态
         ClientQueryCommands::FileLockStatus(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             let workspace = Workspace::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(locker_owner) = file.get_locker_owner_uuid() {
                     if locker_owner == workspace.client.unwrap().uuid {
                         if file.is_longer_lock_unchecked() {
-                            println!("HELD")
+                            result.log("HELD");
                         } else {
-                            println!("held")
+                            result.log("held")
                         }
                     } else {
                         if file.is_longer_lock_unchecked() {
-                            println!("LOCK")
+                            result.log("LOCK")
                         } else {
-                            println!("lock")
+                            result.log("lock")
                         }
                     }
                 } else {
-                    println!("Available")
+                    result.log("Available")
                 }
             }
+            result.end_print();
         }
 
         // 查询自己的Uuid
         ClientQueryCommands::SelfUuid => {
-            println!("{}", Workspace::read().await.client.unwrap().uuid);
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
+            result.log(format!("{}", Workspace::read().await.client.unwrap().uuid).as_str());
+            result.end_print();
         }
 
         // 查询目标工作区地址
         ClientQueryCommands::TargetAddress => {
-            println!("{}", Workspace::read().await.client.unwrap().target_addr);
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
+            result.log(format!("{}", Workspace::read().await.client.unwrap().target_addr).as_str());
+            result.end_print();
         }
 
         // 查询目标工作区名称
         ClientQueryCommands::Workspace => {
-            println!("{}", Workspace::read().await.client.unwrap().workspace_name);
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
+            result.log(format!("{}", Workspace::read().await.client.unwrap().workspace_name).as_str());
+            result.end_print();
         }
 
         // 查询虚拟文件是否在本地
         ClientQueryCommands::ContainLocal(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             let local = LocalFileMap::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(uuid) = database.uuid_of_path(file.path()) {
                     if let Some(_) = local.file_paths.get(uuid.as_str()) {
-                        println!("True");
+                        result.log("true");
                     } else {
-                        println!("False");
+                        result.log("false");
                     }
                 }
             }
+            result.end_print();
         }
 
         // 查询本地文件映射的虚拟文件
         ClientQueryCommands::LocalToRemote(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             let local = LocalFileMap::read().await;
             if let Some(uuid) = local.local_path_to_uuid(args.value.trim().to_string()) {
                 if let Some(file) = database.search_file(uuid.trim().to_string()) {
                     if file.path().is_empty() {
-                        println!("{}", uuid);
+                        result.log(format!("{}", uuid).as_str());
                     } else {
-                        println!("{}", file.path())
+                        result.log(format!("{}", file.path()).as_str());
                     }
                 }
             }
+            result.end_print();
         }
 
         // 查询虚拟文件映射的本地文件
         ClientQueryCommands::RemoteToLocal(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             let local = LocalFileMap::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(local_file) = local.search_to_local(&database, file.path()) {
-                    println!("{}", local_file.local_path)
+                    result.log(format!("{}", local_file.local_path).as_str());
                 }
             }
+            result.end_print();
         }
 
         // 查询本地文件是否被更改
         ClientQueryCommands::Changed(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             let local = LocalFileMap::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
@@ -911,22 +994,25 @@ async fn client_query(command: ClientQueryCommands) {
                     };
                     if let Some(digest) = current_digest {
                         if digest.trim() == local_digest {
-                            println!("False");
+                            result.log("false");
                         } else {
-                            println!("True");
+                            result.log("true");
                         }
                     }
                 }
             }
+            result.end_print();
         }
 
         // 查询本地文件的版本号
         ClientQueryCommands::LocalVersion(args) => {
+            let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
             let local = LocalFileMap::read().await;
             if let Some(local_file) = local.search_to_local(&database, args.value.trim().to_string()) {
-                println!("{}", local_file.local_version);
+                result.log(format!("{}", local_file.local_version).as_str());
             }
+            result.end_print();
         }
     }
 
@@ -1004,14 +1090,19 @@ fn client_print_helps() {
 }
 
 /// 客户端运行命令
-async fn client_execute_command(args: Vec<String>) {
-    // 运行命令
-    execute(args).await;
+async fn exec(args: Vec<String>) -> Option<ClientResult> {
+    execute(args).await
 }
 
 /// 查询参数
 fn client_query_param(param_name: String) {
     print!("{}", read_parameter(param_name.clone()).unwrap_or("".to_string()));
+}
+
+fn print_client_result(result : Option<ClientResult>) {
+    if let Some(result) = result {
+        result.end_print()
+    }
 }
 
 fn print_glock_xd() {

@@ -61,6 +61,9 @@ struct ClientSetupArgs {
     // 工作区名称 (由网络发现获取目标地址)
     #[arg(short, long)]
     workspace: Option<String>,
+
+    #[arg(long)]
+    debug: bool
 }
 
 /// 服务端建立参数
@@ -167,7 +170,9 @@ async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace)
         // 登录口令
         login_code: args.login_code.trim().to_string(),
 
-        uuid: "".to_string()
+        uuid: "".to_string(),
+
+        debug: args.debug,
     };
     workspace.client = Some(client);
 
@@ -194,7 +199,7 @@ async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace)
         members: HashMap::new(),
         member_uuids: HashMap::new(),
         login_code_map: HashMap::new(),
-        enable_debug_logger: false,
+        enable_debug_logger: true,
     };
     workspace.server = Some(server);
 
