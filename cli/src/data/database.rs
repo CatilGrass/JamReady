@@ -16,9 +16,11 @@ use crate::data::workspace::Workspace;
 pub struct Database {
 
     /// 所有文件 (Uid, 文件)
+    #[serde(rename = "Files")]
     virtual_files: HashMap<String, VirtualFile>,
 
     /// 文件目录和 Uid 的映射 (目录, Uuid)
+    #[serde(rename = "Uuids")]
     virtual_uuids: HashMap<String, String>
 }
 
@@ -28,24 +30,31 @@ pub struct Database {
 pub struct VirtualFile {
 
     /// 目录
+    #[serde(rename = "Path")]
     path: String,
 
     /// 映射到的本地文件
+    #[serde(rename = "Real")]
     real: String,
 
     /// 该文件的版本号
+    #[serde(rename = "Version")]
     version: u32,
 
     /// 该文件的修改历史
+    #[serde(rename = "History")]
     change_histories: HashMap<u32, String>,
 
     /// 该文件的历史版本映射
+    #[serde(rename = "Real_History")]
     real_histories: HashMap<u32, String>,
 
     /// 文件状态
+    #[serde(rename = "Status")]
     state: VirtualFileState,
 
     /// 锁是否长期持有
+    #[serde(rename = "LongTerm")]
     longer_lock: bool
 }
 

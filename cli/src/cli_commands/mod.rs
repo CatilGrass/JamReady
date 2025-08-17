@@ -1,3 +1,7 @@
 pub mod setup;
-mod client;
-mod server;
+
+pub mod server;
+
+pub mod client;
+
+mod cli_command_client;

@@ -39,99 +39,103 @@ impl Command for ViewCommand {
 
         // 检查参数数量
         if args.len() < 2 { return None; } // <搜索>
+        let inputs = args[1].split("|");
 
         // 检查是否存在指定版本号 <搜索> <版本>
         let view_version = if args.len() < 3 { "0" } else { args[2] };
 
-        // 成功状态
-        let mut success = false;
-        let mut print_msg = "".to_string();
+        for input in inputs {
 
-        // 文件目录
-        let file_path_str = args[1].to_string();
-        let file = database.search_file(file_path_str.clone());
-        if let Some(file) = file {
+            // 成功状态
+            let mut success = false;
+            let mut print_msg = "".to_string();
 
-            // 尝试寻找本地映射，找不到用默认映射
-            if let Some(client_path) = local.file_to_path(&database, file) {
-                // 是否准备就绪
-                let mut ready = true;
+            // 文件目录
+            let file_path_str = input.to_string();
+            let file = database.search_file(file_path_str.clone());
+            if let Some(file) = file {
 
-                // 如果文件存在且版本与服务端的版本匹配，且指定版本为 0 (最新版)，则不下载
-                if let Some(local_uuid) = database.uuid_of_path(file.path()) {
-                    if let Some(local_file) = local.file_paths.get(&local_uuid) {
-                        if local_file.local_version == file.version() && client_path.exists()
-                            && view_version == "0" {
+                // 尝试寻找本地映射，找不到用默认映射
+                if let Some(client_path) = local.file_to_path(&database, file) {
+                    // 是否准备就绪
+                    let mut ready = true;
 
-                            // 发送 "未就绪"
-                            send_msg(stream, &ClientMessage::NotReady).await;
-                            ready = false;
+                    // 如果文件存在且版本与服务端的版本匹配，且指定版本为 0 (最新版)，则不下载
+                    if let Some(local_uuid) = database.uuid_of_path(file.path()) {
+                        if let Some(local_file) = local.file_paths.get(&local_uuid) {
+                            if local_file.local_version == file.version() && client_path.exists()
+                                && view_version == "0" {
 
-                            print_msg = "The file is already the latest version, no need to download".to_string();
-                        }
-                    }
-                }
+                                // 发送 "未就绪"
+                                send_msg(stream, &ClientMessage::NotReady).await;
+                                ready = false;
 
-                if ready {
-                    // 发送 "就绪"
-                    send_msg(stream, &ClientMessage::Ready).await;
-
-                    // 下载文件
-                    match read_file(stream, client_path.clone()).await {
-                        Ok(_) => {
-                            // 获得本地文件映射的键
-                            let local_path_buf;
-                            if let Some(p) = local.search_to_path_relative(&database, file.path()) {
-                                local_path_buf = p;
-                            } else {
-                                local_path_buf = PathBuf::from_str(file.path().as_str()).unwrap();
+                                print_msg = "The file is already the latest version, no need to download".to_string();
                             }
+                        }
+                    }
 
-                            // 写入本地文件映射
-                            let local_path_str = process_path_text(local_path_buf.display().to_string());
-                            if let Some(uuid) = database.uuid_of_path(file.path()) {
-                                local.file_paths.insert(uuid.clone(), LocalFile {
-                                    local_path: local_path_str.clone(),
-                                    local_version: if let Ok(version) = u32::from_str(view_version) {
-                                        if version == 0 { file.version() } else { version }
-                                    } else {
-                                        file.version()
-                                    },
-                                    local_digest: md5_digest(client_path).unwrap_or("".to_string()),
-                                });
-                                local.file_uuids.insert(local_path_str, uuid.clone());
+                    if ready {
+                        // 发送 "就绪"
+                        send_msg(stream, &ClientMessage::Ready).await;
+
+                        // 下载文件
+                        match read_file(stream, client_path.clone()).await {
+                            Ok(_) => {
+                                // 获得本地文件映射的键
+                                let local_path_buf;
+                                if let Some(p) = local.search_to_path_relative(&database, file.path()) {
+                                    local_path_buf = p;
+                                } else {
+                                    local_path_buf = PathBuf::from_str(file.path().as_str()).unwrap();
+                                }
+
+                                // 写入本地文件映射
+                                let local_path_str = process_path_text(local_path_buf.display().to_string());
+                                if let Some(uuid) = database.uuid_of_path(file.path()) {
+                                    local.file_paths.insert(uuid.clone(), LocalFile {
+                                        local_path: local_path_str.clone(),
+                                        local_version: if let Ok(version) = u32::from_str(view_version) {
+                                            if version == 0 { file.version() } else { version }
+                                        } else {
+                                            file.version()
+                                        },
+                                        local_digest: md5_digest(client_path).unwrap_or("".to_string()),
+                                    });
+                                    local.file_uuids.insert(local_path_str, uuid.clone());
+                                }
+                                print_msg = "File download completed".to_string();
+                                success = true;
                             }
-                            print_msg = "File download completed".to_string();
-                            success = true;
-                        }
-                        Err(_) => {
-                            print_msg = "File download failed".to_string();
+                            Err(_) => {
+                                print_msg = "File download failed".to_string();
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // 读取结束消息
-        select! {
-            _ = sleep(Duration::from_secs(2)) => {
-                print_msg = "Timeout".to_string();
-            }
-            result = read_msg::<ServerMessage>(stream) => {
-                match result {
-                    ServerMessage::Deny(err) => {
-                        print_msg = format!("{}. {}", print_msg, err);
+            // 读取结束消息
+            select! {
+                _ = sleep(Duration::from_secs(2)) => {
+                    print_msg = "Timeout".to_string();
+                }
+                result = read_msg::<ServerMessage>(stream) => {
+                    match result {
+                        ServerMessage::Deny(err) => {
+                            print_msg = format!("{}. {}", print_msg, err);
+                        }
+                        ServerMessage::Done => {}
+                        _ => {}
                     }
-                    ServerMessage::Done => {}
-                    _ => {}
                 }
             }
-        }
 
-        if success {
-            command_result.log(print_msg.as_str());
-        } else {
-            command_result.err(print_msg.as_str());
+            if success {
+                command_result.log(print_msg.as_str());
+            } else {
+                command_result.err(print_msg.as_str());
+            }
         }
 
         LocalFileMap::update(&local).await;
@@ -149,56 +153,60 @@ impl Command for ViewCommand {
 
         // 检查参数数量
         if args.len() < 2 { return; } // <搜索>
+        let inputs = args[1].split("|");
 
         // 检查是否存在指定版本号 <搜索> <版本>
         let view_version = if args.len() < 3 { "0" } else { args[2] };
 
-        // 确认客户端的准备状态
-        let read_message: ClientMessage = read_msg(stream).await;
+        for input in inputs {
 
-        // 成功状态
-        let mut success = false;
-        let mut return_message = "".to_string();
+            // 确认客户端的准备状态
+            let read_message: ClientMessage = read_msg(stream).await;
 
-        match read_message {
-            ClientMessage::Ready => {
+            // 成功状态
+            let mut success = false;
+            let mut return_message = "".to_string();
 
-                // 文件路径
-                let file_path_str = args[1].to_string();
-                let file = database.search_file(file_path_str.clone());
-                if let Some(file) = file {
+            match read_message {
+                ClientMessage::Ready => {
 
-                    // 获得文件的实际地址
-                    let real = if view_version == "0" {
-                        file.server_path()
-                    } else {
-                        if let Ok(version) = u32::from_str(view_version) {
-                            file.server_path_version(version)
+                    // 文件路径
+                    let file_path_str = input.to_string();
+                    let file = database.search_file(file_path_str.clone());
+                    if let Some(file) = file {
+
+                        // 获得文件的实际地址
+                        let real = if view_version == "0" {
+                            file.server_path()
                         } else {
-                            None
-                        }
-                    };
-
-                    if let Some(server_path) = real {
-                        match send_file(stream, server_path).await {
-                            Ok(_) => {
-                                success = true;
+                            if let Ok(version) = u32::from_str(view_version) {
+                                file.server_path_version(version)
+                            } else {
+                                None
                             }
-                            Err(err) => {
-                                let err_string = format!("{}", err);
-                                return_message = err_string;
+                        };
+
+                        if let Some(server_path) = real {
+                            match send_file(stream, server_path).await {
+                                Ok(_) => {
+                                    success = true;
+                                }
+                                Err(err) => {
+                                    let err_string = format!("{}", err);
+                                    return_message = err_string;
+                                }
                             }
                         }
                     }
                 }
+                _ => { }
             }
-            _ => { }
-        }
 
-        if success {
-            send_msg(stream, &ServerMessage::Done).await;
-        } else {
-            send_msg(stream, &ServerMessage::Deny(return_message.to_string())).await;
+            if success {
+                send_msg(stream, &ServerMessage::Done).await;
+            } else {
+                send_msg(stream, &ServerMessage::Deny(return_message.to_string())).await;
+            }
         }
     }
 }

@@ -4,8 +4,6 @@ use tokio::net::{TcpStream, UdpSocket};
 use jam_ready::connect_once;
 use jam_ready::utils::local_archive::LocalArchive;
 use crate::data::client_result::ClientResult;
-use crate::data::local_folder_map::LocalFolderMap;
-use crate::data::parameters::{read_parameter};
 use crate::data::workspace::{ClientWorkspace, Workspace};
 use crate::service::commands::registry;
 use crate::service::jam_command::execute_local_command;
@@ -30,24 +28,9 @@ pub async fn execute(command_input: Vec<String>) -> Option<ClientResult> {
 
         let mut args_input = Vec::new();
         for arg in command_input.iter() {
-            if arg.ends_with("?") {
-                // 若命令文本中存在 ? 说明有参数
-                let param = arg.to_lowercase().replace("?", "");
-                if let Some(content) = read_parameter(param) {
-                    args_input.push(content.trim().to_string());
-                }
-            } else if arg.starts_with(":") {
-                // 若命令文本开头为 : 说明为简写
-                let folder_map = LocalFolderMap::read().await;
-                let full = folder_map.short_file_map.get(&arg.replace(":", "").to_string());
-                if let Some(full) = full {
-                    args_input.push(full.to_string());
-                }
-            } else {
-                // 正常加入
-                args_input.push(arg.clone());
-            }
+            args_input.push(arg.clone());
         }
+
         let args = args_input.iter().map(String::as_str).collect::<Vec<&str>>();
 
         // 若成功取得流，进入正式操作

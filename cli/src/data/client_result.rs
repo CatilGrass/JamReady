@@ -192,6 +192,15 @@ impl ClientResult {
         }
     }
 
+    pub fn err_and_end(mut self, msg: &str) {
+        self.err(msg);
+        self.end_print();
+    }
+
+    pub fn has_result(&self) -> bool {
+        self.info_msg.len() > 0 || self.warn_msg.len() > 0 || self.err_msg.len() > 0
+    }
+
     pub fn combine(&mut self, other: ClientResult) -> Result<(), ()> {
 
         // 类型为 查询 时，无法合并

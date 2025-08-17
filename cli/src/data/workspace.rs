@@ -13,12 +13,15 @@ use jam_ready::utils::local_archive::LocalArchive;
 pub struct Workspace {
 
     /// 工作区类型
+    #[serde(rename = "Type")]
     pub workspace_type: WorkspaceType,
 
     /// 成员工作区
+    #[serde(rename = "Client")]
     pub client: Option<ClientWorkspace>,
 
     /// 服务器工作区
+    #[serde(rename = "Server")]
     pub server: Option<ServerWorkspace>,
 }
 
@@ -40,18 +43,23 @@ pub enum WorkspaceType {
 pub struct ClientWorkspace {
 
     /// 连接到的工作区名称 (无法连接会尝试网络发现)
+    #[serde(rename = "Workspace")]
     pub workspace_name: String,
 
     /// 成员连接到的地址
+    #[serde(rename = "Address")]
     pub target_addr: SocketAddr,
 
     /// 登录口令
+    #[serde(rename = "LoginCode")]
     pub login_code: String,
 
     /// 成员自身的 Uuid
+    #[serde(rename = "SelfUuid")]
     pub uuid: String,
 
     /// 调试输出
+    #[serde(rename = "Debug")]
     pub debug: bool,
 }
 
@@ -59,18 +67,23 @@ pub struct ClientWorkspace {
 pub struct ServerWorkspace {
 
     /// 工作区名称 (用于网络发现)
+    #[serde(rename = "Name")]
     pub workspace_name: String,
 
     /// 成员表
+    #[serde(rename = "Members")]
     pub members: HashMap<String, Member>,
 
     /// 成员 ID 和 UUID 映射
+    #[serde(rename = "MemUuids")]
     pub member_uuids: HashMap<String, String>,
 
     /// 登录代码映射
+    #[serde(rename = "LoginCodes")]
     pub login_code_map: HashMap<String, String>,
 
     /// 是否启用 Debug 级别 Logger
+    #[serde(rename = "Debug")]
     pub enable_debug_logger: bool,
 }
 

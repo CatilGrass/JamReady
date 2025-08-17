@@ -9,9 +9,11 @@ use strum_macros::EnumIter;
 pub struct Member {
 
     /// 成员名称
+    #[serde(rename = "Name")]
     pub member_name: String,
 
     /// 成员职责
+    #[serde(rename = "Duty")]
     pub member_duties: Vec<MemberDuty>,
 }
 

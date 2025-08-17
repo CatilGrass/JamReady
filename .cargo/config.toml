@@ -15,7 +15,7 @@ release = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "-
 # ------ 项目设置 ------
 
 # 项目版本
-PROJECT_VERSION = { value = "0.1.2" }
+PROJECT_VERSION = { value = "0.1.3" }
 
 # ----- 服务器设置 -----
 
@@ -26,15 +26,15 @@ DEFAULT_SERVER_PORT = { value = "5011" }
 
 # 路径
 PATH_WORKSPACE_ROOT = { value = ".jam/" }
-PATH_PARAMETERS = { value = ".jam/param/" }
-PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/db_histories/" }
-PATH_DATABASE = { value = "storage/" }
+PATH_PARAMETERS = { value = ".jam/Params/" }
+PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/_Archived/" }
+PATH_DATABASE = { value = "Storage/" }
 
 # 文件
-FILE_DATABASE = { value = ".jam/db.yaml" }
-FILE_LOCAL_FILE_MAP = { value = ".jam/local.yaml" }
-FILE_LOCAL_FOLDER_MAP = { value = ".jam/struct.yaml" }
-FILE_WORKSPACE_SERVER_DATA = { value = ".jam/workspace.yaml" }
+FILE_DATABASE = { value = ".jam/DBRemote.yaml" }
+FILE_LOCAL_FILE_MAP = { value = ".jam/DBLocal.yaml" }
+FILE_LOCAL_FOLDER_MAP = { value = ".jam/_StructCache.yaml" }
+FILE_WORKSPACE_SERVER_DATA = { value = ".jam/Settings.yaml" }
 
 # ----- 工作区设置 -----
 
