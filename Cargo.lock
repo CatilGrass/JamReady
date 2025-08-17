@@ -482,7 +482,7 @@ dependencies = [
 
 [[package]]
 name = "jam_ready_cli"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "async-trait",
  "bincode",
@@ -495,6 +495,7 @@ dependencies = [
  "local_ipaddress",
  "log",
  "rand 0.9.1",
+ "regex",
  "serde",
  "serde_json",
  "serde_yaml",
