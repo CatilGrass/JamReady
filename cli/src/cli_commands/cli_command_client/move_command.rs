@@ -31,7 +31,7 @@ pub async fn client_move(args: MoveArgs) {
 
     if args.local {
         // 移动本地文件
-        result.combine_unchecked(client_move_local_file(args).await); // TODO :: 待接入 多文件操作
+        result.combine_unchecked(client_move_local_file(args).await);
 
     } else {
 

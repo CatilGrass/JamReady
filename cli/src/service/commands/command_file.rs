@@ -160,7 +160,7 @@ impl Command for FileOperationCommand {
                 });
             }
 
-            // 文件移动 TODO :: 还没搞
+            // 文件移动
             "move" => {
                 if args.len() < 4 {
 
@@ -223,7 +223,7 @@ impl Command for FileOperationCommand {
                 }
             }
 
-            // 回滚操作 TODO :: 还没搞
+            // 回滚操作
             "rollback" => {
                 if args.len() < 4 {
                     send_msg(stream, &Deny("Please specify the version to roll back to.".to_string())).await;
@@ -263,7 +263,7 @@ impl Command for FileOperationCommand {
                 }
             }
 
-            // 文件锁操作 TODO :: 还没搞
+            // 文件锁操作
             "get" | "get_longer" => {
                 let is_long = operation.trim() == "get_longer";
 
@@ -284,7 +284,7 @@ impl Command for FileOperationCommand {
                 }
             }
 
-            // 释放文件锁操作 TODO :: 还没搞
+            // 释放文件锁操作
             "throw" => {
 
                 for input in inputs {
