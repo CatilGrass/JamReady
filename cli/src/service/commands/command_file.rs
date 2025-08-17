@@ -32,13 +32,15 @@ impl Command for FileOperationCommand {
 
         // 此命令的所有操作均在服务端完成，客户端仅处理服务端的响应
         // 处理服务器响应
+        let cmd_name = args[1].to_uppercase();
         match read_msg(stream).await {
             Text(msg) => {
                 sync_local(stream).await;
-                command_result.log(msg.as_str());
+                command_result.log(format!("{} {}", format!("[ {} ]", cmd_name).cyan(), msg.as_str()).as_str());
             }
             Deny(msg) => {
-                command_result.err(msg.as_str());
+                sync_local(stream).await;
+                command_result.warn(format!("{} {}", format!("[ {} ]", cmd_name).cyan(), msg.as_str()).as_str());
                 return Some(command_result);
             }
             _ => {
@@ -99,25 +101,38 @@ impl Command for FileOperationCommand {
         }
 
         let operation = args[1].to_lowercase();
-        let input = args[2];
+        let inputs = args[2].split("|");
+
+        let mut total = 0;
+        let mut success = 0;
+        let mut fail = 0;
+
+        // 发送消息 -> 同步 -> 返回
+        // 或
+        // 增加失败次数 -> 更新错误信息，保证后续无执行
 
         match operation.trim() {
+
             // 文件添加
             "add" => {
                 entry_mutex_async!(database, |guard| {
-                    if guard.search_file(input.to_string()).is_some() {
-                        send_msg(stream, &Deny(format!("File '{}' already exists", input))).await;
+                    if guard.search_file(args[2].to_string()).is_some() {
+                        send_msg(stream, &Deny(format!("File '{}' already exists", args[2]))).await;
+                        sync_remote(stream, guard).await;
                         return;
                     }
 
-                    match guard.insert_virtual_file(VirtualFile::new(input.to_string())) {
+                    match guard.insert_virtual_file(VirtualFile::new(args[2].to_string())) {
                         Ok(true) => {
-                            send_msg(stream, &Text(format!("Created virtual file '{}'", input))).await;
+                            send_msg(stream, &Text(format!("Created virtual file '{}'", args[2]))).await;
                             sync_remote(stream, guard).await;
                             Database::update(guard).await;
+                            return;
                         }
                         _ => {
                             send_msg(stream, &Deny("Failed to create virtual file".to_string())).await;
+                            sync_remote(stream, guard).await;
+                            return;
                         }
                     }
                 })
@@ -126,157 +141,201 @@ impl Command for FileOperationCommand {
             // 文件移除
             "remove" => {
                 entry_mutex_async!(database, |guard| {
-                    let path = process_path_text(input.to_string());
-                    let Some(file) = guard.search_file_mut(input.to_string()) else {
-                        send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return;
-                    };
-
-                    if !is_available(file, stream, uuid.clone()).await {
-                        return;
-                    }
-
-                    match guard.remove_file_map(path) {
-                        Ok(_) => {
-                            send_msg(stream, &Text(format!("Removed virtual file '{}'", input))).await;
-                            sync_remote(stream, guard).await;
-                            Database::update(guard).await;
+                    for input in inputs {
+                        total += 1;
+                        let path = process_path_text(input.to_string());
+                        let Some(file) = guard.search_file_mut(input.to_string()) else {
+                            fail += 1;
+                            continue;
+                        };
+                        if !is_available(file, stream, uuid.clone()).await {
+                            fail += 1;
+                            continue;
                         }
-                        Err(_) => {
-                            send_msg(stream, &Deny(format!("Failed to remove '{}'", input))).await;
+                        match guard.remove_file_map(path) {
+                            Ok(_) => success += 1,
+                            Err(_) => fail += 1
                         }
                     }
-                })
+                });
             }
 
-            // 文件移动
+            // 文件移动 TODO :: 还没搞
             "move" => {
                 if args.len() < 4 {
+
+                    // 缺失目标点
                     send_msg(stream, &Deny("Missing destination path".to_string())).await;
+                    entry_mutex_async!(database, |guard| sync_remote(stream, guard).await);
                     return;
                 }
 
-                entry_mutex_async!(database, |guard| {
-                    let Some(file) = guard.search_file_mut(input.to_string()) else {
-                        send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return;
-                    };
+                let from = inputs.map(|s| s.to_string()).collect::<Vec<String>>();
+                let to = args[3].split("|").map(|s| s.to_string()).collect::<Vec<String>>();
+                let from_count = from.len();
+                let to_count = to.len();
 
-                    if !is_available(file, stream, uuid.clone()).await {
-                        return;
-                    }
+                // 目标数量和输入数量不匹配
+                if from_count != to_count {
+                    send_msg(stream, &Deny("The number of \"from\" and \"to\" parameters does not match.".to_string())).await;
+                    entry_mutex_async!(database, |guard| sync_remote(stream, guard).await);
+                    return;
+                }
 
-                    let dest = process_path_text(args[3].to_string());
+                // 匹配，构建表
+                let mut i = 0;
+                while i < from_count {
+                    total += 1;
+                    let def = String::default();
+                    let (from_path, to_path) =
+                        (from.get(i).unwrap_or(&def),
+                         to.get(i).unwrap_or(&def));
+                    let (from_path, to_path) = (from_path.clone(), to_path.clone());
+                    i += 1;
 
-                    // 尝试路径移动
-                    if guard.move_file(input.to_string(), dest.clone()).is_ok() {
-                        send_msg(stream, &Text(format!("Moved '{}' to '{}'", input, args[3]))).await;
-                        sync_remote(stream, guard).await;
-                        Database::update(guard).await;
-                    }
+                    entry_mutex_async!(database, |guard| {
+                        let Some(file) = guard.search_file_mut(from_path.clone()) else {
+                            fail += 1;
+                            continue;
+                        };
 
-                    // 尝试UUID移动
-                    if guard.move_file_with_uuid(input.to_string(), dest).is_ok() {
-                        send_msg(stream, &Text(format!("Moved UUID '{}' to '{}'", input, args[3]))).await;
-                        sync_remote(stream, guard).await;
-                        Database::update(guard).await;
-                    }
+                        if !is_available(file, stream, uuid.clone()).await {
+                            continue;
+                        }
 
-                    send_msg(stream, &Deny(format!("Failed to move '{}'", input))).await;
-                })
+                        let dest = process_path_text(to_path);
+
+                        // 尝试路径移动
+                        if guard.move_file(from_path.clone(), dest.clone()).is_ok() {
+                            success += 1;
+                            continue;
+                        }
+
+                        // 尝试UUID移动
+                        if guard.move_file_with_uuid(from_path, dest).is_ok() {
+                            success += 1;
+                            continue;
+                        }
+
+                        // 跳出条件判断则视为失败
+                        fail += 1;
+                    });
+                }
             }
 
-            // 回滚操作
+            // 回滚操作 TODO :: 还没搞
             "rollback" => {
                 if args.len() < 4 {
-                    send_msg(stream, &Deny("Missing destination path".to_string())).await;
+                    send_msg(stream, &Deny("Please specify the version to roll back to.".to_string())).await;
+                    entry_mutex_async!(database, |guard| sync_remote(stream, guard).await);
                     return;
                 }
 
-                entry_mutex_async!(database, |guard| {
-                    // 文件
-                    let Some(file) = guard.search_file_mut(input.to_string()) else {
-                        send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return;
-                    };
+                for input in inputs {
+                    total += 1;
+                    entry_mutex_async!(database, |guard| {
 
-                    if !is_available(file, stream, uuid.clone()).await {
-                        return;
-                    }
+                        // 文件
+                        let Some(file) = guard.search_file_mut(input.to_string()) else {
+                            fail += 1;
+                            continue;
+                        };
 
-                    // 回滚的版本
-                    let Ok(rollback_version) = u32::from_str(args[3].to_string().trim()) else {
-                        send_msg(stream, &Deny(format!("Invalid version number '{}' ", args[3]))).await;
-                        return;
-                    };
+                        if !is_available(file, stream, uuid.clone()).await {
+                            continue;
+                        }
 
-                    // 回滚
-                    if file.rollback_to_version(rollback_version) {
-                        send_msg(stream, &Text(format!("Rollback to '{}'", rollback_version))).await;
+                        // 回滚的版本
+                        let Ok(rollback_version) = u32::from_str(args[3].to_string().trim()) else {
+                            fail += 1;
+                            continue;
+                        };
 
-                        sync_remote(stream, guard).await;
-                        Database::update(guard).await;
-                    } else {
-                        send_msg(stream, &Deny(format!("Rollback to '{}' failed", rollback_version))).await;
-                    }
-                })
+                        // 回滚
+                        if file.rollback_to_version(rollback_version) {
+                            success += 1;
+                            continue;
+                        } else {
+                            fail += 1;
+                            continue;
+                        }
+                    })
+                }
             }
 
-            // 文件锁操作
+            // 文件锁操作 TODO :: 还没搞
             "get" | "get_longer" => {
                 let is_long = operation.trim() == "get_longer";
 
-                entry_mutex_async!(database, |guard| {
-                    let Some(file) = guard.search_file_mut(input.to_string()) else {
-                        send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return;
-                    };
+                for input in inputs {
+                    total += 1;
+                    entry_mutex_async!(database, |guard| {
+                        let Some(file) = guard.search_file_mut(input.to_string()) else {
+                            fail += 1;
+                            continue;
+                        };
 
-                    if file.give_uuid_locker(uuid.clone(), is_long).await {
-                        let action = if is_long { "long-term lock" } else { "lock" };
-                        send_msg(stream, &Text(format!("Acquired {} on '{}'", action, input))).await;
-                        let _ = file;
-
-                        sync_remote(stream, guard).await;
-                        Database::update(guard).await;
-                    } else {
-                        send_msg(stream, &Deny("Failed to acquire lock".to_string())).await;
-                    }
-                })
+                        if file.give_uuid_locker(uuid.clone(), is_long).await {
+                            success += 1;
+                        } else {
+                            fail += 1;
+                        }
+                    })
+                }
             }
 
-            // 释放文件锁操作
+            // 释放文件锁操作 TODO :: 还没搞
             "throw" => {
 
-                entry_mutex_async!(database, |guard| {
-                    let Some(file) = guard.search_file_mut(input.to_string()) else {
-                        send_msg(stream, &Deny(format!("File '{}' not found", input))).await;
-                        return;
-                    };
+                for input in inputs {
+                    total += 1;
+                    entry_mutex_async!(database, |guard| {
+                        let Some(file) = guard.search_file_mut(input.to_string()) else {
+                            fail += 1;
+                            continue;
+                        };
 
-                    match file.get_locker_owner().await {
-                        Some((owner, _)) if owner == uuid => {
-                            file.throw_locker();
-                            send_msg(stream, &Text(format!("Released lock on '{}'", input))).await;
-                            let _ = file;
-
-                            sync_remote(stream, guard).await;
-                            Database::update(guard).await;
+                        match file.get_locker_owner().await {
+                            Some((owner, _)) if owner == uuid => {
+                                file.throw_locker();
+                                success += 1;
+                            }
+                            Some(_) => {
+                                fail += 1;
+                            }
+                            None => {
+                                fail += 1;
+                            }
                         }
-                        Some(_) => {
-                            send_msg(stream, &Deny("File locked by another member".to_string())).await;
-                        }
-                        None => {
-                            send_msg(stream, &Deny("File is not locked".to_string())).await;
-                        }
-                    }
-                })
+                    })
+                }
             }
 
             // 未知操作
             _ => {
                 send_msg(stream, &Deny(format!("Unknown operation '{}'", operation))).await;
+                entry_mutex_async!(database, |guard| sync_remote(stream, guard).await);
             }
+        }
+
+        // 处理结果信息
+        if fail > 0 || success < 1 {
+            send_msg(stream, &Deny(format!("Operate {} files (success {}, fail {})", total, success, fail))).await;
+            entry_mutex_async!(database, |guard| {
+                sync_remote(stream, guard).await;
+            })
+        } else {
+            send_msg(stream, &Text(format!("Operate {} files", success))).await;
+            entry_mutex_async!(database, |guard| {
+                sync_remote(stream, guard).await;
+            })
+        }
+
+        // 成功任何一个就需要保存
+        if success > 0 {
+            entry_mutex_async!(database, |guard| {
+                Database::update(guard).await;
+            })
         }
     }
 }
