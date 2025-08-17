@@ -12,9 +12,11 @@ use std::path::PathBuf;
 pub struct LocalFileMap {
 
     /// Uuid 和本地路径的映射
+    #[serde(rename = "Files")]
     pub file_paths: HashMap<String, LocalFile>,
 
     /// 路径 和 Uuid 的映射
+    #[serde(rename = "UuidMappings")]
     pub file_uuids: HashMap<String, String>
 }
 
@@ -22,12 +24,15 @@ pub struct LocalFileMap {
 pub struct LocalFile {
 
     /// 本地路径
+    #[serde(rename = "Path")]
     pub local_path: String,
 
     /// 本地持有的版本
+    #[serde(rename = "Version")]
     pub local_version: u32,
 
     /// 本地文件摘要
+    #[serde(rename = "Digest")]
     pub local_digest: String,
 }
 

@@ -1,18 +1,20 @@
 use crate::data::database::Database;
 use bincode::{Decode, Encode};
 use jam_ready::utils::local_archive::LocalArchive;
+use jam_ready::utils::text_process::split_path_text;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use jam_ready::utils::text_process::split_path_text;
 
 /// 本地文件映射
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct LocalFolderMap {
 
     /// 目录完整路径和其中的文件信息映射
+    #[serde(rename = "Mapping")]
     pub folder_files: HashMap<String, Vec<Node>>,
 
     /// 简化的文件搜索
+    #[serde(rename = "Short")]
     pub short_file_map: HashMap<String, String>,
 }
 
@@ -25,6 +27,9 @@ pub enum Node {
 
     /// 跳转 (目录完整路径 Folder/)
     Jump(String),
+
+    /// 父级跳转
+    Parent(String),
 
     /// 文件 (完整路径 Folder/file.txt)
     /// 为什么不包含 Uuid? 该数据仅为提高客户端界面查询文件结构速度而存在，真正的数据存储在 database.yaml 中
@@ -68,8 +73,19 @@ impl From<&Database> for LocalFolderMap {
 
         // 构建目录结构
         for dir_path in &all_dirs {
+
             // 确保目录在映射中存在
-            folder_files.entry(dir_path.clone()).or_default();
+            let entry = folder_files.entry(dir_path.clone()).or_default();
+
+            // 添加 Parent 节点
+            if !dir_path.is_empty() {
+                if let Some(parent_dir) = get_parent_dir(dir_path) {
+                    let parent_node = Node::Parent(parent_dir);
+                    if !entry.contains(&parent_node) {
+                        entry.push(parent_node);
+                    }
+                }
+            }
 
             // 获取所有直接的子目录
             let sub_dirs: Vec<_> = all_dirs.iter()
