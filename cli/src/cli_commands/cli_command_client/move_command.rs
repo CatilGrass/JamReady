@@ -18,6 +18,7 @@ pub async fn client_move(args: MoveArgs) {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
         return;
     };
+
     let to = comp_param_to(&config, from.clone().next_with_string(args.to_path.clone()));
     let Ok(to) = to else {
         result.err_and_end(format!("{}", to.err().unwrap()).as_str());

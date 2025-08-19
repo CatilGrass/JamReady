@@ -4,10 +4,8 @@ target-dir = "./.cargo/shared/target"
 [alias]
 
 # 构建相关
-win_dev = ["build", "--workspace", "--profile", "dev", "--target", "x86_64-pc-windows-msvc"]
-win_release = ["build", "--workspace", "--profile", "release", "--target", "x86_64-pc-windows-msvc"]
-linux_dev = ["build", "--workspace", "--profile", "dev", "--target", "x86_64-unknown-linux-musl"]
-linux_release = ["build", "--workspace", "--profile", "release", "--target", "x86_64-unknown-linux-musl"]
+build_dev = ["build", "--workspace", "--profile", "dev"]
+build_release = ["build", "--workspace", "--profile", "release"]
 
 # 打包相关
 dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_porject", "dev" ]
