@@ -2,8 +2,7 @@
 name = "jam_ready"
 description = "JamReady - Accelerate your GameJam, focus on creation! Escape the hassle of asset management!"
 authors = [
-    "Weicao-CatilGrass (Github)",
-    "overlord48677 (Github)"
+    "Weicao-CatilGrass (Github)"
 ]
 edition = "2024"
 
@@ -43,7 +42,8 @@ members = [
 version = "0.1.3"
 
 [profile.release]
-opt-level = "z"
+opt-level = 3
 lto = "fat"
 codegen-units = 1
 panic = "abort"
+debug = false
