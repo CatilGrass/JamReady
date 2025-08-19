@@ -55,7 +55,7 @@ enum ServerOperationCommands {
     Set(ServerSetCommands),
 }
 
-/// 服务端操作指向
+/// 服务端操作目标
 #[derive(Subcommand, Debug)]
 enum ServerOperationTargetCommands {
 
