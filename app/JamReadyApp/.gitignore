@@ -4,5 +4,8 @@
 .obj/
 .obj/*
 
+JamReadyAppUtils/bin/
+JamReadyAppUtils/bin/*
+
 JamReadyWorkspace/bin/
 JamReadyWorkspace/bin/*
