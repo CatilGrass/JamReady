@@ -10,6 +10,7 @@ pub fn comp_param_from(config: &CompConfig, mut context: CompContext) -> Result<
     context = comp_short_path_tag(&config, context)?;
     context = comp_multi_file_regex_tag(&config, context)?;
     // context = comp_normalize(context)?;
+
     Ok(comp_final(context))
 }
 
@@ -60,6 +61,9 @@ pub fn comp_context_path_tag(mut context: CompContext) -> Result<CompContext, Co
 
         // 修改输入
         context.input = full.clone();
+
+        // 修改上下文
+        context.ctx = get_path(&context.input.clone());
 
         return Ok(context)
     }
@@ -132,9 +136,9 @@ pub fn comp_short_path_tag(config: &CompConfig, mut context: CompContext) -> Res
             context.input = full.clone();
 
             // 修改上下文
-            context.ctx = full.clone();
+            context.ctx = get_path(&full.clone());
 
-            // 导出结果，并设置上下文
+            // 导出结果
             return Ok(context)
         }
         return Err(CompError::err("Incorrect short path."));
