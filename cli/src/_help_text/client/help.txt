@@ -1,0 +1,30 @@
+[yellow]JAM CLIENT[/yellow] - [cyan]{Workspace_Name}[/cyan]
+
+    ONLINE COMMANDS:
+        [FILE OPERATIONS]
+        [yellow]jam[/yellow] [gray]<add/remove/move>[/gray]
+
+        [OWNERSHIP OPERATIONS]
+        [yellow]jam[/yellow] [gray]<get/throw>[/gray]
+
+        [FILE TRANSFER]
+        [yellow]jam[/yellow] [gray]<view/commit>[/gray]
+
+        [VERSION CONTROL]
+        [yellow]jam[/yellow] [gray]<rollback>[/gray]
+
+        [STRUCT]
+        [yellow]jam[/yellow] [gray]<struct/update>[/gray]
+
+        [CONNECTION]
+        [yellow]jam[/yellow] [gray]<redirect>[/gray]
+
+    [green]Learn more:[/green] [yellow]jam[/yellow] [gray]<COMMAND> --help[/gray]
+
+    OFFLINE COMMANDS:
+    [yellow]jam[/yellow] query [gray]<QUERY_TYPE> <QUERY_ITEMS?>[/gray]
+        Alias: q
+        Query some data.
+
+    [yellow]jam[/yellow] param [gray]<KEY> <VALUE?>[/gray]
+        Alias: set

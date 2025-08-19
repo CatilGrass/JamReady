@@ -1,0 +1,8 @@
+[yellow]JAM CLIENT[/yellow] - [cyan]{Workspace_Name}[/cyan]
+
+    COMMANDS:
+    [yellow]jam[/yellow] [gray]run[/gray]
+        Run VCS Server.
+
+    [yellow]jam[/yellow] [gray]<add/remove/list/query/set>[/gray]
+        View or modify workspace configs.

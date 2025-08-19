@@ -1,0 +1,11 @@
+[yellow] It's not a workspace directory! [/yellow]
+
+[green] Setup a SERVER WORKSPACE: [/green]
+    ~# jam setup <WORKSPACE_NAME>
+
+[green] Join a CLIENT WORKSPACE: [/green]
+    [gray]// Use Workspace Name[/gray]
+    ~# jam login <LOGIN_CODE> --workspace <WORKSPACE_NAME>
+
+    [gray]// Use Ip Address[/gray]
+    ~# jam login <LOGIN_CODE> --target <TARGET_ADDR>
