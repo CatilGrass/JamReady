@@ -1,18 +1,16 @@
-use crate::cli_commands::client::{client_workspace_main, ClientWorkspaceEntry};
+use crate::cli_commands::client::client_workspace_main;
 use crate::cli_commands::server::server_workspace_main;
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::workspace::WorkspaceType::{Client, Server, Unknown};
 use crate::data::workspace::{ClientWorkspace, ServerWorkspace, Workspace};
 use crate::service::jam_client::search_workspace_lan;
-use clap::{Args, CommandFactory, Parser, Subcommand};
-use clap_complete::generate;
+use clap::{Args, Parser, Subcommand};
 use jam_ready::utils::address_str_parser::parse_address_v4_str;
 use jam_ready::utils::hide_folder::hide_folder;
 use jam_ready::utils::local_archive::LocalArchive;
 use jam_ready::utils::text_process::{parse_colored_text, process_id_text_not_to_lower};
 use std::collections::HashMap;
 use std::env::{args, current_dir};
-use std::io;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 /// 建立工作区入口
@@ -31,12 +29,6 @@ struct WorkspaceSetup {
 /// 建立工作区用指令
 #[derive(Subcommand, Debug)]
 enum WorkspaceSetupCommands {
-
-    // 生成补全脚本
-    GenerateClientCompletions {
-        #[arg(value_enum)]
-        shell: clap_complete::Shell,
-    },
 
     // 登录到工作区
     #[command(about = "Login to workspace")]
@@ -62,6 +54,7 @@ struct ClientSetupArgs {
     #[arg(short, long)]
     workspace: Option<String>,
 
+    // 启用调试模式
     #[arg(long)]
     debug: bool
 }
@@ -88,12 +81,6 @@ async fn setup_workspace_main(workspace: Workspace) {
 
     let cmd = WorkspaceSetup::parse();
     match cmd.command {
-
-        // 生成补全脚本
-        WorkspaceSetupCommands::GenerateClientCompletions { shell } => {
-            let mut cmd = ClientWorkspaceEntry::command();
-            generate(shell, &mut cmd, "jam", &mut io::stdout());
-        }
 
         // 建立客户端工作区
         WorkspaceSetupCommands::Login(args) => setup_client_workspace(args, workspace).await,

@@ -17,7 +17,6 @@ sysinfo = "0.36.1"
 
 # 命令行
 clap = { version = "4.5.38", features = ["derive"] }
-clap_complete = "4.5.55"
 
 # 日志
 log = "0.4.27"
