@@ -28,6 +28,7 @@ DEFAULT_SERVER_PORT = { value = "5011" }
 PATH_WORKSPACE_ROOT = { value = ".jam/" }
 PATH_PARAMETERS = { value = ".jam/Params/" }
 PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/_Archived/" }
+PATH_CACHE = { value = ".jam/_Cache/" }
 PATH_DATABASE = { value = "Storage/" }
 
 # 文件

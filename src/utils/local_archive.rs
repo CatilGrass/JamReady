@@ -23,21 +23,21 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
     {
         let file_path = current_dir().unwrap().join(&path);
 
-        // 检查文件是否存在
+        // Check if file exists
         match fs::metadata(&file_path).await {
             Ok(_) => {
-                // 打开文件
+                // Open file
                 let mut file = fs::File::open(&file_path).await.unwrap();
                 let mut contents = String::new();
 
-                // 读取内容
+                // Read contents
                 file.read_to_string(&mut contents).await.unwrap();
 
-                // 反序列化
+                // Deserialize
                 serde_yaml::from_str(&contents).unwrap_or_default()
             }
             Err(_) => {
-                // 文件不存在时返回默认值
+                // Return default value when file doesn't exist
                 Self::DataType::default()
             }
         }
@@ -54,13 +54,13 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
     where
         Self: Sized + Send + Sync,
     {
-        // 确保目录存在
+        // Ensure directory exists
         create_paths().await;
 
         let file_path = current_dir().unwrap().join(&path);
         let contents = serde_yaml::to_string(val).unwrap();
 
-        // 写入文件
+        // Write to file
         fs::write(&file_path, contents).await.unwrap();
     }
 }
@@ -70,6 +70,7 @@ async fn create_paths() {
         env!("PATH_WORKSPACE_ROOT"),
         env!("PATH_PARAMETERS"),
         env!("PATH_DATABASE_CONFIG_ARCHIVE"),
+        env!("PATH_CACHE"),
     ];
 
     for path in paths {
