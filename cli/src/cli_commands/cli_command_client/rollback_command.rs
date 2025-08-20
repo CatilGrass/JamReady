@@ -8,7 +8,7 @@ pub async fn client_rollback (args: RollbackArgs) {
     let mut result = ClientResult::result().await;
 
     let config = CompConfig::read().await;
-    let from = comp_param_from(&config, CompContext::input(&args.search));
+    let from = comp_param_from(&config, CompContext::input(&args.from_search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
         return;
@@ -21,11 +21,11 @@ pub async fn client_rollback (args: RollbackArgs) {
         result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), from.to_string()]).await);
     }
     // 回滚版本
-    result.combine_unchecked(exec(vec!["file".to_string(), "rollback".to_string(), from.to_string(), (&args.version).to_string()]).await);
+    result.combine_unchecked(exec(vec!["file".to_string(), "rollback".to_string(), from.to_string(), (&args.to_version).to_string()]).await);
 
     // 直接重新下载文件
     if args.back {
-        result.combine_unchecked(exec(vec!["view".to_string(), from.to_string(), args.version.to_string()]).await);
+        result.combine_unchecked(exec(vec!["view".to_string(), from.to_string(), args.to_version.to_string()]).await);
     }
 
     // 无结果时

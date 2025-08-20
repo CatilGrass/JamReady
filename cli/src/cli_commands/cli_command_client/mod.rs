@@ -12,5 +12,6 @@ pub mod get_command;
 pub mod throw_command;
 pub mod view_command;
 pub mod param_command;
+pub mod doc_command;
 
 pub mod param_comp;
