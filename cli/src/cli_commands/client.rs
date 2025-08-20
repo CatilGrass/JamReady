@@ -1,6 +1,7 @@
 use crate::cli_commands::cli_command_client::{
     add_command::client_add,
     archive_command::client_archive,
+    complete_command::client_complete,
     commit_command::client_commit,
     get_command::client_get,
     move_command::client_move,
@@ -71,13 +72,22 @@ enum ClientCommands {
     // ---------------------------
     // File operations
 
+    // Mark a file as completed
+    #[command(
+        visible_alias = "cmpl",
+        visible_alias = "c",
+        visible_alias = "done",
+        visible_alias = "d",
+    )]
+    Complete(CompleteArgs),
+
     // Commit locked local files
     #[command(
         visible_alias = "cmt",
         visible_alias = "save",
         visible_alias = "sv"
     )]
-    Commit(CommitArgs),
+    Commit,
 
     // Archive database version (Leader only)
     Archive,
@@ -367,7 +377,10 @@ pub struct RollbackArgs {
 }
 
 #[derive(Args, Debug)]
-pub struct CommitArgs {
+pub struct CompleteArgs {
+    // Search term
+    pub from_search: String,
+
     // Commit message
     pub info: Option<String>
 }
@@ -464,52 +477,39 @@ pub async fn client_workspace_main() {
     let cmd = ClientWorkspaceEntry::parse();
 
     match cmd.command {
-        // Help
         ClientCommands::Help => client_print_helps(),
 
-        // Query
         ClientCommands::Query(command) => client_query(command).await,
 
         // Redirect to workspace
         ClientCommands::Redirect(args) => client_redirect(args).await,
 
-        // Update
         ClientCommands::Update(args) => client_update(args).await,
 
-        // Commit
-        ClientCommands::Commit(args) => client_commit(args).await,
+        ClientCommands::Complete(args) => client_complete(args).await,
 
-        // List structure
+        ClientCommands::Commit => client_commit().await,
+
         ClientCommands::Struct(args) => client_struct(args).await,
 
-        // Archive
         ClientCommands::Archive => client_archive().await,
 
-        // Add file
         ClientCommands::Add(args) => client_add(args).await,
 
-        // Remove file
         ClientCommands::Remove(args) => client_remove(args).await,
 
-        // Move file
         ClientCommands::Move(args) => client_move(args).await,
 
-        // Rollback file
         ClientCommands::Rollback(args) => client_rollback(args).await,
 
-        // Get lock
         ClientCommands::Get(args) => client_get(args).await,
 
-        // Release lock
         ClientCommands::Throw(args) => client_throw(args).await,
 
-        // View file
         ClientCommands::View(args) => client_view(args).await,
 
-        // Parameters
         ClientCommands::Param(args) => client_param(args).await,
 
-        // Documentation
         ClientCommands::Doc(args) => client_doc(args).await,
 
         // Glock???
