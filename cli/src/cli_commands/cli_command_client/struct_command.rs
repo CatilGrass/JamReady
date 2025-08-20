@@ -15,12 +15,13 @@ pub async fn client_struct(args: StructArgs) {
     if args.remote_held { flags.push_str("h"); }
     if args.remote_updated { flags.push_str("u"); }
     if args.local_untracked { flags.push_str("n"); }
+    if args.local_completed { flags.push_str("c"); }
     if args.local_removed { flags.push_str("d"); }
     if args.remote_locked { flags.push_str("g"); }
     if args.moved { flags.push_str("m"); }
     if args.remote_other { flags.push_str("e"); }
     if flags.is_empty() {
-        flags = "zhundgme".to_string();
+        flags = "zhundecmg".to_string();
     }
 
     print_client_result(exec(vec!["struct".to_string(), env_flags, flags]).await);
