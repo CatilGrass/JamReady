@@ -31,3 +31,33 @@ pub fn move_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
 
     Ok(())
 }
+
+pub fn copy_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
+    // Check if source exists
+    if !from.exists() {
+        return Err(Error::new(
+            ErrorKind::NotFound,
+            format!("Source file '{}' does not exist", from.display()),
+        ));
+    }
+
+    // Ensure source is a file
+    if !from.is_file() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("'{}' is not a file", from.display()),
+        ));
+    }
+
+    // Create destination directory if needed
+    if let Some(parent) = to.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+
+    // Perform copy with overwrite
+    fs::copy(from, to)?;
+
+    Ok(())
+}
