@@ -8,7 +8,7 @@ pub async fn client_remove(args: RemoveArgs) {
     let mut result = ClientResult::result().await;
 
     let config = CompConfig::read().await;
-    let from = comp_param_from(&config, CompContext::input(&args.search));
+    let from = comp_param_from(&config, CompContext::input(&args.from_search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
         return;

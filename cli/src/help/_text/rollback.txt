@@ -1,0 +1,7 @@
+ARGUMENTS: [green]<FROM_SEARCH>[/] Files to be rolled back
+           [green]<TO_VERSION>[/]  Target version to roll back to
+
+  OPTIONS: [gray]<--get/-g>[/]    Attempt to lock before rollback
+  OPTIONS: [gray]<--back/-b>[/]    Download the rolled-back files
+
+[green]Learn more:[/] [yellow]jam[/] doc [cyan]search_rule[/]

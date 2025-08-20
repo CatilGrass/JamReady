@@ -1,0 +1,5 @@
+ARGUMENTS: [green]<FROM_SEARCH>[/] Files to be removed
+
+  OPTIONS: [gray]<--get/-g>[/]    Attempt to lock before removal
+
+[green]Learn more:[/] [yellow]jam[/] doc [cyan]search_rule[/]

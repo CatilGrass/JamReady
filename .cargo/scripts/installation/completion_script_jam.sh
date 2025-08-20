@@ -19,6 +19,7 @@ _jam_completion() {
         throw t unlock release
         view v download dl
         param set
+        doc
     )
 
     local VFCommands=(

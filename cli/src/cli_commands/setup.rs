@@ -1,19 +1,18 @@
-use crate::cli_commands::client::{client_workspace_main, ClientWorkspaceEntry};
+use crate::cli_commands::client::client_workspace_main;
 use crate::cli_commands::server::server_workspace_main;
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::workspace::WorkspaceType::{Client, Server, Unknown};
 use crate::data::workspace::{ClientWorkspace, ServerWorkspace, Workspace};
 use crate::service::jam_client::search_workspace_lan;
-use clap::{Args, CommandFactory, Parser, Subcommand};
-use clap_complete::generate;
+use clap::{Args, Parser, Subcommand};
 use jam_ready::utils::address_str_parser::parse_address_v4_str;
 use jam_ready::utils::hide_folder::hide_folder;
 use jam_ready::utils::local_archive::LocalArchive;
-use jam_ready::utils::text_process::{parse_colored_text, process_id_text_not_to_lower};
+use jam_ready::utils::text_process::{process_id_text_not_to_lower};
 use std::collections::HashMap;
 use std::env::{args, current_dir};
-use std::io;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use crate::help::help_docs::get_help_docs;
 
 /// 建立工作区入口
 #[derive(Parser, Debug)]
@@ -32,18 +31,10 @@ struct WorkspaceSetup {
 #[derive(Subcommand, Debug)]
 enum WorkspaceSetupCommands {
 
-    // 生成补全脚本
-    GenerateClientCompletions {
-        #[arg(value_enum)]
-        shell: clap_complete::Shell,
-    },
-
     // 登录到工作区
-    #[command(about = "Login to workspace")]
     Login(ClientSetupArgs),
 
     // 建立新的工作区
-    #[command(about = "Setup workspace")]
     Setup(ServerSetupArgs),
 }
 
@@ -62,6 +53,7 @@ struct ClientSetupArgs {
     #[arg(short, long)]
     workspace: Option<String>,
 
+    // 启用调试模式
     #[arg(long)]
     debug: bool
 }
@@ -89,12 +81,6 @@ async fn setup_workspace_main(workspace: Workspace) {
     let cmd = WorkspaceSetup::parse();
     match cmd.command {
 
-        // 生成补全脚本
-        WorkspaceSetupCommands::GenerateClientCompletions { shell } => {
-            let mut cmd = ClientWorkspaceEntry::command();
-            generate(shell, &mut cmd, "jam", &mut io::stdout());
-        }
-
         // 建立客户端工作区
         WorkspaceSetupCommands::Login(args) => setup_client_workspace(args, workspace).await,
 
@@ -104,29 +90,7 @@ async fn setup_workspace_main(workspace: Workspace) {
 }
 
 fn setup_print_help() {
-    println!("{}", parse_colored_text("\
-Login to Workspace
-==================
-Use either of these commands:
-
-1. By workspace name:
-   [green]jam login[/] [yellow]<YOUR_LOGIN_CODE>[/] [cyan]--workspace[/] [yellow]<TARGET_WORKSPACE_NAME>[/]
-
-2. By workspace address:
-   [green]jam login[/] [yellow]<YOUR_LOGIN_CODE>[/] [cyan]--target[/] [yellow]<TARGET_WORKSPACE_ADDRESS>[/]
-
-Examples:
-• [gray]jam login XXXX-XXXX[/] [cyan]--workspace[/] MyWorkspace
-• [gray]jam login XXXX-XXXX[/] [cyan]--target[/] localhost:5011
-
-Setup Workspace
-===============
-Create a new workspace with:
-   [green]jam setup[/] [yellow]<YOUR_WORKSPACE_NAME>[/]
-
-Example:
-   [gray]jam setup[/] MyWorkspace
-   "))
+    println!("{}", get_help_docs("setup_help"))
 }
 
 async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace) {

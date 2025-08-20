@@ -14,7 +14,8 @@ $AllCommands = @(
     'get','g','lock',
     'throw','t','unlock','release',
     'view','v','download','dl',
-    'param','set'
+    'param','set',
+    'doc'
 )
 
 $VFCommands = @(

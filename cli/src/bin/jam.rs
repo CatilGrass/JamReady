@@ -18,7 +18,6 @@ fn try_correct_current_dir() {
             set_current_dir(found).unwrap();
         }
     }
-
     fn check_parent(current: PathBuf) -> Option<PathBuf> {
         if current.join(env!("PATH_WORKSPACE_ROOT")).exists() {
             Some(current)

@@ -19,7 +19,7 @@ pub async fn client_move(args: MoveArgs) {
         return;
     };
 
-    let to = comp_param_to(&config, from.clone().next_with_string(args.to_path.clone()));
+    let to = comp_param_to(&config, from.clone().next_with_string(args.to_search.clone()));
     let Ok(to) = to else {
         result.err_and_end(format!("{}", to.err().unwrap()).as_str());
         return;
@@ -32,6 +32,7 @@ pub async fn client_move(args: MoveArgs) {
 
     if args.local {
         // 移动本地文件
+        // TODO :: 移动本地文件并不支持批量移动
         result.combine_unchecked(client_move_local_file(args).await);
 
     } else {
@@ -62,12 +63,12 @@ async fn client_move_local_file(mv: MoveArgs) -> Option<ClientResult> {
     let Ok(current_dir) = current_dir() else { return None; };
 
     let raw_path = current_dir.join(&local_file_mut.local_path);
-    let target_path = current_dir.join(mv.to_path.clone());
+    let target_path = current_dir.join(mv.to_search.clone());
 
     if ! target_path.exists() {
 
         // 修改本地文件地址
-        let new_path = process_path_text(mv.to_path);
+        let new_path = process_path_text(mv.to_search);
         let old_path = local_file_mut.local_path.clone();
         local_file_mut.local_path = new_path.clone();
 

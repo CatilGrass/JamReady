@@ -1,0 +1,22 @@
+FROM_SEARCH:
+    Direct path specification
+    [cyan]\"Documents/FileName.txt\"[/]
+
+    Reference by filename
+    [cyan]\"[/][green]:[/][cyan]FileName.txt\"[/]
+
+    Reference parameter content
+    [cyan]\"MyFile[/][green]?[/][cyan]\"[/]
+
+    Regex pattern matching
+    [cyan]\"Documents/[/][gray].[/][green]*[/][cyan]\"[/]
+
+TO_SEARCH:
+    Direct path specification
+    [cyan]\"Documents/FileName_Renamed.txt\"[/]
+
+    Reference relative to FROM
+    [cyan]\"[/][gray].[/][cyan]/FileName_Renamed.txt\"[/] -> [cyan]\"Documents/FileName_Renamed.txt\"[/]
+
+    Bind new directory
+    [cyan]\"Documents/Backup/\"[/] -> [cyan]\"Documents/Backup/FileName_Renamed.txt\"[/]

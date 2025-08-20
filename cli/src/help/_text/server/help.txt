@@ -1,0 +1,5 @@
+JAM SERVER COMMANDS:
+
+    [yellow]run[/] Run VCS Server.
+
+    [yellow]add/remove/list/query/set[/] View or modify workspace configs.

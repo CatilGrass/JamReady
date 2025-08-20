@@ -1,0 +1,8 @@
+ COMMANDS: [yellow]get[/]           Attempt to acquire file lock
+           [yellow]throw[/]         Attempt to release file lock
+
+ARGUMENTS: [green]<FROM_SEARCH>[/] Files to be locked
+
+  OPTIONS: [gray]<--longer/-l>[/] Is it a long-term lock? [red](Only get command)[/]
+
+[green]Learn more:[/] [yellow]jam[/] doc [cyan]search_rule[/]

@@ -1,0 +1,7 @@
+ARGUMENTS: [green]<FROM_SEARCH>[/] Files to be moved
+           [green]<TO_SEARCH>[/]   Dest path.
+
+  OPTIONS: [gray]<--get/-g>[/]    Attempt to lock before moving.
+           [gray]<--local/l>[/]   Move local files.
+
+[green]Learn more:[/] [yellow]jam[/] doc [cyan]search_rule[/]
