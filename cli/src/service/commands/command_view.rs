@@ -1,25 +1,27 @@
-use std::path::PathBuf;
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Duration;
-use crate::data::database::Database;
+use crate::data::client_result::ClientResult;
+use crate::data::database::{Database, VirtualFile};
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::data::member::Member;
 use crate::service::commands::database_sync::{sync_local, sync_remote};
 use crate::service::commands::file_transmitter::{read_file, send_file};
 use crate::service::jam_command::Command;
+use crate::service::messages::{ClientMessage, ServerMessage};
+use crate::service::service_utils::{read_msg, send_msg};
 use async_trait::async_trait;
+use jam_ready::entry_mutex_async;
+use jam_ready::utils::file_digest::md5_digest;
+use jam_ready::utils::file_operation::copy_file;
 use jam_ready::utils::local_archive::LocalArchive;
+use jam_ready::utils::text_process::process_path_text;
+use std::env::current_dir;
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::select;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use jam_ready::entry_mutex_async;
-use jam_ready::utils::file_digest::md5_digest;
-use jam_ready::utils::text_process::process_path_text;
-use crate::data::client_result::ClientResult;
-use crate::service::messages::{ClientMessage, ServerMessage};
-use crate::service::service_utils::{read_msg, send_msg};
 
 pub struct ViewCommand;
 
@@ -65,6 +67,25 @@ impl Command for ViewCommand {
                         }
                     }
 
+                    // Check local cache files
+                    if let Some(cache_file) = local_cache_file(file) {
+                        if cache_file.exists() {
+                            match copy_file(&cache_file, &client_path.clone()) {
+                                Ok(_) => {
+                                    print_msg = "Restored from cache successfully".to_string();
+                                    success = true;
+                                    ready = false;
+                                    send_msg(stream, &ClientMessage::NotReady).await;
+                                }
+                                Err(e) => {
+                                    success = false;
+                                    ready = true;
+                                    // Not ready, trying to download
+                                }
+                            }
+                        }
+                    }
+
                     if ready {
                         send_msg(stream, &ClientMessage::Ready).await;
 
@@ -84,12 +105,19 @@ impl Command for ViewCommand {
                                         } else {
                                             file.version()
                                         },
-                                        local_digest: md5_digest(client_path).unwrap_or_default(),
+                                        local_digest: md5_digest(client_path.clone()).unwrap_or_default(),
                                     });
                                     local.file_uuids.insert(local_path_str, uuid.clone());
                                 }
                                 print_msg = "File download completed".to_string();
                                 success = true;
+
+                                // Attempting to establish cache
+                                if let Some(path) = local_cache_file(file) {
+                                    if ! path.exists() {
+                                        let _ = copy_file(&client_path.clone(), &path);
+                                    }
+                                }
                             }
                             Err(_) => {
                                 print_msg = "File download failed".to_string();
@@ -177,4 +205,9 @@ impl Command for ViewCommand {
             }
         }
     }
+}
+
+fn local_cache_file(virtual_path: &VirtualFile) -> Option<PathBuf> {
+    let Ok(current_dir) = current_dir() else { return None };
+    Some(current_dir.join(env!("PATH_CACHE")).join(virtual_path.real_path()))
 }
