@@ -436,6 +436,10 @@ pub struct StructArgs {
     #[arg(long = "untracked", short = 'n')]
     pub local_untracked: bool,
 
+    // Show untracked files
+    #[arg(long = "completed", short = 'c')]
+    pub local_completed: bool,
+
     // -- General
 
     // Show moved files (based on remote/local switches)

@@ -41,7 +41,11 @@ ONLINE COMMANDS:
         Change version of Virtual File(s).
         [green]Learn more:[/] [yellow]jam[/] doc [cyan]rollback[/]
 
-    [yellow]commit[/]    [green]<INFO?>[/]
+    [yellow]complete[/]  [green]<FROM_SEARCH> <INFO?>[/]
+        Alias: cmpl, c, done, d
+        Mark the Local File(s) as [cyan]\"completed\"[/] and make it ready for [yellow]commit[/].
+
+    [yellow]commit[/]
         Alias: cmt, save, sv
         Upload all held and modified Local File(s).
 
@@ -54,7 +58,7 @@ ONLINE COMMANDS:
         Alias: red
         Redirect to a new network address.
 
-    [yellow]update[/]
+    [yellow]update[/]    [yellow]database/struct[/]
         Alias: sync
         Sync the local workspace struct with the remote.
 
@@ -180,17 +184,17 @@ ARGUMENTS: [green]<FROM_SEARCH>[/]  Downloaded and viewed files
 
 pub fn get_help_docs(name: &str) -> String {
     parse_colored_text(match name {
-        "view" => VIEW,
-        "rollback" => ROLLBACK,
-        "add" => ADD,
-        "search_rule" => SEARCH_RULE,
-        "server_help" => SERVER_HELP,
-        "remove" => REMOVE,
-        "client_help" => CLIENT_HELP,
-        "setup_help" => SETUP_HELP,
         "struct" => STRUCT,
         "ownership" => OWNERSHIP,
+        "server_help" => SERVER_HELP,
+        "view" => VIEW,
+        "setup_help" => SETUP_HELP,
+        "search_rule" => SEARCH_RULE,
+        "rollback" => ROLLBACK,
+        "add" => ADD,
         "move" => MOVE,
+        "remove" => REMOVE,
+        "client_help" => CLIENT_HELP,
         _ => "",
     }.trim())
 }
