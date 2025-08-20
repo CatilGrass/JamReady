@@ -25,6 +25,7 @@ pub async fn client_complete(args: CompleteArgs) {
         let Some(path) = local.search_to_path(&database, final_path.clone()) else { continue; };
         let Some(local_file) = local.search_to_local_mut(&database, final_path.clone()) else { continue; };
         let Ok(digest) = md5_digest(path) else { continue; };
+        if digest == local_file.local_digest { continue; };
         local_file.completed = true;
         local_file.completed_commit = commit.clone();
         local_file.completed_digest = digest;
