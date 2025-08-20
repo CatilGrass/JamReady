@@ -28,7 +28,7 @@ pub async fn client_get (args: GetArgs) {
         ).await
     );
 
-    // 无结果时
+    // No results
     if result.has_result() {
         result.end_print();
     } else {

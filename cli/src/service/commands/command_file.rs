@@ -25,13 +25,14 @@ impl Command for FileOperationCommand {
 
     async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) -> Option<ClientResult> {
 
-        // 参数校验
+        // Parameter validation
         if args.len() < 3 { return None; }
 
         let mut command_result = ClientResult::result().await;
 
-        // 此命令的所有操作均在服务端完成，客户端仅处理服务端的响应
-        // 处理服务器响应
+        // All operations of this command are completed on the server side,
+        // the client only processes server responses
+        // Process server response
         let cmd_name = args[1].to_uppercase();
         match read_msg(stream).await {
             Text(msg) => {
@@ -48,9 +49,10 @@ impl Command for FileOperationCommand {
             },
         }
 
-        // 若操作成功，则会开始处理客户端的后续逻辑
+        // If operation succeeds, process client-side follow-up logic
 
-        // 文件添加成功后，检查本地是否存在对应文件，若存在，则更新本地映射
+        // After successful file addition, check if corresponding file exists locally
+        // If exists, update local mapping
         if args[1].to_lowercase().trim() == "add" {
             let mut local = LocalFileMap::read().await;
             let database = Database::read().await;
@@ -59,7 +61,7 @@ impl Command for FileOperationCommand {
             if let Ok(current) = current_dir() {
                 let local_file_path_buf = current.join(search);
 
-                // 处理本地文件存在的情况
+                // Handle case where local file exists
                 if local_file_path_buf.exists() {
                     if let Some(file) = database.search_file(search.to_string()) {
                         let file_path = file.path();
@@ -69,12 +71,15 @@ impl Command for FileOperationCommand {
                                 local_path: search.to_string(),
                                 local_version: file.version(),
                                 local_digest: md5_digest(local_file_path_buf).unwrap_or_default(),
+                                completed: false,
+                                completed_digest: String::new(),
+                                completed_commit: String::new(),
                             });
                         }
                     }
                 }
                 else {
-                    // 否则，提示成员该文件应当被存储的地址
+                    // Otherwise, notify member where file should be stored
                     command_result.warn("Virtual file created but missing locally.");
                     command_result.log("Save completed file to:");
                     command_result.log(format!("{}", local_file_path_buf.display().to_string().green()).as_str());
@@ -94,7 +99,7 @@ impl Command for FileOperationCommand {
         (uuid, _member): (String, &Member),
         database: Arc<Mutex<Database>>
     ) {
-        // 参数校验
+        // Parameter validation
         if args.len() < 3 {
             send_msg(stream, &Deny("Insufficient arguments".to_string())).await;
             return;
@@ -107,13 +112,13 @@ impl Command for FileOperationCommand {
         let mut success = 0;
         let mut fail = 0;
 
-        // 发送消息 -> 同步 -> 返回
-        // 或
-        // 增加失败次数 -> 更新错误信息，保证后续无执行
+        // Send message -> sync -> return
+        // Or
+        // Increment failure count -> update error message to ensure no further execution
 
         match operation.trim() {
 
-            // 文件添加
+            // File addition
             "add" => {
                 entry_mutex_async!(database, |guard| {
                     if guard.search_file(args[2].to_string()).is_some() {
@@ -138,7 +143,7 @@ impl Command for FileOperationCommand {
                 })
             }
 
-            // 文件移除
+            // File removal
             "remove" => {
                 entry_mutex_async!(database, |guard| {
                     for input in inputs {
@@ -160,11 +165,10 @@ impl Command for FileOperationCommand {
                 });
             }
 
-            // 文件移动
+            // File move
             "move" => {
                 if args.len() < 4 {
-
-                    // 缺失目标点
+                    // Missing destination
                     send_msg(stream, &Deny("Missing destination path".to_string())).await;
                     entry_mutex_async!(database, |guard| sync_remote(stream, guard).await);
                     return;
@@ -175,14 +179,14 @@ impl Command for FileOperationCommand {
                 let from_count = from.len();
                 let to_count = to.len();
 
-                // 目标数量和输入数量不匹配
+                // Source and destination count mismatch
                 if from_count != to_count {
                     send_msg(stream, &Deny("The number of \"from\" and \"to\" parameters does not match.".to_string())).await;
                     entry_mutex_async!(database, |guard| sync_remote(stream, guard).await);
                     return;
                 }
 
-                // 匹配，构建表
+                // Match, build mapping
                 let mut i = 0;
                 while i < from_count {
                     total += 1;
@@ -205,25 +209,25 @@ impl Command for FileOperationCommand {
 
                         let dest = process_path_text(to_path);
 
-                        // 尝试路径移动
+                        // Attempt path move
                         if guard.move_file(from_path.clone(), dest.clone()).is_ok() {
                             success += 1;
                             continue;
                         }
 
-                        // 尝试UUID移动
+                        // Attempt UUID move
                         if guard.move_file_with_uuid(from_path, dest).is_ok() {
                             success += 1;
                             continue;
                         }
 
-                        // 跳出条件判断则视为失败
+                        // If break condition reached, consider failure
                         fail += 1;
                     });
                 }
             }
 
-            // 回滚操作
+            // Rollback operation
             "rollback" => {
                 if args.len() < 4 {
                     send_msg(stream, &Deny("Please specify the version to roll back to.".to_string())).await;
@@ -235,7 +239,7 @@ impl Command for FileOperationCommand {
                     total += 1;
                     entry_mutex_async!(database, |guard| {
 
-                        // 文件
+                        // File
                         let Some(file) = guard.search_file_mut(input.to_string()) else {
                             fail += 1;
                             continue;
@@ -245,13 +249,13 @@ impl Command for FileOperationCommand {
                             continue;
                         }
 
-                        // 回滚的版本
+                        // Rollback version
                         let Ok(rollback_version) = u32::from_str(args[3].to_string().trim()) else {
                             fail += 1;
                             continue;
                         };
 
-                        // 回滚
+                        // Rollback
                         if file.rollback_to_version(rollback_version) {
                             success += 1;
                             continue;
@@ -263,7 +267,7 @@ impl Command for FileOperationCommand {
                 }
             }
 
-            // 文件锁操作
+            // File lock operations
             "get" | "get_longer" => {
                 let is_long = operation.trim() == "get_longer";
 
@@ -284,7 +288,7 @@ impl Command for FileOperationCommand {
                 }
             }
 
-            // 释放文件锁操作
+            // Release file lock operation
             "throw" => {
 
                 for input in inputs {
@@ -311,14 +315,14 @@ impl Command for FileOperationCommand {
                 }
             }
 
-            // 未知操作
+            // Unknown operation
             _ => {
                 send_msg(stream, &Deny(format!("Unknown operation '{}'", operation))).await;
                 entry_mutex_async!(database, |guard| sync_remote(stream, guard).await);
             }
         }
 
-        // 处理结果信息
+        // Process result message
         if fail > 0 || success < 1 {
             send_msg(stream, &Deny(format!("Operate {} files (success {}, fail {})", total, success, fail))).await;
             entry_mutex_async!(database, |guard| {
@@ -331,7 +335,7 @@ impl Command for FileOperationCommand {
             })
         }
 
-        // 成功任何一个就需要保存
+        // Save if any operation succeeded
         if success > 0 {
             entry_mutex_async!(database, |guard| {
                 Database::update(guard).await;
@@ -340,7 +344,7 @@ impl Command for FileOperationCommand {
     }
 }
 
-/// 检查文件可用性（锁定状态）
+/// Check file availability (lock status)
 async fn is_available(file: &VirtualFile, stream: &mut TcpStream, self_uuid: String) -> bool {
     match file.get_locker_owner().await {
         Some((owner, _)) if owner != self_uuid => {

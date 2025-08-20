@@ -19,18 +19,17 @@ use crate::service::jam_command::CommandRegistry;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// 获得命令注册表
 pub fn registry() -> CommandRegistry {
     let mut registry : CommandRegistry = HashMap::new();
 
-    // 注册
+    // Core commands
     registry.insert("update", Arc::new(UpdateCommand));
     registry.insert("view", Arc::new(ViewCommand));
     registry.insert("commit", Arc::new(CommitCommand));
     registry.insert("file", Arc::new(FileOperationCommand));
     registry.insert("struct", Arc::new(ShowFileStructCommand));
 
-    // 调试指令
+    // Debug commands
     registry.insert("archive", Arc::new(ArchiveCommand));
 
     registry

@@ -6,19 +6,17 @@ use crate::data::database::Database;
 use crate::data::local_folder_map::LocalFolderMap;
 
 pub struct CompConfig {
-
-    /// 该表达式是否允许多个目录
+    /// Whether the expression allows multiple paths
     pub allow_multi_path: bool,
 
-    /// 该表达式所使用的上下文环境
+    /// Context environment used by the expression
     pub local_folder_map: LocalFolderMap,
 
-    /// 该表达式所使用的数据库
+    /// Database used by the expression
     pub database: Database
 }
 
 impl CompConfig {
-
     pub async fn read() -> CompConfig {
         Self {
             allow_multi_path: true,
@@ -30,20 +28,19 @@ impl CompConfig {
 
 #[derive(Default, Clone)]
 pub struct CompContext {
-
-    /// 输入
+    /// Input
     pub input: String,
 
-    /// 上下文所在的目录
+    /// Context directory
     pub ctx: String,
 
-    /// 输出目录
+    /// Output paths
     pub final_paths: Vec<String>,
 }
 
 impl Display for CompContext {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut result = "".to_string();
+        let mut result = String::new();
         for context_path in &self.final_paths {
             result.push_str(format!("{}{}", context_path.trim(), SPLIT_CHAR).as_str());
         }
@@ -53,7 +50,6 @@ impl Display for CompContext {
 
 #[allow(dead_code)]
 impl CompContext {
-
     pub fn input(str: &str) -> Self {
         Self::input_string(str.to_string())
     }
@@ -93,7 +89,7 @@ impl Error for CompError {}
 impl Default for CompError {
     fn default() -> Self {
         Self {
-            err: "".to_string(),
+            err: String::new(),
         }
     }
 }

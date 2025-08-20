@@ -104,6 +104,7 @@ ARGUMENTS: [green]<FROM_SEARCH>[/] Files to be rolled back
            [green]<TO_VERSION>[/]  Target version to roll back to
 
   OPTIONS: [gray]<--get/-g>[/]    Attempt to lock before rollback
+  OPTIONS: [gray]<--back/-b>[/]    Download the rolled-back files
 
 [green]Learn more:[/] [yellow]jam[/] doc [cyan]search_rule[/]";
 
@@ -179,17 +180,17 @@ ARGUMENTS: [green]<FROM_SEARCH>[/]  Downloaded and viewed files
 
 pub fn get_help_docs(name: &str) -> String {
     parse_colored_text(match name {
-        "client_help" => CLIENT_HELP,
-        "remove" => REMOVE,
-        "ownership" => OWNERSHIP,
         "view" => VIEW,
-        "search_rule" => SEARCH_RULE,
         "rollback" => ROLLBACK,
-        "server_help" => SERVER_HELP,
         "add" => ADD,
-        "move" => MOVE,
+        "search_rule" => SEARCH_RULE,
+        "server_help" => SERVER_HELP,
+        "remove" => REMOVE,
+        "client_help" => CLIENT_HELP,
         "setup_help" => SETUP_HELP,
         "struct" => STRUCT,
+        "ownership" => OWNERSHIP,
+        "move" => MOVE,
         _ => "",
     }.trim())
 }

@@ -21,11 +21,11 @@ pub async fn client_view(args: ViewArgs) {
     }
 
     if args.get {
-        // 获得文件的锁
+        // Acquire file lock
         result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), from.to_string()]).await);
     }
 
-    // 无结果时
+    // No results
     if result.has_result() {
         result.end_print();
     } else {

@@ -33,27 +33,27 @@ impl Command for CommitCommand {
 
         let mut command_result = ClientResult::result().await;
 
-        // 同步数据库
+        // Sync database
         sync_local(stream).await;
         let database = Database::read().await;
         let mut local = LocalFileMap::read().await;
 
-        // 计数器
+        // Counters
         let mut all_count = 0;
         let mut success_count = 0;
 
-        // 文件表
+        // File lists
         let mut success_files = Vec::new();
         let mut failed_files = Vec::new();
 
-        // 加载工作区
+        // Load workspace
         let workspace = Workspace::read().await;
         if let Some(client) = workspace.client {
 
-            // 寻找数据库内自己锁定的文件
+            // Find files locked by current member in database
             for file in database.files() {
 
-                // 检查文件是否被当前成员锁定
+                // Check if file is locked by current member
                 let is_locked_by_me = file.get_locker_owner_uuid()
                     .map(|owner_uuid| owner_uuid.trim() == client.uuid.trim())
                     .unwrap_or(false);
@@ -64,7 +64,7 @@ impl Command for CommitCommand {
 
                 command_result.log(format!("Checking {}", format!("\"{}\"", &file.path()).cyan()).as_str());
 
-                // 获取文件本地路径
+                // Get local file path
                 let client_path = match local.file_to_path(&database, file) {
                     Some(path) if path.exists() => path,
                     _ => {
@@ -73,29 +73,43 @@ impl Command for CommitCommand {
                     },
                 };
 
-                command_result.log("File Found, Checking Modified");
+                command_result.log("File Found, Checking Completed");
 
-                // 计算当前文件 MD5
-                let current_md5 = match md5_digest(client_path.clone()) {
+                // Calculate current file MD5
+                let current_digest = match md5_digest(client_path.clone()) {
                     Ok(md5) => md5,
                     Err(_) => continue,
                 };
 
-                // 检查版本是否允许提交
+                // Check if the local file is marked as completed
+                let Some(completed_commit) = ({
+                    if let Some(local_file) = local.search_to_local(&database, file.path()) {
+                        if local_file.completed && local_file.completed_digest == current_digest {
+                            Some(local_file.completed_commit.clone())
+                        } else { None }
+                    } else { None }
+                }) else {
+                    command_result.warn("File Not Completed!");
+                    continue;
+                };
+
+                command_result.log("File Completed, Checking Modified");
+
+                // Check if version allows commit
                 let local_file = local.file_paths.get(
                     &database.uuid_of_path(file.path()).unwrap_or_default()
                 );
 
                 let modified = match (local_file, file.version()) {
 
-                    // 远程版本为 0 则允许提交 （新文件）
+                    // Allow commit if remote version is 0 (new file)
                     (_, 0) => true,
 
-                    // 本地有记录且版本匹配但 MD5 不同（已修改）
+                    // File modified if local record exists, versions match but MD5 differs
                     (Some(local_file), _) if local_file.local_version == file.version()
-                        && local_file.local_digest != current_md5 => true,
+                        && local_file.local_digest != current_digest => true,
 
-                    // 其他情况不允许提交
+                    // Other cases don't allow commit
                     _ => false,
                 };
 
@@ -109,27 +123,33 @@ impl Command for CommitCommand {
                 all_count += 1;
                 let record_file_path = process_path_text(client_path.display().to_string());
 
-                // 请求服务器上传权限
-                send_msg(stream, &Text(file.path())).await;
+                // Request upload permission from server
+                send_msg(stream, &Text(format!("{}|{}", file.path(), completed_commit))).await;
                 match read_msg::<ServerMessage>(stream).await {
                     Pass => {
 
-                        // 上传文件
+                        // Upload file
                         if send_file(stream, client_path.clone()).await.is_ok() {
                             success_count += 1;
                             success_files.push(record_file_path.clone());
 
-                            // 更新本地映射
+                            // Update local mapping
                             if let Some(uuid) = database.uuid_of_path(file.path()) {
                                 let new_version = file.version() + 1;
                                 if let Some(local_file) = local.file_paths.get_mut(&uuid) {
                                     local_file.local_version = new_version;
-                                    local_file.local_digest = current_md5.clone();
+                                    local_file.local_digest = current_digest.clone();
+                                    local_file.completed = false;
+                                    local_file.completed_digest = String::new();
+                                    local_file.completed_commit = String::new();
                                 } else {
                                     local.file_paths.insert(uuid.clone(), LocalFile {
                                         local_path: file.path().to_string(),
                                         local_version: new_version,
-                                        local_digest: current_md5,
+                                        local_digest: current_digest,
+                                        completed: false,
+                                        completed_digest: String::new(),
+                                        completed_commit: String::new(),
                                     });
                                     local.file_uuids.insert(file.path().to_string(), uuid);
                                 }
@@ -145,7 +165,7 @@ impl Command for CommitCommand {
                 }
             }
 
-            // 打印提交结果
+            // Print commit results
             if all_count == 0 {
                 command_result.err("No File Committed.");
             } else if success_count == all_count {
@@ -154,7 +174,7 @@ impl Command for CommitCommand {
                 command_result.warn(format!("Committed {} file(s).", all_count).as_str());
             }
 
-            // 打印成功和失败的文件列表
+            // Print success and failed file lists
             if !success_files.is_empty() {
                 command_result.log("Success file(s):");
                 for file in success_files {
@@ -169,7 +189,7 @@ impl Command for CommitCommand {
                 }
             }
 
-            // 发送完成消息
+            // Send completion message
             send_msg(stream, &Done).await;
             return Some(command_result)
         }
@@ -179,41 +199,44 @@ impl Command for CommitCommand {
     async fn remote(
         &self,
         stream: &mut TcpStream,
-        args: Vec<&str>,
+        _args: Vec<&str>,
         (uuid, _member): (String, &Member),
         database: Arc<Mutex<Database>>
     ) {
         let mut changed = false;
-        let commit_description = args.get(1).unwrap_or(&"Update");
 
-        // 同步数据库
+        // Sync database
         entry_mutex_async!(database, |guard| {
             sync_remote(stream, guard).await;
         });
 
         loop {
             select! {
-                // 60 秒超时
+                // 60 seconds timeout
                 _ = sleep(Duration::from_secs(60)) => break,
 
-                // 处理消息
+                // Process messages
                 msg = read_msg::<ClientMessage>(stream) => {
                     if msg == Unknown || msg == Done {
                         break;
                     }
 
-                    if let Text(path) = msg {
+                    if let Text(msg) = msg {
+
+                        let split = msg.split("|").into_iter().collect::<Vec<&str>>();
+                        let path = split[0];
+                        let commit_description = split[1];
 
                         let pack;
 
-                        // 查找文件
+                        // Find file
                         entry_mutex_async!(database, |guard| {
-                            let Some(file) = guard.file_mut(path.clone()) else {
+                            let Some(file) = guard.file_mut(path.to_string()) else {
                                 send_msg(stream, &Deny("Virtual file not found.".to_string())).await;
                                 continue;
                             };
 
-                            // 检查锁定状态
+                            // Check lock status
                             let is_locked_by_client = file.get_locker_owner_uuid()
                                 .map(|owner| owner.trim() == uuid.trim())
                                 .unwrap_or(false);
@@ -223,10 +246,10 @@ impl Command for CommitCommand {
                                 continue;
                             }
 
-                            // 生成新文件UUID
+                            // Generate new file UUID
                             let real_file_uuid = Uuid::new_v4().to_string();
 
-                            // 获取服务器路径
+                            // Get server path
                             if let Some(path) = file.server_path_temp(real_file_uuid.clone()) {
                                 send_msg(stream, &Pass).await;
                                 pack = Some((path.clone(), real_file_uuid.clone()));
@@ -238,19 +261,19 @@ impl Command for CommitCommand {
 
                         if let Some((real_path, real_file_uuid)) = pack {
 
-                            // 接收文件
+                            // Receive file
                             if read_file(stream, real_path.clone()).await.is_ok() {
 
                                 entry_mutex_async!(database, |guard| {
-                                    let Some(file) = guard.file_mut(path) else {
+                                    let Some(file) = guard.file_mut(path.to_string()) else {
                                         continue;
                                     };
 
-                                    // 更新文件
+                                    // Update file
                                     file.update(real_file_uuid, commit_description.to_string());
                                     info!("Update file {}: \"{}\"", file.path(), commit_description);
 
-                                    // 如果不是长期锁则释放
+                                    // Release lock if not long-term
                                     if !file.is_longer_lock_unchecked() {
                                         file.throw_locker();
                                     }
@@ -261,7 +284,7 @@ impl Command for CommitCommand {
                             }
                         }
 
-                        // 拒绝请求
+                        // Deny request
                         send_msg(stream, &Deny("Invalid request".to_string())).await;
                     }
                 }

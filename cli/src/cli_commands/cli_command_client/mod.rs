@@ -1,6 +1,7 @@
 pub mod query_command;
 pub mod redirect_command;
 pub mod update_command;
+pub mod complete_command;
 pub mod commit_command;
 pub mod struct_command;
 pub mod archive_command;

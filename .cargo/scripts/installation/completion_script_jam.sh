@@ -10,7 +10,6 @@ _jam_completion() {
         update sync
         commit cmt save sv
         archive
-        clone c build
         add new create
         remove rm delete del
         move mv rename
@@ -20,6 +19,7 @@ _jam_completion() {
         view v download dl
         param set
         doc
+        complete cmpl c \done d
     )
 
     local VFCommands=(
@@ -31,6 +31,7 @@ _jam_completion() {
         move mv rename
         rollback rb restore
         query q
+        complete cmpl c \done d
     )
 
     local PArgCommands=(param set)

@@ -1,30 +1,28 @@
 use crate::data::member::{Member, MemberDuty};
-use crate::service::messages::ServerMessage;
 use crate::service::messages::ServerMessage::{Deny, Pass};
 use crate::service::service_utils::{read_msg, send_msg};
 use tokio::net::TcpStream;
 
+/// Verifies client authentication with the server
 pub async fn verify(stream: &mut TcpStream) -> bool {
-
-    // 接收服务端发来的身份验证信息
-    let message: ServerMessage = read_msg(stream).await;
-    if let Deny(message) = message {
-        eprintln!("{}", message);
-        return false
-    } else if message == Pass {
-        return true
+    match read_msg(stream).await {
+        Pass => true,
+        Deny(message) => {
+            eprintln!("Authentication failed: {}", message);
+            false
+        }
+        _ => false
     }
-    false
 }
 
+/// Verifies if member has required duty privileges
 pub async fn verify_duty(stream: &mut TcpStream, member: &Member, duty: MemberDuty) -> bool {
-
-    // 检查成员身份，只有对应身份可以继续
-    if ! member.member_duties.contains(&duty) {
-        send_msg(stream, &Deny(format!("Only \"{:?}\" can execute this command.", duty))).await;
-        false
-    } else {
+    if member.member_duties.contains(&duty) {
         send_msg(stream, &Pass).await;
         true
+    } else {
+        let error_msg = format!("Insufficient privileges: \"{:?}\" duty required", duty);
+        send_msg(stream, &Deny(error_msg)).await;
+        false
     }
 }

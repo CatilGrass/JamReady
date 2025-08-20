@@ -7,58 +7,56 @@ use std::fmt::Debug;
 
 #[derive(Default, Serialize, Deserialize, Encode, Decode, PartialEq, Debug, Clone)]
 pub enum ClientMessage {
-
     #[default]
     Unknown,
 
-    // ------ 基础部分 ------
+    // ------ Basic Commands ------
 
-    /// 验证自己的身份 (登录代码)
+    /// Verify identity (login code)
     Verify(String),
 
-    /// 文本
+    /// Text message
     Text(String),
 
-    /// 表示自己操作完成
+    /// Indicate operation completed
     Done,
 
-    /// 表示自己准备就绪
+    /// Indicate ready status
     Ready,
 
-    /// 表示自己结束操作
+    /// Indicate not ready status
     NotReady,
 
-    // ------ 命令部分 ------
+    // ------ Command Operations ------
 
-    /// 发送字符串命令
+    /// Send command with arguments
     Command(Vec<String>)
 }
 
 #[derive(Default, Serialize, Deserialize, Encode, Decode, PartialEq, Debug, Clone)]
 pub enum ServerMessage {
-
     #[default]
     Unknown,
 
-    // ------ 基础部分 ------
+    // ------ Basic Responses ------
 
-    /// 表示同意
+    /// Indicate approval
     Pass,
 
-    /// 表示拒绝 (原因)
+    /// Indicate rejection (with reason)
     Deny(String),
 
-    /// 表示自己操作完成
+    /// Indicate operation completed
     Done,
 
-    // ---- 返回内容部分 ----
+    // ------ Response Data ------
 
-    /// 发送数据库的拷贝
+    /// Send database copy
     Sync(Database),
 
-    /// 文本
+    /// Text message
     Text(String),
 
-    /// Uuid
+    /// UUID response
     Uuid(String)
 }

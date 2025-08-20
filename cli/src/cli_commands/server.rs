@@ -16,7 +16,7 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tokio::sync::Mutex;
 use crate::help::help_docs::get_help_docs;
 
-/// 服务端命令行
+/// Server command line interface
 #[derive(Parser, Debug)]
 #[command(
     disable_help_flag = true,
@@ -29,7 +29,7 @@ pub struct ServerWorkspaceEntry {
     command: ServerOperationCommands,
 }
 
-/// 服务端操作类命令
+/// Server operation commands
 #[derive(Subcommand, Debug)]
 enum ServerOperationCommands {
 
@@ -39,130 +39,130 @@ enum ServerOperationCommands {
         long_flag = "help")]
     Help,
 
-    /// 启动服务器，并监听客户端消息
+    /// Start server and listen for client messages
     Run,
 
-    /// 添加
+    /// Add
     #[command(subcommand)]
     Add(ServerOperationTargetCommands),
 
-    /// 删除
+    /// Remove
     #[command(subcommand)]
     Remove(ServerOperationTargetCommands),
 
-    /// 列表
+    /// List
     #[command(subcommand)]
     List(ServerListCommands),
 
-    /// 查询
+    /// Query
     #[command(subcommand)]
     Query(ServerQueryCommands),
 
-    /// 设置
+    /// Set
     #[command(subcommand)]
     Set(ServerSetCommands),
 }
 
-/// 服务端操作目标
+/// Server operation targets
 #[derive(Subcommand, Debug)]
 enum ServerOperationTargetCommands {
 
-    /// 操作成员
+    /// Operate on members
     Member(MemberArgs),
 
-    /// 操作职责
+    /// Operate on duties
     Duty(DutyOperationArgs),
 
-    /// 调试等级的 Logger
+    /// Debug level logger
     Debug
 }
 
-/// 服务器列表命令
+/// Server list commands
 #[derive(Subcommand, Debug)]
 enum ServerListCommands {
 
-    /// 列出成员
+    /// List members
     Member
 }
 
-/// 服务器查询命令
+/// Server query commands
 #[derive(Subcommand, Debug)]
 enum ServerQueryCommands {
 
-    /// 查询成员的职责
+    /// Query member duties
     Duty(MemberArgs),
 
-    /// 查询成员的 Uuid
+    /// Query member Uuid
     Uuid(MemberArgs),
 
-    /// 查询成员的 登录代码
+    /// Query member login code
     LoginCode(MemberArgs),
 
-    /// 查询工作区名称
+    /// Query workspace name
     Workspace,
 
-    /// 查询本地地址
+    /// Query local address
     LocalAddress
 }
 
-/// 服务器设置命令
+/// Server set commands
 #[derive(Subcommand, Debug)]
 enum ServerSetCommands {
 
-    /// 设置成员
-    #[command(subcommand, )]
+    /// Set member properties
+    #[command(subcommand)]
     Member(ServerSetMemberCommands),
 }
 
-/// 服务器设置命令
+/// Server set member commands
 #[derive(Subcommand, Debug)]
 enum ServerSetMemberCommands {
 
-    /// 设置成员的职责
+    /// Set member duties
     Duties(DutiesSetArgs),
 
-    /// 设置成员名称
+    /// Set member name
     Name(MemberRenameArgs),
 }
 
-/// 成员操作参数
+/// Member operation arguments
 #[derive(Args, Debug)]
 struct MemberArgs {
 
-    /// 成员名称
+    /// Member name
     member: String
 }
 
-/// 成员操作参数
+/// Member rename arguments
 #[derive(Args, Debug)]
 struct MemberRenameArgs {
 
-    /// 成员名称
+    /// Current name
     old_name: String,
 
-    /// 新名称
+    /// New name
     new_name: String
 }
 
-/// 职责操作参数
+/// Duty operation arguments
 #[derive(Args, Debug)]
 struct DutyOperationArgs {
 
-    /// 职责
+    /// Duty name
     duties: String,
 
-    /// 成员名称
+    /// Member name
     member: String
 }
 
-/// 职责操作参数
+/// Duties set arguments
 #[derive(Args, Debug)]
 struct DutiesSetArgs {
 
-    /// 成员名称
+    /// Member name
     member: String,
 
-    /// 职责
+    /// Duties
     duties: String
 }
 
@@ -240,16 +240,16 @@ fn server_print_help() {
 
 async fn server_run() {
 
-    // 构建数据库
+    // Build database
     let database = Arc::new(Mutex::new(Database::read().await));
 
-    // 信号
+    // Signals
     let (write_tx, write_rx) : (UnboundedSender<bool>, UnboundedReceiver<bool>) = unbounded_channel();
 
     join!(jam_server_entry(database.clone(), write_tx.clone()), refresh_monitor(database.clone(), write_rx));
 }
 
-/// 添加成员
+/// Add member
 async fn server_add_member (member_name: String) {
     let member_name = process_id_text(member_name);
     let mut workspace = Workspace::read().await;
@@ -282,7 +282,7 @@ async fn server_add_member (member_name: String) {
     }
 }
 
-/// 生成登录代码
+/// Generate login code
 fn generate_login_code() -> String {
     let charset: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".chars().collect();
     let mut rng = rand::rng();
@@ -300,7 +300,7 @@ fn generate_login_code() -> String {
     code
 }
 
-/// 移除成员
+/// Remove member
 async fn server_remove_member(member_name: String) {
     let member_name = process_id_text(member_name);
     let mut workspace = Workspace::read().await;
@@ -320,11 +320,11 @@ async fn server_remove_member(member_name: String) {
                 break;
             }
         }
-        // 移除 Login Code 的绑定
+        // Remove login code binding
         if let Some(login_code) = login_code_to_remove {
             let _ = server.login_code_map.remove(&login_code.clone());
         }
-        // 移除用户数据
+        // Remove member data
         if let Some(uuid) = uuid_to_remove {
             let _ = server.member_uuids.remove(&member_name);
             if server.members.remove(&uuid).is_some() {
@@ -339,7 +339,7 @@ async fn server_remove_member(member_name: String) {
     }
 }
 
-/// 添加成员职责
+/// Add duty to member
 async fn server_add_duty_to_member (duty_name: String, member_name: String) {
     let member_name = process_id_text(member_name);
     let mut workspace = Workspace::read().await;
@@ -366,12 +366,12 @@ async fn server_add_duty_to_member (duty_name: String, member_name: String) {
     }
 }
 
-/// 设置成员的职责
+/// Set member duties
 async fn server_set_duties_to_member (member_name: String, duties_str: String) {
     let mut workspace = Workspace::read().await;
     if let Some(server) = &mut workspace.server {
 
-        // 清除成员职责
+        // Clear member duties
         if let Some(member_uuid) = server.member_uuids.get(member_name.as_str()) {
             if let Some(member) = server.members.get_mut(member_uuid) {
                 member.member_duties.clear();
@@ -380,14 +380,14 @@ async fn server_set_duties_to_member (member_name: String, duties_str: String) {
         Workspace::update(&mut workspace).await;
     }
 
-    // 遍历添加
+    // Add duties one by one
     for duty_str in duties_str.split(",") {
         let duty_str = duty_str.trim();
         server_add_duty_to_member(duty_str.to_string(), member_name.clone()).await;
     }
 }
 
-/// 设置成员的名称
+/// Set member name
 async fn server_set_member_name(args: MemberRenameArgs) {
     let old_name = process_id_text(args.old_name);
     let new_name = process_id_text(args.new_name);
@@ -399,24 +399,24 @@ async fn server_set_member_name(args: MemberRenameArgs) {
     let mut found_uuid = None;
     if let Some(server) = &mut workspace.server {
 
-        // 新名称不存在
+        // New name doesn't exist
         if let None = server.member_uuids.get(new_name.trim()) {
 
-            // 拿出旧的 Uuid，并尝试拿到原来的成员
+            // Remove old uuid and get original member
             if let Some(uuid) = server.member_uuids.remove(old_name.trim()) {
                 if let Some(member) = server.members.get_mut(uuid.as_str()) {
 
-                    // 设置新的名称
+                    // Set new name
                     member.member_name = new_name.clone();
 
-                    // 记录旧的 Uuid
+                    // Record old uuid
                     found_uuid = Some(uuid);
                 }
             }
         }
     }
 
-    // 若找到旧的 Uuid，说明设置名称成功，此时开始重建映射，并保存工作区
+    // If old uuid was found, rebuild mapping and save workspace
     if let Some(server) = &mut workspace.server {
         if let Some(uuid) = found_uuid {
             server.member_uuids.insert(new_name, uuid);
@@ -425,7 +425,7 @@ async fn server_set_member_name(args: MemberRenameArgs) {
     }
 }
 
-/// 移除成员职责
+/// Remove duty from member
 async fn server_remove_duty_from_member (duty_name: String, member_name: String) {
     let member_name = process_id_text(member_name);
     let mut workspace = Workspace::read().await;
@@ -463,7 +463,7 @@ fn print_maybe(maybe: Option<MemberDuty>, duty_name: String) {
     }
 }
 
-/// 搜索 Duty (结果，可能是)
+/// Search duty (with possible suggestions)
 fn search_duty_by_str (input: String) -> Result<MemberDuty, Option<MemberDuty>> {
     let mut vec = Vec::new();
     let (mut index, mut current, mut min) = (0, 0, 1000);
@@ -488,7 +488,7 @@ fn search_duty_by_str (input: String) -> Result<MemberDuty, Option<MemberDuty>> 
     }
 }
 
-/// 列出成员
+/// List members
 async fn server_list_members () {
     let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {
@@ -500,7 +500,7 @@ async fn server_list_members () {
     }
 }
 
-/// 列出成员的职责
+/// Query member duties
 async fn server_query_duties_of_member (member_name: String) {
     let member_name = process_id_text(member_name);
     let workspace = Workspace::read().await;
@@ -518,7 +518,7 @@ async fn server_query_duties_of_member (member_name: String) {
     }
 }
 
-/// 查询成员的 Uuid
+/// Query member Uuid
 async fn server_query_uuid_of_member (member_name: String) {
     let member_name = process_id_text(member_name);
     let workspace = Workspace::read().await;
@@ -532,7 +532,7 @@ async fn server_query_uuid_of_member (member_name: String) {
     }
 }
 
-/// 查询成员的 登录代码
+/// Query member login code
 async fn server_query_login_code(member_name: String) {
     let member_name = process_id_text(member_name);
     let workspace = Workspace::read().await;
@@ -547,7 +547,7 @@ async fn server_query_login_code(member_name: String) {
     }
 }
 
-/// 查询工作区名称
+/// Query workspace name
 async fn server_query_workspace() {
     let workspace = Workspace::read().await;
     if let Some(server) = workspace.server {

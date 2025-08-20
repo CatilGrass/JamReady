@@ -5,49 +5,49 @@ use crate::data::client_result::ClientResult;
 use crate::data::workspace::Workspace;
 use crate::service::jam_client::search_workspace_lan;
 
-/// 重定向
+/// Redirect
 pub async fn client_redirect(args: RedirectArgs) {
     let mut result = ClientResult::result().await;
     let mut workspace = Workspace::read().await;
 
     if let Some(client) = &mut workspace.client {
 
-        // 重定向账户
+        // Redirect account
         if let Some(login_code) = args.login_code {
             client.login_code = login_code;
             result.log(format!("Trying to change login code to {}", client.login_code).as_str());
         }
 
-        // 此处：若同时指定工作区名称和地址，仅更新地址
+        // Note: If both workspace name and address are specified, only update the address
         if let Some(target_addr) = args.target {
 
-            // 若成功
+            // If successful
             if let Ok(addr) = parse_address_v4_str(target_addr).await {
                 client.target_addr = addr;
 
                 result.log(format!("Changed target address to {}", &client.target_addr).as_str());
 
-                // 并保存工作区信息
+                // And save workspace info
                 Workspace::update(&workspace).await;
                 return;
             }
-            // 失败则继续工作区的查询
+            // If failed, continue with workspace search
         }
 
-        // 若存在工作区名称数据
+        // If workspace name data exists
         if let Some(workspace_name) = args.workspace {
 
-            // 则更新工作区数据
+            // Then update workspace data
             client.workspace_name = workspace_name;
         }
 
-        // 根据当前工作区刷新地址
+        // Refresh address based on current workspace
         if let Ok(addr) = search_workspace_lan(client.workspace_name.clone()).await {
             client.target_addr = addr;
 
             result.log(format!("Redirected {} to {}.", client.workspace_name, addr).as_str());
 
-            // 并保存工作区信息
+            // And save workspace info
             Workspace::update(&workspace).await;
             return;
         }

@@ -3,7 +3,7 @@ use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
 pub fn move_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
-    // 检查源文件是否存在
+    // Check if source file exists
     if !from.exists() {
         return Err(Error::new(
             ErrorKind::NotFound,
@@ -11,7 +11,7 @@ pub fn move_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
         ));
     }
 
-    // 检查目标文件是否已存在
+    // Check if destination file already exists
     if to.exists() {
         return Err(Error::new(
             ErrorKind::AlreadyExists,
@@ -19,15 +19,45 @@ pub fn move_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
         ));
     }
 
-    // 确保目标目录存在，如果不存在则创建
+    // Ensure destination directory exists, create if not
     if let Some(parent) = to.parent() {
         if !parent.exists() {
             fs::create_dir_all(parent)?;
         }
     }
 
-    // 执行文件移动
+    // Perform file move operation
     fs::rename(&from, &to)?;
+
+    Ok(())
+}
+
+pub fn copy_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
+    // Check if source exists
+    if !from.exists() {
+        return Err(Error::new(
+            ErrorKind::NotFound,
+            format!("Source file '{}' does not exist", from.display()),
+        ));
+    }
+
+    // Ensure source is a file
+    if !from.is_file() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            format!("'{}' is not a file", from.display()),
+        ));
+    }
+
+    // Create destination directory if needed
+    if let Some(parent) = to.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+
+    // Perform copy with overwrite
+    fs::copy(from, to)?;
 
     Ok(())
 }

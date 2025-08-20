@@ -33,7 +33,6 @@ pub async fn client_param(args: ParamArgs) {
     }
 }
 
-/// 查询参数
 fn client_query_param(param_name: String) {
     print!("{}", read_parameter(param_name.clone()).unwrap_or("".to_string()));
 }
