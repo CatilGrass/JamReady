@@ -1,0 +1,6 @@
+ARGUMENTS: [green]<FROM_SEARCH>[/]  Downloaded and viewed files
+
+  OPTIONS: [gray]<--get/-g>[/]     Attempt to lock after download.
+           [gray]<--version/-v>[/] Specify the file version to download.
+
+[green]Learn more:[/] [yellow]jam[/] doc [cyan]search_rule[/]

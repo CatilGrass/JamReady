@@ -1,0 +1,10 @@
+[green] Setup a SERVER WORKSPACE: [/]
+    ~# [yellow]jam[/] setup [green]<WORKSPACE_NAME>[/]
+
+[green] Join a CLIENT WORKSPACE: [/]
+
+    [gray]// Use Workspace Name[/]
+    ~# [yellow]jam[/] login [green]<LOGIN_CODE>[/] --workspace [green]<WORKSPACE_NAME>[/]
+
+    [gray]// Use Ip Address[/]
+    ~# [yellow]jam[/] login [green]<LOGIN_CODE>[/] --target [green]<TARGET_ADDR>[/]

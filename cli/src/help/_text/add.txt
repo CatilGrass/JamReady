@@ -1,0 +1,3 @@
+ARGUMENTS: [green]<PATH>[/]     Virtual File path.
+
+  OPTIONS: [gray]<--get/-g>[/] Lock after adding file.

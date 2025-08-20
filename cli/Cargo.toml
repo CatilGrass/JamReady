@@ -47,3 +47,6 @@ rand = "0.9.1"
 
 # 字符串
 regex = "1.11.1"
+
+[build-dependencies]
+walkdir = "2.5.0"

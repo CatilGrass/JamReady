@@ -1,0 +1,10 @@
+OPTIONS: [gray]<--local>[/]                 Local files
+         [gray]<--remote>[/]                Remote files
+         [gray]<--zero/-z/--empty/--new>[/] Zero-version, empty, newly created files
+         [gray]<--updated/-u>[/]            Updated files
+         [gray]<--held/-h>[/]               Files held by self
+         [gray]<--lock/g>[/]                Locked files
+         [gray]<--removed/d>[/]             Removed files
+         [gray]<--untracked/n>[/]           Untracked files
+         [gray]<--moved/m>[/]               Moved files
+         [gray]<--other/e>[/]               Other files
