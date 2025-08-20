@@ -32,6 +32,18 @@ pub struct LocalFile {
     /// File digest
     #[serde(rename = "Digest")]
     pub local_digest: String,
+
+    /// Is the file completed
+    #[serde(rename = "Completed")]
+    pub completed: bool,
+
+    /// Summary information when the file is completed
+    #[serde(rename = "CompletedDigest")]
+    pub completed_digest: String,
+
+    /// File commit information
+    #[serde(rename = "CompletedCommit")]
+    pub completed_commit: String,
 }
 
 impl LocalArchive for LocalFileMap {

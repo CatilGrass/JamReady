@@ -180,17 +180,17 @@ ARGUMENTS: [green]<FROM_SEARCH>[/]  Downloaded and viewed files
 
 pub fn get_help_docs(name: &str) -> String {
     parse_colored_text(match name {
-        "client_help" => CLIENT_HELP,
+        "view" => VIEW,
+        "rollback" => ROLLBACK,
+        "add" => ADD,
         "search_rule" => SEARCH_RULE,
         "server_help" => SERVER_HELP,
         "remove" => REMOVE,
-        "ownership" => OWNERSHIP,
-        "rollback" => ROLLBACK,
-        "add" => ADD,
+        "client_help" => CLIENT_HELP,
         "setup_help" => SETUP_HELP,
-        "move" => MOVE,
-        "view" => VIEW,
         "struct" => STRUCT,
+        "ownership" => OWNERSHIP,
+        "move" => MOVE,
         _ => "",
     }.trim())
 }

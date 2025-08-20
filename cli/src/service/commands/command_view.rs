@@ -75,9 +75,19 @@ impl Command for ViewCommand {
                                     print_msg = "Restored from cache successfully".to_string();
                                     success = true;
                                     ready = false;
+
+                                    let uuid = database.uuid_of_path(file.path()).unwrap_or("".to_string());
+                                    let local_path_str = if let Some(local_file) = local.search_to_local(&database, file.path()) {
+                                        local_file.local_path.clone()
+                                    } else {
+                                        file.path()
+                                    };
+
+                                    generate_local_file_map_info(&mut local, file, client_path.clone(), local_path_str, uuid, view_version);
+
                                     send_msg(stream, &ClientMessage::NotReady).await;
                                 }
-                                Err(e) => {
+                                Err(_) => {
                                     success = false;
                                     ready = true;
                                     // Not ready, trying to download
@@ -98,16 +108,7 @@ impl Command for ViewCommand {
 
                                 let local_path_str = process_path_text(local_path_buf.display().to_string());
                                 if let Some(uuid) = database.uuid_of_path(file.path()) {
-                                    local.file_paths.insert(uuid.clone(), LocalFile {
-                                        local_path: local_path_str.clone(),
-                                        local_version: if let Ok(version) = u32::from_str(view_version) {
-                                            if version == 0 { file.version() } else { version }
-                                        } else {
-                                            file.version()
-                                        },
-                                        local_digest: md5_digest(client_path.clone()).unwrap_or_default(),
-                                    });
-                                    local.file_uuids.insert(local_path_str, uuid.clone());
+                                    generate_local_file_map_info(&mut local, file, client_path.clone(), local_path_str, uuid, view_version);
                                 }
                                 print_msg = "File download completed".to_string();
                                 success = true;
@@ -210,4 +211,22 @@ impl Command for ViewCommand {
 fn local_cache_file(virtual_path: &VirtualFile) -> Option<PathBuf> {
     let Ok(current_dir) = current_dir() else { return None };
     Some(current_dir.join(env!("PATH_CACHE")).join(virtual_path.real_path()))
+}
+
+fn generate_local_file_map_info(
+    local: &mut LocalFileMap, file: &VirtualFile,
+    client_path: PathBuf, local_path_str: String, uuid: String, view_version: &str) {
+    local.file_paths.insert(uuid.clone(), LocalFile {
+        local_path: local_path_str.clone(),
+        local_version: if let Ok(version) = u32::from_str(view_version) {
+            if version == 0 { file.version() } else { version }
+        } else {
+            file.version()
+        },
+        local_digest: md5_digest(client_path).unwrap_or_default(),
+        completed: false,
+        completed_digest: String::new(),
+        completed_commit: String::new(),
+    });
+    local.file_uuids.insert(local_path_str, uuid);
 }

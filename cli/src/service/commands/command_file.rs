@@ -71,6 +71,9 @@ impl Command for FileOperationCommand {
                                 local_path: search.to_string(),
                                 local_version: file.version(),
                                 local_digest: md5_digest(local_file_path_buf).unwrap_or_default(),
+                                completed: false,
+                                completed_digest: String::new(),
+                                completed_commit: String::new(),
                             });
                         }
                     }

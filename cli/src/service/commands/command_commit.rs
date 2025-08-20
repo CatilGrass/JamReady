@@ -73,13 +73,27 @@ impl Command for CommitCommand {
                     },
                 };
 
-                command_result.log("File Found, Checking Modified");
+                command_result.log("File Found, Checking Completed");
 
                 // Calculate current file MD5
-                let current_md5 = match md5_digest(client_path.clone()) {
+                let current_digest = match md5_digest(client_path.clone()) {
                     Ok(md5) => md5,
                     Err(_) => continue,
                 };
+
+                // Check if the local file is marked as completed
+                let Some(completed_commit) = ({
+                    if let Some(local_file) = local.search_to_local(&database, file.path()) {
+                        if local_file.completed && local_file.completed_digest == current_digest {
+                            Some(local_file.completed_commit.clone())
+                        } else { None }
+                    } else { None }
+                }) else {
+                    command_result.warn("File Not Completed!");
+                    continue;
+                };
+
+                command_result.log("File Completed, Checking Modified");
 
                 // Check if version allows commit
                 let local_file = local.file_paths.get(
@@ -93,7 +107,7 @@ impl Command for CommitCommand {
 
                     // File modified if local record exists, versions match but MD5 differs
                     (Some(local_file), _) if local_file.local_version == file.version()
-                        && local_file.local_digest != current_md5 => true,
+                        && local_file.local_digest != current_digest => true,
 
                     // Other cases don't allow commit
                     _ => false,
@@ -110,7 +124,7 @@ impl Command for CommitCommand {
                 let record_file_path = process_path_text(client_path.display().to_string());
 
                 // Request upload permission from server
-                send_msg(stream, &Text(file.path())).await;
+                send_msg(stream, &Text(format!("{}|{}", file.path(), completed_commit))).await;
                 match read_msg::<ServerMessage>(stream).await {
                     Pass => {
 
@@ -124,12 +138,18 @@ impl Command for CommitCommand {
                                 let new_version = file.version() + 1;
                                 if let Some(local_file) = local.file_paths.get_mut(&uuid) {
                                     local_file.local_version = new_version;
-                                    local_file.local_digest = current_md5.clone();
+                                    local_file.local_digest = current_digest.clone();
+                                    local_file.completed = false;
+                                    local_file.completed_digest = String::new();
+                                    local_file.completed_commit = String::new();
                                 } else {
                                     local.file_paths.insert(uuid.clone(), LocalFile {
                                         local_path: file.path().to_string(),
                                         local_version: new_version,
-                                        local_digest: current_md5,
+                                        local_digest: current_digest,
+                                        completed: false,
+                                        completed_digest: String::new(),
+                                        completed_commit: String::new(),
                                     });
                                     local.file_uuids.insert(file.path().to_string(), uuid);
                                 }
@@ -179,12 +199,11 @@ impl Command for CommitCommand {
     async fn remote(
         &self,
         stream: &mut TcpStream,
-        args: Vec<&str>,
+        _args: Vec<&str>,
         (uuid, _member): (String, &Member),
         database: Arc<Mutex<Database>>
     ) {
         let mut changed = false;
-        let commit_description = args.get(1).unwrap_or(&"Update");
 
         // Sync database
         entry_mutex_async!(database, |guard| {
@@ -202,13 +221,17 @@ impl Command for CommitCommand {
                         break;
                     }
 
-                    if let Text(path) = msg {
+                    if let Text(msg) = msg {
+
+                        let split = msg.split("|").into_iter().collect::<Vec<&str>>();
+                        let path = split[0];
+                        let commit_description = split[1];
 
                         let pack;
 
                         // Find file
                         entry_mutex_async!(database, |guard| {
-                            let Some(file) = guard.file_mut(path.clone()) else {
+                            let Some(file) = guard.file_mut(path.to_string()) else {
                                 send_msg(stream, &Deny("Virtual file not found.".to_string())).await;
                                 continue;
                             };
@@ -242,7 +265,7 @@ impl Command for CommitCommand {
                             if read_file(stream, real_path.clone()).await.is_ok() {
 
                                 entry_mutex_async!(database, |guard| {
-                                    let Some(file) = guard.file_mut(path) else {
+                                    let Some(file) = guard.file_mut(path.to_string()) else {
                                         continue;
                                     };
 
