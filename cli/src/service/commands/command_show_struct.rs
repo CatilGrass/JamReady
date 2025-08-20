@@ -34,7 +34,7 @@ impl Command for ShowFileStructCommand {
 
     async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) -> Option<ClientResult> {
 
-        // 参数检查
+        // Parameter validation
         if args.len() < 3 {
             return None;
         }
@@ -63,7 +63,7 @@ impl Command for ShowFileStructCommand {
             let show_untracked = switches.contains(UNTRACKED_FLAG);
             let show_removed = switches.contains(REMOVED_FLAG);
 
-            // 处理工作区文件
+            // Process workspace files
             if show_remote {
                 for file in database.files() {
                     if let Some(info) = build_remote_file_info(
@@ -76,7 +76,7 @@ impl Command for ShowFileStructCommand {
                 }
             }
 
-            // 处理本地文件
+            // Process local files
             if show_local {
                 paths.extend(get_local_file_info(
                     &local, &database,
@@ -112,14 +112,14 @@ fn build_remote_file_info(
     let mut should_display = false;
     let local_file = local.search_to_local(database, file.path());
 
-    // 空文件
+    // Empty file
     if file.real_path().is_empty() {
         if show_zero_version {
             info.push_str(&format!(" {}", "[Empty]".truecolor(128, 128, 128)));
             should_display = true;
         }
     }
-    // 本地文件存在
+    // Local file exists
     else if let (Ok(current_dir), Some(local_file)) = (current_dir(), local_file) {
         let local_path = current_dir.join(&local_file.local_path);
 
@@ -127,7 +127,7 @@ fn build_remote_file_info(
             let local_version = local_file.local_version;
             let file_version = file.version();
 
-            // 版本
+            // Version comparison
             match local_version.cmp(&file_version) {
                 std::cmp::Ordering::Less if show_updated => {
                     info.push_str(&format!(" {}", format!("[v{}↓]", local_version).bright_red()));
@@ -144,21 +144,21 @@ fn build_remote_file_info(
                 _ => {}
             }
 
-            // 文件移动
+            // File moved
             if show_moved && local_file.local_path != file.path() {
                 let formatted_path = local_file.local_path.replace("/", "\\s");
                 info.push_str(&format!(" {}", format!("<- {}", formatted_path).truecolor(128, 128, 128)));
             }
         }
     }
-    // 本地文件不存在
+    // Local file doesn't exist
     else {
         if show_other {
             should_display = true;
         }
     }
 
-    // 文件锁定
+    // File lock status
     if let Some(locker_uuid) = file.get_locker_owner_uuid() {
         let is_long_lock = file.is_longer_lock_unchecked();
         let is_held = locker_uuid == client.uuid.trim();
@@ -191,7 +191,7 @@ fn get_local_file_info(
 
     for path in get_all_file_paths() {
 
-        // 跳过工作区配置目录
+        // Skip workspace config directory
         if path.starts_with(workspace_root) {
             continue;
         }
@@ -199,11 +199,11 @@ fn get_local_file_info(
         match local.file_uuids.get(&path) {
             Some(uuid) => {
                 if let Some(file) = database.file_with_uuid(uuid.clone()) {
-                    // 路径变动时
+                    // Path changed
                     if file.path() != path {
-                        // 路径不为空且显示移动
+                        // Path not empty and show moved
                         if !file.path().is_empty() && show_moved {
-                            // 文件移动
+                            // File moved
                             let moved_info = format!(
                                 "{} {} {}",
                                 path,
@@ -212,9 +212,9 @@ fn get_local_file_info(
                             );
                             paths.push(format!("{}", moved_info));
                         }
-                        // 路径为空且显示移除
+                        // Path empty and show removed
                         if file.path().is_empty() && show_removed {
-                            // 文件移除
+                            // File removed
                             paths.push(format!(
                                 "{} {} {}",
                                 path,
@@ -226,7 +226,7 @@ fn get_local_file_info(
                 }
             }
             None if show_untracked => {
-                // 未追踪
+                // Untracked file
                 paths.push(format!(
                     "{} {}",
                     path,

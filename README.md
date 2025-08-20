@@ -50,8 +50,8 @@ CLI 快速入门 : [Quick Start](docs/learn-cli/quick-start_zh_cn.md)
 ### 一、运行客户端界面 (开发中)
 
 ```bash
-# 在根目录运行如下命令
-dotnet run --project app/JamReadyApp/JamReadyWorkspace
+# 在根目录运行如下命令 (暂不支持)
+# dotnet run --project app/JamReadyApp/JamReadyWorkspace
 ```
 
 
@@ -63,8 +63,8 @@ dotnet run --project app/JamReadyApp/JamReadyWorkspace
 # 构建 JamReady CLI 部分代码
 cargo build_release
 
-# 构建 JamReady GUI 部分代码 (可选)
-dotnet publish app/JamReadyApp
+# 构建 JamReady GUI 部分代码 (暂不支持)
+# dotnet publish app/JamReadyApp
 
 # 发布项目
 cargo release

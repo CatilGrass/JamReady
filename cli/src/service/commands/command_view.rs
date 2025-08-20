@@ -27,70 +27,54 @@ pub struct ViewCommand;
 impl Command for ViewCommand {
 
     async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) -> Option<ClientResult> {
-
         let mut command_result = ClientResult::result().await;
 
-        // 同步数据库
+        // Sync database
         sync_local(stream).await;
         let database = Database::read().await;
 
-        // 加载本地映射表
+        // Load local file mapping
         let mut local = LocalFileMap::read().await;
 
-        // 检查参数数量
-        if args.len() < 2 { return None; } // <搜索>
+        // Validate arguments
+        if args.len() < 2 { return None; } // <search>
         let inputs = args[1].split("|");
 
-        // 检查是否存在指定版本号 <搜索> <版本>
+        // Check for version parameter <search> <version>
         let view_version = if args.len() < 3 { "0" } else { args[2] };
 
         for input in inputs {
-
-            // 成功状态
             let mut success = false;
-            let mut print_msg = "".to_string();
+            let mut print_msg = String::new();
 
-            // 文件目录
             let file_path_str = input.to_string();
-            let file = database.search_file(file_path_str.clone());
-            if let Some(file) = file {
-
-                // 尝试寻找本地映射，找不到用默认映射
+            if let Some(file) = database.search_file(file_path_str.clone()) {
                 if let Some(client_path) = local.file_to_path(&database, file) {
-                    // 是否准备就绪
                     let mut ready = true;
 
-                    // 如果文件存在且版本与服务端的版本匹配，且指定版本为 0 (最新版)，则不下载
+                    // Check if file exists locally and matches server version
                     if let Some(local_uuid) = database.uuid_of_path(file.path()) {
                         if let Some(local_file) = local.file_paths.get(&local_uuid) {
-                            if local_file.local_version == file.version() && client_path.exists()
-                                && view_version == "0" {
-
-                                // 发送 "未就绪"
+                            if local_file.local_version == file.version() &&
+                                client_path.exists() &&
+                                view_version == "0" {
                                 send_msg(stream, &ClientMessage::NotReady).await;
                                 ready = false;
-
                                 print_msg = "The file is already the latest version, no need to download".to_string();
                             }
                         }
                     }
 
                     if ready {
-                        // 发送 "就绪"
                         send_msg(stream, &ClientMessage::Ready).await;
 
-                        // 下载文件
                         match read_file(stream, client_path.clone()).await {
                             Ok(_) => {
-                                // 获得本地文件映射的键
-                                let local_path_buf;
-                                if let Some(p) = local.search_to_path_relative(&database, file.path()) {
-                                    local_path_buf = p;
-                                } else {
-                                    local_path_buf = PathBuf::from_str(file.path().as_str()).unwrap();
-                                }
+                                let local_path_buf = match local.search_to_path_relative(&database, file.path()) {
+                                    Some(p) => p,
+                                    None => PathBuf::from_str(file.path().as_str()).unwrap(),
+                                };
 
-                                // 写入本地文件映射
                                 let local_path_str = process_path_text(local_path_buf.display().to_string());
                                 if let Some(uuid) = database.uuid_of_path(file.path()) {
                                     local.file_paths.insert(uuid.clone(), LocalFile {
@@ -100,7 +84,7 @@ impl Command for ViewCommand {
                                         } else {
                                             file.version()
                                         },
-                                        local_digest: md5_digest(client_path).unwrap_or("".to_string()),
+                                        local_digest: md5_digest(client_path).unwrap_or_default(),
                                     });
                                     local.file_uuids.insert(local_path_str, uuid.clone());
                                 }
@@ -115,26 +99,22 @@ impl Command for ViewCommand {
                 }
             }
 
-            // 读取结束消息
+            // Handle timeout or server response
             select! {
                 _ = sleep(Duration::from_secs(2)) => {
                     print_msg = "Timeout".to_string();
                 }
                 result = read_msg::<ServerMessage>(stream) => {
-                    match result {
-                        ServerMessage::Deny(err) => {
-                            print_msg = format!("{}. {}", print_msg, err);
-                        }
-                        ServerMessage::Done => {}
-                        _ => {}
+                    if let ServerMessage::Deny(err) = result {
+                        print_msg = format!("{}. {}", print_msg, err);
                     }
                 }
             }
 
             if success {
-                command_result.log(print_msg.as_str());
+                command_result.log(&print_msg);
             } else {
-                command_result.err(print_msg.as_str());
+                command_result.err(&print_msg);
             }
         }
 
@@ -142,70 +122,58 @@ impl Command for ViewCommand {
         Some(command_result)
     }
 
-    async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, (_uuid, _member): (String, &Member), database: Arc<Mutex<Database>>) {
-
-        // 首先同步数据库
+    async fn remote(
+        &self,
+        stream: &mut TcpStream,
+        args: Vec<&str>,
+        (_uuid, _member): (String, &Member),
+        database: Arc<Mutex<Database>>
+    ) {
+        // First sync database
         entry_mutex_async!(database, |guard| {
             sync_remote(stream, guard).await;
         });
 
         let database = Database::read().await;
 
-        // 检查参数数量
-        if args.len() < 2 { return; } // <搜索>
+        // Validate arguments
+        if args.len() < 2 { return; } // <search>
         let inputs = args[1].split("|");
 
-        // 检查是否存在指定版本号 <搜索> <版本>
+        // Check for version parameter <search> <version>
         let view_version = if args.len() < 3 { "0" } else { args[2] };
 
         for input in inputs {
-
-            // 确认客户端的准备状态
-            let read_message: ClientMessage = read_msg(stream).await;
-
-            // 成功状态
             let mut success = false;
-            let mut return_message = "".to_string();
+            let mut return_message = String::new();
 
-            match read_message {
+            match read_msg::<ClientMessage>(stream).await {
                 ClientMessage::Ready => {
-
-                    // 文件路径
                     let file_path_str = input.to_string();
-                    let file = database.search_file(file_path_str.clone());
-                    if let Some(file) = file {
-
-                        // 获得文件的实际地址
+                    if let Some(file) = database.search_file(file_path_str.clone()) {
                         let real = if view_version == "0" {
                             file.server_path()
                         } else {
-                            if let Ok(version) = u32::from_str(view_version) {
-                                file.server_path_version(version)
-                            } else {
-                                None
-                            }
+                            u32::from_str(view_version)
+                                .ok()
+                                .and_then(|v| file.server_path_version(v))
                         };
 
                         if let Some(server_path) = real {
                             match send_file(stream, server_path).await {
-                                Ok(_) => {
-                                    success = true;
-                                }
-                                Err(err) => {
-                                    let err_string = format!("{}", err);
-                                    return_message = err_string;
-                                }
+                                Ok(_) => success = true,
+                                Err(err) => return_message = err.to_string(),
                             }
                         }
                     }
                 }
-                _ => { }
+                _ => {}
             }
 
             if success {
                 send_msg(stream, &ServerMessage::Done).await;
             } else {
-                send_msg(stream, &ServerMessage::Deny(return_message.to_string())).await;
+                send_msg(stream, &ServerMessage::Deny(return_message)).await;
             }
         }
     }

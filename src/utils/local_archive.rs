@@ -10,7 +10,6 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
 
     fn relative_path() -> String;
 
-    /// 加载
     async fn read() -> Self::DataType
     where
         Self: Sized + Send + Sync,
@@ -44,7 +43,6 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
         }
     }
 
-    /// 更新
     async fn update(val: &Self::DataType)
     where
         Self: Sized + Send + Sync,
@@ -67,7 +65,6 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
     }
 }
 
-/// 创建目录
 async fn create_paths() {
     let paths = vec![
         env!("PATH_WORKSPACE_ROOT"),

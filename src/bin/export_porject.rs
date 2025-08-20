@@ -52,7 +52,6 @@ pub fn main() {
     let target_dir =
         root.join(".cargo").join("shared").join("target").join(branch);
 
-    // 清理目录
     let _ = remove_dir_all(&export_version_dir);
 
     for data in config.release.root {
@@ -106,13 +105,13 @@ fn copy_files(raw: &PathBuf, target: &PathBuf, file_names: Vec<String>) {
         let source_path = raw.join(&file);
 
         if source_path.is_file() {
-            // 文件复制
+            // Copy file
             let destination_path = target.join(&file);
             if let Err(e) = copy_with_parents(&source_path, &destination_path) {
                 eprintln!("Error copying file: {:?} -> {:?}: {}", source_path, destination_path, e);
             }
         } else if source_path.is_dir() {
-            // 文件夹复制
+            // Copy folder
             if let Err(e) = copy_dir_contents(&source_path, target) {
                 eprintln!("Error copying directory contents: {:?} -> {:?}: {}", source_path, target, e);
             }

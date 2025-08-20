@@ -16,13 +16,11 @@ pub struct ArchiveCommand;
 
 #[async_trait]
 impl Command for ArchiveCommand {
-
     async fn local(&self, stream: &mut TcpStream, _args: Vec<&str>) -> Option<ClientResult> {
-
         let mut command_result = ClientResult::result().await;
 
-        // 验证 Leader 身份通过
-        if ! verify(stream).await {
+        // Verify leader identity
+        if !verify(stream).await {
             command_result.err("You are not the leader and cannot execute this command.");
             return Some(command_result);
         }
@@ -32,32 +30,38 @@ impl Command for ArchiveCommand {
     }
 
     async fn remote(
-        &self, stream: &mut TcpStream, _args: Vec<&str>,
-        (_uuid, member): (String, &Member), database: Arc<Mutex<Database>>) {
-
-        // 验证对方是否为 Leader
-        if ! verify_duty(stream, member, Leader).await { return; }
-
-        // 服务端直接执行归档
-        let mut i = 0;
-        loop {
-            let path = PathBuf::from(env!("PATH_DATABASE_CONFIG_ARCHIVE")).join(format!("history_{}.yaml", i));
-            if path.exists() {
-                i += 1;
-                continue
-            }
-
-            // 备份当前版本
-            if let Some(path) = path.to_str() {
-                entry_mutex_async!(database, |guard| {
-                    Database::update_to(guard, path.to_string()).await;
-                    guard.clean_histories();
-                });
-
-                break;
-            }
+        &self,
+        stream: &mut TcpStream,
+        _args: Vec<&str>,
+        (_uuid, member): (String, &Member),
+        database: Arc<Mutex<Database>>
+    ) {
+        // Verify leader duty
+        if !verify_duty(stream, member, Leader).await {
+            return;
         }
 
+        // Find available archive filename
+        let mut i = 0;
+        let archive_path = loop {
+            let path = PathBuf::from(env!("PATH_DATABASE_CONFIG_ARCHIVE"))
+                .join(format!("history_{}.yaml", i));
+
+            if !path.exists() {
+                break path;
+            }
+            i += 1;
+        };
+
+        // Create archive backup
+        if let Some(path_str) = archive_path.to_str() {
+            entry_mutex_async!(database, |guard| {
+                Database::update_to(guard, path_str.to_string()).await;
+                guard.clean_histories();
+            });
+        }
+
+        // Update main database
         entry_mutex_async!(database, |guard| {
             Database::update(guard).await;
         });

@@ -3,7 +3,7 @@ use crate::cli_commands::cli_command_client::param_comp::data::{CompConfig, Comp
 use crate::cli_commands::client::{exec, RollbackArgs};
 use crate::data::client_result::ClientResult;
 
-pub async fn client_rollback (args: RollbackArgs) {
+pub async fn client_rollback(args: RollbackArgs) {
 
     let mut result = ClientResult::result().await;
 
@@ -14,21 +14,21 @@ pub async fn client_rollback (args: RollbackArgs) {
         return;
     };
 
-    // 理论上 Rollback 不应该支持多目录操作的，但是我还是想加
+    // Theoretically Rollback shouldn't support multi-directory operations, but I still want to add it :)))))
 
     if args.get {
-        // 获得文件的锁
+        // Acquire file lock
         result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), from.to_string()]).await);
     }
-    // 回滚版本
+    // Rollback version
     result.combine_unchecked(exec(vec!["file".to_string(), "rollback".to_string(), from.to_string(), (&args.to_version).to_string()]).await);
 
-    // 直接重新下载文件
+    // Directly re-download the file
     if args.back {
         result.combine_unchecked(exec(vec!["view".to_string(), from.to_string(), args.to_version.to_string()]).await);
     }
 
-    // 无结果时
+    // When no results
     if result.has_result() {
         result.end_print();
     } else {

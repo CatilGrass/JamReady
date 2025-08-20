@@ -2,9 +2,9 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tokio::net::lookup_host;
 
 pub async fn parse_address_v4_str(address: String) -> std::io::Result<SocketAddr> {
-    let default_port : u16 = env!("DEFAULT_SERVER_PORT").parse().unwrap();
+    let default_port: u16 = env!("DEFAULT_SERVER_PORT").parse().unwrap();
 
-    // 尝试解析为 SocketAddr
+    // Try to parse as SocketAddr
     if let Ok(socket_addr) = address.parse::<SocketAddr>() {
         return Ok(match socket_addr.ip() {
             IpAddr::V4(_) => socket_addr,
@@ -12,33 +12,33 @@ pub async fn parse_address_v4_str(address: String) -> std::io::Result<SocketAddr
         });
     }
 
-    // 解析为纯 IPv6 地址
+    // Parse as pure IPv6 address
     if let Ok(_v6_addr) = address.parse::<std::net::Ipv6Addr>() {
         return Ok(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), default_port));
     }
 
-    // 拆分地址和端口部分
+    // Split address and port parts
     let (host, port_str) = if let Some((host, port)) = address.rsplit_once(':') {
-        // 处理 IPv6
+        // Handle IPv6
         (host.trim_matches(|c| c == '[' || c == ']'), Some(port))
     } else {
         (&address[..], None)
     };
 
-    // 解析端口
+    // Parse port
     let port = port_str
         .and_then(|p| p.parse::<u16>().ok())
         .map(|p| p.clamp(0, u16::MAX))
         .unwrap_or(default_port);
 
-    // 异步解析主机名
+    // Async hostname resolution
     let socket_iter = lookup_host((host, 0)).await?;
 
-    // 寻找第一个 IPv4 地址
+    // Find first IPv4 address
     if let Some(addr) = socket_iter.filter(|addr| addr.is_ipv4()).next() {
         return Ok(SocketAddr::new(addr.ip(), port));
     }
 
-    // 解析失败时使用本地地址
+    // Fallback to local address if resolution fails
     Ok(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port))
 }

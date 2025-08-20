@@ -3,7 +3,6 @@ use env_logger::fmt::Color;
 use env_logger::fmt::Color::{Cyan, Green, Red, White, Yellow};
 use log::{Level, LevelFilter};
 
-/// 构建 Logger
 pub fn logger_build(level: LevelFilter) {
     build_full(level)
 }

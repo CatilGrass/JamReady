@@ -28,7 +28,7 @@ impl Command for UpdateCommand {
         let mut command_result = ClientResult::result().await;
 
         command_result.log("Step1: Sync Database.");
-        // 同步数据库
+        // Sync database
         if debug {
             sync_local(stream).await;
         } else {
@@ -36,12 +36,12 @@ impl Command for UpdateCommand {
         }
         command_result.log("Ok");
 
-        // 将本地文件结构和远程同步
+        // Sync local file structure with remote
         command_result.log("Step2: Sync File Struct.");
         Self::sync_file_struct().await;
         command_result.log("Ok");
 
-        // 删除本地目录下所有的空文件夹
+        // Remove all empty directories locally
         command_result.log("Step3: Remove Empty Directories.");
         if let Ok(current) = current_dir() {
             let _ = Self::remove_unused_directory(current);
@@ -56,7 +56,7 @@ impl Command for UpdateCommand {
         stream: &mut TcpStream, _args: Vec<&str>,
         (_uuid, _member): (String, &Member), database: Arc<Mutex<Database>>) {
 
-        // 同步数据库
+        // Sync database
         entry_mutex_async!(database, |guard| {
             sync_remote_with_progress(stream, guard).await;
         });
@@ -65,35 +65,35 @@ impl Command for UpdateCommand {
 
 impl UpdateCommand {
 
-    /// 将本地文件结构和远程同步
+    /// Sync local file structure with remote
     async fn sync_file_struct() {
 
-        // 本地文件和数据库
+        // Local files and database
         let database = Database::read().await;
         let mut local = LocalFileMap::read().await;
 
-        // 标记成功的 Uuid
+        // Track successful UUIDs
         let mut success_uuid = Vec::new();
 
-        // 比对所有本地文件
+        // Compare all local files
         for (uuid, local_file) in &local.file_paths {
 
-            // 此文件寻找到 VirtualFile 后，对比其远程地址和本地地址
+            // Find VirtualFile and compare remote vs local paths
             if let Some(file) = database.file_with_uuid(uuid.clone()) {
 
-                // 位置相同，跳过
+                // Paths match, skip
                 if file.path() == local_file.local_path { continue; }
 
-                // 检查本地位置是否存在
+                // Check if local path exists
                 if let Some(from) = local.search_to_path(&database, uuid.clone()) {
 
-                    // 检查是否能获得对应服务端的本地位置
+                    // Check if we can get corresponding server-side local path
                     if let Some(to) = file.client_path() {
 
                         let from_str = process_path_text(from.display().to_string());
                         let to_str = process_path_text(to.display().to_string());
 
-                        // 开始处理文件移动
+                        // Process file move
                         match move_file(&from, &to) {
                             Ok(_) => {
                                 println!("Ok: Move {} to {}", from_str, to_str);
@@ -108,10 +108,10 @@ impl UpdateCommand {
             }
         }
 
-        // 处理成功的 Uuid，修改他们的本地映射
+        // Process successful UUIDs and update their local mappings
         for uuid in success_uuid {
 
-            // 寻找 路径 到 Uuid 的映射
+            // Find path-to-UUID mapping
             let mut path = None;
             for (local_path, local_uuid) in &local.file_uuids {
                 if uuid.trim() == local_uuid.trim() {
@@ -120,10 +120,10 @@ impl UpdateCommand {
                 }
             }
 
-            // 获得文件
+            // Get file
             let file = database.file_with_uuid(uuid.clone());
 
-            // 重建 路径 到 Uuid 的映射
+            // Rebuild path-to-UUID mapping
             if let Some(path) = path {
                 if let Some(file) = file.clone() {
                     local.file_uuids.remove(&path);
@@ -131,7 +131,7 @@ impl UpdateCommand {
                 }
             }
 
-            // 修改 Uuid 到 文件 的映射
+            // Update UUID-to-file mapping
             let local_file = local.file_paths.get_mut(&uuid);
             if let Some(local_file) = local_file {
                 if let Some(file) = file {
@@ -143,7 +143,7 @@ impl UpdateCommand {
         LocalFileMap::update(&local).await;
     }
 
-    /// 删除所有空文件夹
+    /// Remove all empty directories
     pub fn remove_unused_directory(dir_path: PathBuf) -> io::Result<()> {
         if !dir_path.exists() {
             return Err(Error::new(

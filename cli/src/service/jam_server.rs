@@ -34,34 +34,31 @@ use crate::service::service_utils::{get_self_address_with_port_str, read_msg, se
 const DISCOVERY_PORT: u16 = 54000;
 const MAX_BUFFER_SIZE: usize = 1024;
 
-/// 服务器入口
+/// Server entry point
 pub async fn jam_server_entry(
     database: Arc<Mutex<Database>>,
     sender: UnboundedSender<bool>
 ) {
-
-    // 构建日志，尝试获得工作区名称
+    // Build logger and try to get workspace name
     let workspace = Workspace::read().await;
     let mut workspace_name = "Workspace";
 
     if let Some(server) = &workspace.server {
-
-        // 工作区
         workspace_name = server.workspace_name.as_str();
 
-        // 设置 Logger
+        // Setup logger
         if server.enable_debug_logger {
             logger_build(Info);
         }
     }
 
-    // 构建命令
+    // Build command registry
     let commands = Arc::new(registry());
 
-    // 获得本机 ip
+    // Get local IP address
     let address_tcp = get_self_address_with_port_str(env!("DEFAULT_SERVER_PORT"));
 
-    // 绑定 TCP 监听器
+    // Bind TCP listener
     let listener_bind = TcpListener::bind(&address_tcp).await;
     if listener_bind.is_err() {
         error!("Failed to bind to {}", address_tcp.to_string());
@@ -76,11 +73,11 @@ pub async fn jam_server_entry(
         return;
     }
 
-    // 网络发现初始化
+    // Initialize network discovery
     let socket = UdpSocket::bind(format!("0.0.0.0:{}", DISCOVERY_PORT)).await.unwrap();
     let mut buf = [0u8; MAX_BUFFER_SIZE];
 
-    // 打印数据
+    // Print server info
     info!("Workspace: \"{}\", Address: {}, DiscoveryServicePort: {}, Commands: {}",
         workspace_name,
         &address_tcp,
@@ -88,22 +85,21 @@ pub async fn jam_server_entry(
         commands.len()
     );
 
-    // 进入循环
+    // Main event loop
     loop {
         select! {
-
-            // Ctrl + C 关闭
+            // Ctrl+C shutdown
             Ok(()) = ctrl_c() => {
                 info!("Shutting down");
                 break;
             }
 
-            // 接收请求
+            // Handle incoming connections
             Ok((stream, _)) = listener.accept() => {
                 spawn(process_connection(stream, Arc::clone(&database), Arc::clone(&commands), sender.clone()));
             }
 
-            // 网络发现
+            // Network discovery
             Ok((len, addr)) = socket.recv_from(&mut buf) => {
                 if let Ok(received) = from_utf8(&buf[..len]) {
                     if received == workspace_name {
@@ -117,36 +113,28 @@ pub async fn jam_server_entry(
     info!("Main thread exiting");
 }
 
-/// 初次验证该请求
+/// Initial connection verification
 async fn process_connection (
     mut stream: TcpStream,
     database_arc: Arc<Mutex<Database>>,
     command_registry: Arc<CommandRegistry>,
     sender: UnboundedSender<bool>) {
 
-    // 从客户端读取消息
+    // Read message from client
     let message: ClientMessage = read_msg(&mut stream).await;
 
-    // 若接收到验证请求则继续
+    // Handle verification request
     if let Verify(login_code) = message {
-
-        // 尝试拿到工作区数据
         let workspace = Workspace::read().await;
         if let Some(server) = workspace.server {
-
-            // 通过 登录代码 拿到 Uuid
             if let Some(uuid) = server.login_code_map.get(&login_code) {
-
-                // 存在该成员则继续
                 if server.members.contains_key(uuid) {
-
-                    // 发送 Uuid 代表该用户通过
+                    // Send UUID to indicate successful verification
                     send_msg(&mut stream, &Uuid(uuid.clone())).await;
 
                     let member = server.members.get(uuid);
                     if let Some(member) = member {
-
-                        // 继续处理
+                        // Process member commands
                         process_member_command(
                             &mut stream,
                             database_arc.clone(),
@@ -154,49 +142,40 @@ async fn process_connection (
                             (uuid.clone(), member)
                         ).await;
 
-                        // 发送更新
+                        // Send update notification
                         let _ = sender.send(true);
                     }
                 } else {
-
-                    // 发送失败信息
                     send_msg(&mut stream, &Deny("Who are you?".to_string())).await;
                     return;
                 }
             }
         } else {
-
-            // 发送失败信息
             send_msg(&mut stream, &Deny("No ServerWorkspace setup!".to_string())).await;
             return;
         }
     } else {
-
-        // 发送失败信息
         send_msg(&mut stream, &Deny("Please verify first.".to_string())).await;
         return;
     }
 }
 
-/// 处理成员命令
+/// Process member commands
 async fn process_member_command (
     stream: &mut TcpStream,
     database: Arc<Mutex<Database>>,
     command_registry: Arc<CommandRegistry>,
     (uuid, member): (String, &Member)
 ) {
-    // 接收命令
     let command: ClientMessage = read_msg(stream).await;
 
     if let ClientMessage::Command(args_input) = command {
         let args: Vec<&str> = args_input.iter().map(String::as_str).collect();
-
         execute_remote_command(command_registry.as_ref(), stream, args, (uuid, member), database.clone()).await;
     }
 }
 
 pub async fn refresh_monitor(database: Arc<Mutex<Database>>, mut write_rx: UnboundedReceiver<bool>) {
-
     let Some(workspace) = Workspace::read().await.server else {
         return;
     };
@@ -221,10 +200,8 @@ pub async fn refresh_monitor(database: Arc<Mutex<Database>>, mut write_rx: Unbou
     }
 }
 
-/// 渲染一次监视器
+/// Render the monitoring display
 async fn render_monitor(database: &Arc<Mutex<Database>>) {
-
-    // 存储上次渲染的行数
     static LAST_LINES: AtomicUsize = AtomicUsize::new(0);
 
     let Some(workspace) = Workspace::read().await.server else {
@@ -234,23 +211,22 @@ async fn render_monitor(database: &Arc<Mutex<Database>>) {
     let Ok(current) = current_dir() else { return; };
     let current = current.join(env!("PATH_DATABASE"));
 
-    // 创建缓冲区存储所有输出内容
     let mut output_buffer = String::new();
 
-    // 储存大小
+    // Storage size
     let storage_size_str = if let Ok(size) = get_folder_size(current) {
         format!("STORAGE: {:.2} MB", size as f64 / (1024.0 * 1024.0))
     } else {
         "0".to_string()
     };
 
-    // 虚拟文件数量
+    // Virtual file count
     let virtual_count_str;
     entry_mutex_async!(database, |guard| {
         virtual_count_str = format!("VIRTUAL_FILES: {}", guard.files().len());
     });
 
-    // 内存占用和CPU占用
+    // Memory and CPU usage
     let mut mem_str = "UNKNOWN".to_string();
     let mut cpu_str = "UNKNOWN".to_string();
     let mut sys = System::new_all();
@@ -264,16 +240,16 @@ async fn render_monitor(database: &Arc<Mutex<Database>>) {
         }
     }
 
-    // 表格
+    // Info table
     let table_info_str =
         format!("| {} | {} | {} | {} |", storage_size_str, virtual_count_str, mem_str, cpu_str);
     let table_width = table_info_str.len();
 
-    // 表格边框
+    // Table borders
     let table_top_str = "_".repeat(table_width);
     let table_bottom_str = "▔".repeat(table_width);
 
-    // 工作区信息
+    // Workspace info
     let workspace_info = format!("Workspace: {}, Member: ({})", workspace.workspace_name, {
         let mut result = "".to_string();
         for (_uuid, member) in workspace.members {
@@ -282,16 +258,16 @@ async fn render_monitor(database: &Arc<Mutex<Database>>) {
         result.trim_start_matches(',').trim().to_string()
     });
 
-    // 文件树
+    // File tree
     let mut virtual_file_path_list = Vec::new();
     entry_mutex_async!(database, |guard| {
         for file in guard.files() {
             let mut path = file.path();
 
-            // 版本
+            // Version
             path = format!("{} {}", path, format!("[v{}]", file.version()).green());
 
-            // 锁定
+            // Lock status
             if let Some((_, member)) = file.get_locker_owner().await {
                 let lock_status = if file.is_longer_lock_unchecked() {
                     format!("[HELD: {}]", member.member_name)
@@ -305,7 +281,7 @@ async fn render_monitor(database: &Arc<Mutex<Database>>) {
         }
     });
 
-    // 构建完整输出
+    // Build complete output
     output_buffer.push('\n');
     output_buffer.push_str(&workspace_info);
     output_buffer.push('\n');
@@ -319,20 +295,19 @@ async fn render_monitor(database: &Arc<Mutex<Database>>) {
     output_buffer.push('\n');
     output_buffer.push('\n');
 
-    // 计算当前输出行数
+    // Calculate line count
     let current_lines = output_buffer.matches('\n').count() + 1;
     let last_lines = LAST_LINES.swap(current_lines, Ordering::SeqCst);
 
-    // 光标定位和渲染
+    // Cursor positioning and rendering
     if last_lines > 0 {
-        // 移动光标到起始位置
         print!("\x1B[{}A", last_lines);
     }
 
-    // 清除从光标到屏幕末尾的内容
+    // Clear from cursor to end of screen
     print!("\x1B[J");
 
-    // 输出新内容
+    // Output new content
     print!("{}", output_buffer);
 
     let _ = std::io::stdout().flush();

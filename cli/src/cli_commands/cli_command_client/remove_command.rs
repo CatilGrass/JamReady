@@ -15,13 +15,13 @@ pub async fn client_remove(args: RemoveArgs) {
     };
 
     if args.get {
-        // 获得文件的锁
+        // Acquire file lock
         result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), from.to_string()]).await);
     }
-    // 移除文件
+    // Remove file
     result.combine_unchecked(exec(vec!["file".to_string(), "remove".to_string(), from.to_string()]).await);
 
-    // 无结果时
+    // When no results
     if result.has_result() {
         result.end_print();
     } else {

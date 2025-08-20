@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::io::Error;
 use std::process::Command;
 
-/// 打开本地资源管理器
 pub fn open_in_explorer(path: PathBuf) -> Result<(), Error> {
     let absolute_path = if path.is_relative() {
         std::env::current_dir()?.join(path)

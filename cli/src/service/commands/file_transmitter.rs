@@ -8,54 +8,53 @@ use tokio::time::Instant;
 use crate::data::client_result::ClientResult;
 
 const CHUNK_SIZE: usize = 8 * 1024;
+const PROGRESS_UPDATE_THRESHOLD: u64 = 256 * 1024;
+const PROGRESS_UPDATE_INTERVAL: Duration = Duration::from_millis(350);
 
-/// 发送文件
+/// Sends a file over TCP with progress tracking
 pub async fn send_file(
     stream: &mut TcpStream,
-    file: impl AsRef<Path>,
+    file_path: impl AsRef<Path>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     let debug = ClientResult::debug_mode().await;
+    let path = file_path.as_ref();
 
-    let file_path = file.as_ref();
-
-    // 文件检查
-    if !file_path.exists() {
-        return Err(format!("File not found \"{}\"", file_path.display()).into());
+    // Validate file
+    if !path.exists() {
+        return Err(format!("File not found: {}", path.display()).into());
     }
-    if file_path.is_dir() {
-        return Err(format!("Path is directory \"{}\"", file_path.display()).into());
+    if path.is_dir() {
+        return Err(format!("Path is directory: {}", path.display()).into());
     }
 
-    // 打开文件
-    let (file_size, mut file) = {
-        let file = File::open(file_path).await?;
-        let metadata = file.metadata().await?;
-        if metadata.len() == 0 {
-            return Err("Empty file".into());
-        }
-        (metadata.len(), file)
-    };
+    // Open file and get metadata
+    let mut file = File::open(path).await?;
+    let file_size = file.metadata().await?.len();
+    if file_size == 0 {
+        return Err("Cannot send empty file".into());
+    }
 
-    // 进度条初始化
-    let progress_bar = ProgressBar::new(file_size);
-    if !debug {
-        progress_bar.set_style(
+    // Initialize progress bar
+    let progress_bar = if !debug {
+        let pb = ProgressBar::new(file_size);
+        pb.set_style(
             ProgressStyle::default_bar()
                 .template("{spinner:.blue} [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({percent}%) {eta_precise}")
-                .expect("Valid style")
+                .unwrap()
                 .progress_chars("■■■")
         );
-    }
+        pb
+    } else {
+        ProgressBar::hidden()
+    };
 
-    // 发送文件大小
+    // Send file header (version + size)
     stream.write_all(&1u64.to_be_bytes()).await?;
     stream.write_all(&file_size.to_be_bytes()).await?;
 
-    // 传输
+    // Transfer file content
     let mut reader = BufReader::with_capacity(CHUNK_SIZE, &mut file);
     let mut bytes_sent = 0;
-
     let mut last_update = Instant::now();
     let mut last_bytes = 0;
 
@@ -69,18 +68,17 @@ pub async fn send_file(
 
         bytes_sent += chunk_size as u64;
 
-        if bytes_sent - last_bytes >= 256 * 1024 ||
-            last_update.elapsed() >= Duration::from_millis(350)
+        // Update progress periodically
+        if bytes_sent - last_bytes >= PROGRESS_UPDATE_THRESHOLD ||
+            last_update.elapsed() >= PROGRESS_UPDATE_INTERVAL
         {
-            if ! debug {
-                progress_bar.set_position(bytes_sent);
-            }
+            progress_bar.set_position(bytes_sent);
             last_bytes = bytes_sent;
             last_update = Instant::now();
         }
     }
 
-    // 完整性检查
+    // Verify transfer completion
     if bytes_sent != file_size {
         return Err(format!(
             "Transfer incomplete: expected {} bytes, sent {} bytes",
@@ -90,7 +88,7 @@ pub async fn send_file(
 
     stream.flush().await?;
 
-    // 等待确认
+    // Wait for receiver confirmation
     let mut ack = [0u8; 1];
     tokio::time::timeout(Duration::from_secs(10), stream.read_exact(&mut ack)).await??;
 
@@ -98,123 +96,100 @@ pub async fn send_file(
         return Err("Receiver verification failed".into());
     }
 
-    if ! debug {
-        progress_bar.finish_with_message(format!("Sent {} bytes", bytes_sent));
-    }
-
+    progress_bar.finish_with_message(format!("Sent {} bytes", bytes_sent));
     Ok(())
 }
 
-/// 读取文件
+/// Receives a file over TCP with progress tracking
 pub async fn read_file(
     stream: &mut TcpStream,
-    save_to: impl AsRef<Path>,
+    save_path: impl AsRef<Path>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     let debug = ClientResult::debug_mode().await;
+    let path = save_path.as_ref();
 
-    let save_path = save_to.as_ref();
-
-    // 检查目录存在
-    if let Some(parent) = save_path.parent() {
+    // Ensure parent directory exists
+    if let Some(parent) = path.parent() {
         if !parent.exists() {
             tokio::fs::create_dir_all(parent).await?;
         }
-    } else {
-        return Err("Invalid save path".into());
     }
 
-    // 接收文件元数据
-    let mut version_buffer = [0u8; 8];
-    stream.read_exact(&mut version_buffer).await?;
-    let version = u64::from_be_bytes(version_buffer);
-
+    // Read file header (version + size)
+    let version = stream.read_u64().await?;
     if version != 1 {
         return Err("Unsupported transfer version".into());
     }
 
-    let mut size_buffer = [0u8; 8];
-    stream.read_exact(&mut size_buffer).await?;
-    let file_size = u64::from_be_bytes(size_buffer);
-
+    let file_size = stream.read_u64().await?;
     if file_size == 0 {
-        return Err("Zero-length file transfer".into());
+        return Err("Cannot receive zero-length file".into());
     }
 
-    // 写入文件
+    // Prepare output file
     let file = OpenOptions::new()
         .write(true)
         .create(true)
         .truncate(true)
-        .open(save_path)
-        .await
-        .map_err(|e| format!("Failed to create file \"{}\"", e))?;
+        .open(path)
+        .await?;
     let mut writer = BufWriter::with_capacity(CHUNK_SIZE, file);
 
-    // 进度条初始化
-    let progress_bar = ProgressBar::new(file_size);
-    if ! debug {
-        progress_bar.set_style(
+    // Initialize progress bar
+    let progress_bar = if !debug {
+        let pb = ProgressBar::new(file_size);
+        pb.set_style(
             ProgressStyle::default_bar()
                 .template("{spinner:.green} [{bar:40.green/yellow}] {bytes}/{total_bytes} ({percent}%) {eta_precise}")
-                .expect("Valid style")
+                .unwrap()
                 .progress_chars("■■■")
         );
-    }
+        pb
+    } else {
+        ProgressBar::hidden()
+    };
 
-    // 接收文件内容
+    // Receive file content
     let mut buffer = vec![0u8; CHUNK_SIZE];
     let mut bytes_received = 0;
-    let mut buffered_bytes = 0;
     let mut last_update = Instant::now();
     let mut last_bytes = 0;
 
     while bytes_received < file_size {
-        let read_size = std::cmp::min(
-            buffer.len(),
-            (file_size - bytes_received) as usize
-        );
+        let read_size = buffer.len().min((file_size - bytes_received) as usize);
         stream.read_exact(&mut buffer[..read_size]).await?;
 
         writer.write_all(&buffer[..read_size]).await?;
         bytes_received += read_size as u64;
-        buffered_bytes += read_size;
 
-        if buffered_bytes >= 256 * 1024 {
-            writer.flush().await?;
-            buffered_bytes = 0;
-        }
-
-        if bytes_received - last_bytes >= 256 * 1024 ||
-            last_update.elapsed() >= Duration::from_millis(500)
+        // Flush periodically and update progress
+        if bytes_received - last_bytes >= PROGRESS_UPDATE_THRESHOLD ||
+            last_update.elapsed() >= PROGRESS_UPDATE_INTERVAL
         {
-            if ! debug {
-                progress_bar.set_position(bytes_received);
-            }
+            writer.flush().await?;
+            progress_bar.set_position(bytes_received);
             last_bytes = bytes_received;
             last_update = Instant::now();
         }
     }
 
+    // Final flush and sync
     writer.flush().await?;
-    let file = writer.into_inner();
-    file.sync_all().await?;
+    writer.into_inner().sync_all().await?;
 
-    // 完整性检查
+    // Verify completion
     if bytes_received != file_size {
-        let _ = tokio::fs::remove_file(save_path).await; // 清理不完整文件
+        let _ = tokio::fs::remove_file(path).await;
         return Err(format!(
-            "File incomplete: expected {} bytes, received {} bytes",
+            "Transfer incomplete: expected {} bytes, received {} bytes",
             file_size, bytes_received
         ).into());
     }
 
-    // 发送确认信号
+    // Send confirmation
     stream.write_all(&[1]).await?;
     stream.flush().await?;
 
-    if ! debug {
-        progress_bar.finish_with_message(format!("Received {} bytes", bytes_received));
-    }
+    progress_bar.finish_with_message(format!("Received {} bytes", bytes_received));
     Ok(())
 }

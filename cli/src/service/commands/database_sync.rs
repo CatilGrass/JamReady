@@ -6,7 +6,6 @@ use indicatif::ProgressBar;
 use jam_ready::utils::local_archive::LocalArchive;
 use tokio::net::TcpStream;
 
-/// 接收同步消息
 pub async fn sync_local(stream: &mut TcpStream) {
     let progress_bar = None;
     let database_sync = &read_large_msg(stream, progress_bar).await;
@@ -16,7 +15,6 @@ pub async fn sync_local(stream: &mut TcpStream) {
     }
 }
 
-/// 发送同步信息
 pub async fn sync_remote(stream: &mut TcpStream, database: &Database) {
     let database = Sync(database.clone());
     let progress_bar = None;
@@ -24,7 +22,6 @@ pub async fn sync_remote(stream: &mut TcpStream, database: &Database) {
 }
 
 
-/// 接收同步消息
 pub async fn sync_local_with_progress(stream: &mut TcpStream) {
     let progress_bar = Some(ProgressBar::new(0));
     let database_sync = &read_large_msg(stream, progress_bar).await;
@@ -34,7 +31,6 @@ pub async fn sync_local_with_progress(stream: &mut TcpStream) {
     }
 }
 
-/// 发送同步信息
 pub async fn sync_remote_with_progress(stream: &mut TcpStream, database: &Database) {
     let database = Sync(database.clone());
     let progress_bar = Some(ProgressBar::new(0));
