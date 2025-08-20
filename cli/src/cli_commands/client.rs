@@ -66,7 +66,7 @@ enum ClientCommands {
 
     // Sync file structure
     #[command(visible_alias = "sync")]
-    Update,
+    Update(UpdateArgs),
 
     // ---------------------------
     // File operations
@@ -445,6 +445,16 @@ pub struct RedirectArgs {
     pub workspace: Option<String>,
 }
 
+#[derive(Args, Debug)]
+pub struct UpdateArgs {
+
+    #[arg(short = 's', long = "struct")]
+    pub file_struct : bool,
+
+    #[arg(short = 'd', long = "database", alias = "db", default_value = "true")]
+    pub database : bool,
+}
+
 pub async fn client_workspace_main() {
     if args().count() <= 1 {
         client_print_helps();
@@ -464,7 +474,7 @@ pub async fn client_workspace_main() {
         ClientCommands::Redirect(args) => client_redirect(args).await,
 
         // Update
-        ClientCommands::Update => client_update().await,
+        ClientCommands::Update(args) => client_update(args).await,
 
         // Commit
         ClientCommands::Commit(args) => client_commit(args).await,
