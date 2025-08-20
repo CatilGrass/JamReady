@@ -6,7 +6,6 @@ $AllCommands = @(
     'update','sync',
     'commit','cmt','save','sv',
     'archive',
-    'clone','c','build',
     'add','new','create',
     'remove','rm','delete','del',
     'move','mv','rename',
@@ -15,7 +14,8 @@ $AllCommands = @(
     'throw','t','unlock','release',
     'view','v','download','dl',
     'param','set',
-    'doc'
+    'doc',
+    'complete', 'cmpl', 'c', 'done', 'd'
 )
 
 $VFCommands = @(
@@ -26,7 +26,8 @@ $VFCommands = @(
     'view','v','download','dl',
     'move','mv','rename',
     'rollback', 'rb', 'restore',
-    'query', 'q'
+    'query', 'q',
+    'complete', 'cmpl', 'c', 'done', 'd'
 )
 
 $PArgCommands = @('param','set')
