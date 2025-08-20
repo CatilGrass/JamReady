@@ -8,10 +8,11 @@ use clap::{Args, Parser, Subcommand};
 use jam_ready::utils::address_str_parser::parse_address_v4_str;
 use jam_ready::utils::hide_folder::hide_folder;
 use jam_ready::utils::local_archive::LocalArchive;
-use jam_ready::utils::text_process::{parse_colored_text, process_id_text_not_to_lower};
+use jam_ready::utils::text_process::{process_id_text_not_to_lower};
 use std::collections::HashMap;
 use std::env::{args, current_dir};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use crate::help::help_docs::get_help_docs;
 
 /// 建立工作区入口
 #[derive(Parser, Debug)]
@@ -31,11 +32,9 @@ struct WorkspaceSetup {
 enum WorkspaceSetupCommands {
 
     // 登录到工作区
-    #[command(about = "Login to workspace")]
     Login(ClientSetupArgs),
 
     // 建立新的工作区
-    #[command(about = "Setup workspace")]
     Setup(ServerSetupArgs),
 }
 
@@ -91,29 +90,7 @@ async fn setup_workspace_main(workspace: Workspace) {
 }
 
 fn setup_print_help() {
-    println!("{}", parse_colored_text("\
-Login to Workspace
-==================
-Use either of these commands:
-
-1. By workspace name:
-   [green]jam login[/] [yellow]<YOUR_LOGIN_CODE>[/] [cyan]--workspace[/] [yellow]<TARGET_WORKSPACE_NAME>[/]
-
-2. By workspace address:
-   [green]jam login[/] [yellow]<YOUR_LOGIN_CODE>[/] [cyan]--target[/] [yellow]<TARGET_WORKSPACE_ADDRESS>[/]
-
-Examples:
-• [gray]jam login XXXX-XXXX[/] [cyan]--workspace[/] MyWorkspace
-• [gray]jam login XXXX-XXXX[/] [cyan]--target[/] localhost:5011
-
-Setup Workspace
-===============
-Create a new workspace with:
-   [green]jam setup[/] [yellow]<YOUR_WORKSPACE_NAME>[/]
-
-Example:
-   [gray]jam setup[/] MyWorkspace
-   "))
+    println!("{}", get_help_docs("setup_help"))
 }
 
 async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace) {

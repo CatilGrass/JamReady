@@ -1,3 +1,4 @@
+use std::env::args;
 use crate::data::database::Database;
 use crate::data::member::{Member, MemberDuty};
 use crate::data::workspace::Workspace;
@@ -13,12 +14,14 @@ use strum::IntoEnumIterator;
 use tokio::join;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tokio::sync::Mutex;
+use crate::help::help_docs::get_help_docs;
 
 /// 服务端命令行
 #[derive(Parser, Debug)]
 #[command(
     disable_help_flag = true,
     disable_version_flag = true,
+    disable_help_subcommand = true,
     help_template = "{all-args}"
 )]
 pub struct ServerWorkspaceEntry {
@@ -30,28 +33,33 @@ pub struct ServerWorkspaceEntry {
 #[derive(Subcommand, Debug)]
 enum ServerOperationCommands {
 
+    #[command(
+        hide = true,
+        short_flag = 'h',
+        long_flag = "help")]
+    Help,
+
     /// 启动服务器，并监听客户端消息
-    #[command(about = "Run server")]
     Run,
 
     /// 添加
-    #[command(subcommand, about = "Add something")]
+    #[command(subcommand)]
     Add(ServerOperationTargetCommands),
 
     /// 删除
-    #[command(subcommand, about = "Remove something")]
+    #[command(subcommand)]
     Remove(ServerOperationTargetCommands),
 
     /// 列表
-    #[command(subcommand, about = "List something")]
+    #[command(subcommand)]
     List(ServerListCommands),
 
     /// 查询
-    #[command(subcommand, about = "Query something")]
+    #[command(subcommand)]
     Query(ServerQueryCommands),
 
     /// 设置
-    #[command(subcommand, about = "Set something")]
+    #[command(subcommand)]
     Set(ServerSetCommands),
 }
 
@@ -60,15 +68,12 @@ enum ServerOperationCommands {
 enum ServerOperationTargetCommands {
 
     /// 操作成员
-    #[command(about = "Operate members")]
     Member(MemberArgs),
 
     /// 操作职责
-    #[command(about = "Operate duties")]
     Duty(DutyOperationArgs),
 
     /// 调试等级的 Logger
-    #[command(about = "Operate debug")]
     Debug
 }
 
@@ -77,7 +82,6 @@ enum ServerOperationTargetCommands {
 enum ServerListCommands {
 
     /// 列出成员
-    #[command(about = "List members")]
     Member
 }
 
@@ -86,23 +90,18 @@ enum ServerListCommands {
 enum ServerQueryCommands {
 
     /// 查询成员的职责
-    #[command(about = "Query duties of the member")]
     Duty(MemberArgs),
 
     /// 查询成员的 Uuid
-    #[command(about = "Query uuid of the member")]
     Uuid(MemberArgs),
 
     /// 查询成员的 登录代码
-    #[command(about = "Query login code of the member")]
     LoginCode(MemberArgs),
 
     /// 查询工作区名称
-    #[command(about = "Query workspace name")]
     Workspace,
 
     /// 查询本地地址
-    #[command(about = "Query lan address")]
     LocalAddress
 }
 
@@ -111,7 +110,7 @@ enum ServerQueryCommands {
 enum ServerSetCommands {
 
     /// 设置成员
-    #[command(subcommand, about = "Set member")]
+    #[command(subcommand, )]
     Member(ServerSetMemberCommands),
 }
 
@@ -120,11 +119,9 @@ enum ServerSetCommands {
 enum ServerSetMemberCommands {
 
     /// 设置成员的职责
-    #[command(about = "Set duties of the member")]
     Duties(DutiesSetArgs),
 
     /// 设置成员名称
-    #[command(about = "Set member")]
     Name(MemberRenameArgs),
 }
 
@@ -170,9 +167,17 @@ struct DutiesSetArgs {
 }
 
 pub async fn server_workspace_main() {
+
+    if args().count() <= 1 {
+        server_print_help();
+        return;
+    }
+
     let cmd = ServerWorkspaceEntry::parse();
 
     match cmd.command {
+
+        ServerOperationCommands::Help => server_print_help(),
 
         ServerOperationCommands::Run => server_run().await,
 
@@ -227,6 +232,10 @@ pub async fn server_workspace_main() {
             }
         }
     }
+}
+
+fn server_print_help() {
+    println!("{}", get_help_docs("server_help"));
 }
 
 async fn server_run() {
