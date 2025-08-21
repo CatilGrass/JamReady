@@ -186,15 +186,15 @@ pub fn get_help_docs(name: &str) -> String {
     parse_colored_text(match name {
         "search_rule" => SEARCH_RULE,
         "server_help" => SERVER_HELP,
+        "client_help" => CLIENT_HELP,
+        "remove" => REMOVE,
+        "rollback" => ROLLBACK,
+        "move" => MOVE,
         "setup_help" => SETUP_HELP,
         "struct" => STRUCT,
         "view" => VIEW,
-        "remove" => REMOVE,
-        "move" => MOVE,
         "ownership" => OWNERSHIP,
-        "client_help" => CLIENT_HELP,
         "add" => ADD,
-        "rollback" => ROLLBACK,
         _ => "",
     }.trim())
 }

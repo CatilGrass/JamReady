@@ -15,11 +15,11 @@ use crate::data::workspace::Workspace;
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct Database {
     /// All files (Uid, File)
-    #[serde(rename = "Files")]
+    #[serde(rename = "files")]
     virtual_files: HashMap<String, VirtualFile>,
 
     /// File path to Uuid mapping (Path, Uuid)
-    #[serde(rename = "Uuids")]
+    #[serde(rename = "uuids")]
     virtual_uuids: HashMap<String, String>
 }
 
@@ -28,31 +28,31 @@ pub struct Database {
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct VirtualFile {
     /// Path
-    #[serde(rename = "Path")]
+    #[serde(rename = "path")]
     path: String,
 
     /// Mapped local file
-    #[serde(rename = "Real")]
+    #[serde(rename = "real")]
     real: String,
 
     /// File version
-    #[serde(rename = "Version")]
+    #[serde(rename = "version")]
     version: u32,
 
     /// File change history
-    #[serde(rename = "History")]
+    #[serde(rename = "changes")]
     change_histories: HashMap<u32, String>,
 
     /// File version history mapping
-    #[serde(rename = "Real_History")]
+    #[serde(rename = "history_real")]
     real_histories: HashMap<u32, String>,
 
     /// File status
-    #[serde(rename = "Status")]
+    #[serde(rename = "status")]
     state: VirtualFileState,
 
     /// Whether the lock is long-term
-    #[serde(rename = "LongTerm")]
+    #[serde(rename = "long")]
     longer_lock: bool
 }
 

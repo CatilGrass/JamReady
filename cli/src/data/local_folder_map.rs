@@ -9,11 +9,11 @@ use std::collections::{HashMap, HashSet};
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct LocalFolderMap {
     /// Complete directory path to file info mapping
-    #[serde(rename = "Mapping")]
+    #[serde(rename = "tree")]
     pub folder_files: HashMap<String, Vec<Node>>,
 
     /// Simplified file search
-    #[serde(rename = "Short")]
+    #[serde(rename = "short_names")]
     pub short_file_map: HashMap<String, String>,
 }
 

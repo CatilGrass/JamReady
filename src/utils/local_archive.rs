@@ -1,7 +1,8 @@
+use std::borrow::Cow;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
-use tokio::io::{AsyncReadExt};
+use tokio::io::AsyncReadExt;
 use std::env::current_dir;
 
 #[async_trait]
@@ -33,8 +34,11 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
                 // Read contents
                 file.read_to_string(&mut contents).await.unwrap();
 
-                // Deserialize
-                serde_yaml::from_str(&contents).unwrap_or_default()
+                // Deserialize from RON
+                ron::from_str(&contents).unwrap_or_else(|e| {
+                    eprintln!("Failed to parse RON file {}: {}", path, e);
+                    Self::DataType::default()
+                })
             }
             Err(_) => {
                 // Return default value when file doesn't exist
@@ -58,10 +62,24 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
         create_paths().await;
 
         let file_path = current_dir().unwrap().join(&path);
-        let contents = serde_yaml::to_string(val).unwrap();
+
+        let mut pretty_config = ron::ser::PrettyConfig::new();
+        pretty_config.new_line = Cow::from("\n");
+        pretty_config.indentor = Cow::from("  ");
+
+        let contents = ron::ser::to_string_pretty(val, pretty_config)
+            .unwrap_or_else(|e| {
+                eprintln!("Failed to serialize to RON: {}", e);
+                ron::to_string(val).unwrap_or_else(|e| {
+                    eprintln!("Failed to serialize to RON (basic): {}", e);
+                    String::new()
+                })
+            });
 
         // Write to file
-        fs::write(&file_path, contents).await.unwrap();
+        fs::write(&file_path, contents).await.unwrap_or_else(|e| {
+            eprintln!("Failed to write RON file {}: {}", path, e);
+        });
     }
 }
 

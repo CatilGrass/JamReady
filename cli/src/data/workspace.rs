@@ -12,15 +12,15 @@ use jam_ready::utils::local_archive::LocalArchive;
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct Workspace {
     /// Workspace type
-    #[serde(rename = "Type")]
+    #[serde(rename = "type")]
     pub workspace_type: WorkspaceType,
 
     /// Client workspace configuration
-    #[serde(rename = "Client")]
+    #[serde(rename = "client")]
     pub client: Option<ClientWorkspace>,
 
     /// Server workspace configuration
-    #[serde(rename = "Server")]
+    #[serde(rename = "server")]
     pub server: Option<ServerWorkspace>,
 }
 
@@ -41,23 +41,23 @@ pub enum WorkspaceType {
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct ClientWorkspace {
     /// Target workspace name (will attempt network discovery if connection fails)
-    #[serde(rename = "Workspace")]
+    #[serde(rename = "workspace")]
     pub workspace_name: String,
 
     /// Server address to connect to
-    #[serde(rename = "Address")]
+    #[serde(rename = "addr")]
     pub target_addr: SocketAddr,
 
     /// Authentication token
-    #[serde(rename = "LoginCode")]
+    #[serde(rename = "login_code")]
     pub login_code: String,
 
     /// Client's unique identifier
-    #[serde(rename = "SelfUuid")]
+    #[serde(rename = "member_uuid")]
     pub uuid: String,
 
     /// Debug output flag
-    #[serde(rename = "Debug")]
+    #[serde(rename = "debug")]
     pub debug: bool,
 }
 
@@ -65,23 +65,23 @@ pub struct ClientWorkspace {
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct ServerWorkspace {
     /// Workspace name (used for network discovery)
-    #[serde(rename = "Name")]
+    #[serde(rename = "workspace")]
     pub workspace_name: String,
 
     /// Member registry
-    #[serde(rename = "Members")]
+    #[serde(rename = "members")]
     pub members: HashMap<String, Member>,
 
     /// Mapping between member IDs and UUIDs
-    #[serde(rename = "MemUuids")]
+    #[serde(rename = "uuids")]
     pub member_uuids: HashMap<String, String>,
 
     /// Authentication token mapping
-    #[serde(rename = "LoginCodes")]
+    #[serde(rename = "login_code")]
     pub login_code_map: HashMap<String, String>,
 
     /// Debug logging flag
-    #[serde(rename = "Debug")]
+    #[serde(rename = "debug")]
     pub enable_debug_logger: bool,
 }
 
