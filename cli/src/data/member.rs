@@ -8,11 +8,11 @@ use strum_macros::EnumIter;
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct Member {
     /// Member name
-    #[serde(rename = "Name")]
+    #[serde(rename = "name")]
     pub member_name: String,
 
     /// Member responsibilities (can be combined)
-    #[serde(rename = "Duty")]
+    #[serde(rename = "duty")]
     pub member_duties: Vec<MemberDuty>,
 }
 

@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace JamReadyWorkspace.AppWindows;
+namespace JamReadyGui;
 
 public partial class MainWindow : Window
 {

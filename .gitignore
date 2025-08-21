@@ -1,15 +1,9 @@
-# Idea 目录
+# Idea Directory
+
 /.idea/
 /.idea/*
 
-# Cargo Target 目录
-/.cargo/shared/
-/.cargo/shared/*
+# Cargo Target Directory
 
-# Gui 项目 bin 和 obj 文件夹
-/gui/JamReadyExplorer/obj/
-/gui/JamReadyExplorer/bin/Debug/
-/gui/JamReadyExplorer/bin/Work/config/
-/gui/JamReadyExplorer/obj/*
-/gui/JamReadyExplorer/bin/Debug/*
-/gui/JamReadyExplorer/bin/Work/config/*
+/.shared/
+/.shared/*

@@ -11,38 +11,38 @@ use std::path::PathBuf;
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct LocalFileMap {
     /// Uuid to local path mapping
-    #[serde(rename = "Files")]
+    #[serde(rename = "files")]
     pub file_paths: HashMap<String, LocalFile>,
 
     /// Path to Uuid mapping
-    #[serde(rename = "UuidMappings")]
+    #[serde(rename = "uuids")]
     pub file_uuids: HashMap<String, String>
 }
 
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct LocalFile {
     /// Local path
-    #[serde(rename = "Path")]
+    #[serde(rename = "path")]
     pub local_path: String,
 
     /// Local version
-    #[serde(rename = "Version")]
+    #[serde(rename = "version")]
     pub local_version: u32,
 
     /// File digest
-    #[serde(rename = "Digest")]
+    #[serde(rename = "digest")]
     pub local_digest: String,
 
     /// Is the file completed
-    #[serde(rename = "Completed")]
+    #[serde(rename = "cmpl")]
     pub completed: bool,
 
     /// Summary information when the file is completed
-    #[serde(rename = "CompletedDigest")]
+    #[serde(rename = "cmpl_digest")]
     pub completed_digest: String,
 
     /// File commit information
-    #[serde(rename = "CompletedCommit")]
+    #[serde(rename = "cmpl_commit")]
     pub completed_commit: String,
 }
 

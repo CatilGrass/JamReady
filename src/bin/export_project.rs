@@ -42,7 +42,7 @@ pub fn main() {
         .expect("Failed to parse TOML");
 
     let export_root =
-        root.join(".cargo").join("shared").join("export");
+        root.join(".shared").join("export");
 
     let export_version_dir =
         export_root.join(&version);
@@ -50,7 +50,7 @@ pub fn main() {
     let branch = if version.eq("dev") { "debug" } else { "release" };
 
     let target_dir =
-        root.join(".cargo").join("shared").join("target").join(branch);
+        root.join(".shared").join("target").join(branch);
 
     let _ = remove_dir_all(&export_version_dir);
 

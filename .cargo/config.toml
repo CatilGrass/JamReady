@@ -1,43 +1,46 @@
 [build]
-target-dir = "./.cargo/shared/target"
+target-dir = "./.shared/target"
 
 [alias]
 
-# 构建相关
+# Build related
 build_dev = ["build", "--workspace", "--profile", "dev"]
 build_release = ["build", "--workspace", "--profile", "release"]
 
-# 打包相关
-dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_porject", "dev" ]
-release = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_porject" ]
+# Packaging related
+dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_project", "dev" ]
+release = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project" ]
 
 [env]
-# ------ 项目设置 ------
+# ------ Project Settings ------
 
-# 项目版本
+# Project version
 PROJECT_VERSION = { value = "0.1.3" }
 
-# ----- 服务器设置 -----
+# ----- Server Settings -----
 
-# 默认端口
+# Default port
 DEFAULT_SERVER_PORT = { value = "5011" }
 
-# ------ 路径设置 ------
+# ------ Path Settings ------
 
-# 路径
+# In the .jam directory,     names should use "lower_snake_case",
+# while other directories or files should use " UpperCamelCase ".
+
+# Paths
 PATH_WORKSPACE_ROOT = { value = ".jam/" }
-PATH_PARAMETERS = { value = ".jam/Params/" }
-PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/_Archived/" }
-PATH_CACHE = { value = ".jam/_Cache/" }
+PATH_PARAMETERS = { value = ".jam/params/" }
+PATH_DATABASE_CONFIG_ARCHIVE = { value = ".jam/.archived/" }
+PATH_CACHE = { value = ".jam/.cached/" }
 PATH_DATABASE = { value = "Storage/" }
 
-# 文件
-FILE_DATABASE = { value = ".jam/DBRemote.yaml" }
-FILE_LOCAL_FILE_MAP = { value = ".jam/DBLocal.yaml" }
-FILE_LOCAL_FOLDER_MAP = { value = ".jam/_StructCache.yaml" }
-FILE_WORKSPACE_SERVER_DATA = { value = ".jam/Settings.yaml" }
+# Files
+FILE_DATABASE = { value = ".jam/db_remote.ron" }
+FILE_LOCAL_FILE_MAP = { value = ".jam/db_local.ron" }
+FILE_LOCAL_FOLDER_MAP = { value = ".jam/.struct_cache.ron" }
+FILE_WORKSPACE_SERVER_DATA = { value = ".jam/workspace.ron" }
 
-# ----- 工作区设置 -----
+# ----- Workspace Settings -----
 
-# 工作区回收站
+# Workspace recycle bin
 WORKSPACE_RECYCLEBIN = { value = "Removed/" }

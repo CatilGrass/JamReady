@@ -87,7 +87,9 @@ impl Command for CommitCommand {
                         if local_file.completed && local_file.completed_digest == current_digest {
                             Some(local_file.completed_commit.clone())
                         } else { None }
-                    } else { None }
+                    } else {
+                        Some("First commit".to_string())
+                    }
                 }) else {
                     command_result.warn("File Not Completed!");
                     continue;

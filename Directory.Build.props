@@ -1,0 +1,9 @@
+<Project>
+    <PropertyGroup>
+        <SolutionBasePath>$(MSBuildThisFileDirectory).shared/target/dotnet/</SolutionBasePath>
+        <BaseOutputPath>$(SolutionBasePath)gui/bin/$(MSBuildProjectName)/</BaseOutputPath>
+        <BaseIntermediateOutputPath>$(SolutionBasePath)gui/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
+</Project>

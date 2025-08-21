@@ -10,7 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn generate_help_docs() -> Result<(), Box<dyn std::error::Error>> {
-    let source_dir = Path::new("src/help/_text");
+    let source_dir = Path::new("../docs/cli_help");
     let output_path = Path::new("src/help/help_docs.rs");
 
     if let Some(parent) = output_path.parent() {
@@ -74,7 +74,7 @@ fn process_file(
         .trim_end_matches(".txt")
         .replace('/', "_")
         .replace('.', "_")
-        .trim_start_matches("_text_")
+        .trim_start_matches("cli_help_")
         .to_uppercase();
 
     let help_name = const_name.to_lowercase();
