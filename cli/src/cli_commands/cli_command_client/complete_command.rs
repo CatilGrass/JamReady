@@ -33,5 +33,11 @@ pub async fn client_complete(args: CompleteArgs) {
     }
 
     let _ = LocalFileMap::update(&local).await;
-    result.end_print();
+
+    // No results
+    if result.has_result() {
+        result.end_print();
+    } else {
+        result.err_and_end("No result");
+    }
 }
