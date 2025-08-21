@@ -2,9 +2,9 @@
 [release.root]
 
 # GUI packaging
-# gui_executable_files = { raw = "./app/JamReadyApp/JamReadyWorkspace/bin/Release/net9.0/", target = "./", files = [
-#     "publish/"
-# ] }
+ gui_executable_files = { raw = "./.shared/target/dotnet/gui/bin/JamReadyGui/Release/", target = "./bin/", files = [
+     "publish/"
+ ] }
 
 # Installation scripts (Windows)
 installation_scripts_win = { raw = "./.cargo/scripts/installation/", target = "./scripts/win/", files = [

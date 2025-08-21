@@ -74,7 +74,7 @@ fn process_file(
         .trim_end_matches(".txt")
         .replace('/', "_")
         .replace('.', "_")
-        .trim_start_matches("cli_help")
+        .trim_start_matches("cli_help_")
         .to_uppercase();
 
     let help_name = const_name.to_lowercase();
