@@ -46,15 +46,15 @@ pub async fn execute_remote_command(
     (uuid, member): (String, &Member),
     database: Arc<Mutex<Database>>
 ) {
-    info!("{}: {}", &member.member_name.yellow(), display_args(&args));
+    if args.len() > 1 && args[0] != "struct" {
+        info!("{} {}", &member.member_name.yellow(), display_args(&args));
+    }
 
     if let Some(command_name) = args.get(0) {
         let command_name = command_name.trim().to_lowercase();
         if let Some(command) = registry.get(command_name.as_str()) {
             // Execute command
             command.remote(stream, args, (uuid, member), database.clone()).await;
-        } else {
-            eprintln!("Unknown command: {}", command_name);
         }
     }
 }
