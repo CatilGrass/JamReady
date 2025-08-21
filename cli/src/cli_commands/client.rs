@@ -1,6 +1,7 @@
 use crate::cli_commands::cli_command_client::{
     add_command::client_add,
     archive_command::client_archive,
+    complete_command::client_complete,
     commit_command::client_commit,
     get_command::client_get,
     move_command::client_move,
@@ -21,7 +22,7 @@ use crate::service::jam_client::execute;
 use clap::{Args, Parser, Subcommand};
 use std::env::args;
 
-/// 客户端命令行
+/// Client command line interface
 #[derive(Parser, Debug)]
 #[command(
     disable_help_flag = true,
@@ -34,7 +35,7 @@ pub struct ClientWorkspaceEntry {
     command: ClientCommands,
 }
 
-/// 客户端命令
+/// Client commands
 #[derive(Subcommand, Debug)]
 enum ClientCommands {
 
@@ -44,13 +45,13 @@ enum ClientCommands {
         long_flag = "help")]
     Help,
 
-    // 查询器
+    // Query tool
     #[command(
         subcommand,
         visible_alias = "q")]
     Query(ClientQueryCommands),
 
-    // 列出文件结构
+    // List file structure
     #[command(
         visible_alias = "tree",
         visible_alias = "list",
@@ -58,38 +59,47 @@ enum ClientCommands {
     Struct(StructArgs),
 
     // ---------------------------
-    // 工作区相关
+    // Workspace related
 
-    // 重新定向至工作区
+    // Redirect to workspace
     #[command(visible_alias = "red")]
     Redirect(RedirectArgs),
 
-    // 同步文件结构
+    // Sync file structure
     #[command(visible_alias = "sync")]
-    Update,
+    Update(UpdateArgs),
 
     // ---------------------------
-    // 文件操作
+    // File operations
 
-    // 提交取得锁的本地文件
+    // Mark a file as completed
+    #[command(
+        visible_alias = "cmpl",
+        visible_alias = "c",
+        visible_alias = "done",
+        visible_alias = "d",
+    )]
+    Complete(CompleteArgs),
+
+    // Commit locked local files
     #[command(
         visible_alias = "cmt",
         visible_alias = "save",
         visible_alias = "sv"
     )]
-    Commit(CommitArgs),
+    Commit,
 
-    // 归档数据库版本 (仅 Leader)
+    // Archive database version (Leader only)
     Archive,
 
-    // 添加文件
+    // Add file
     #[command(
         visible_alias = "new",
         visible_alias = "create"
     )]
     Add(NewArgs),
 
-    // 移除文件
+    // Remove file
     #[command(
         visible_alias = "rm",
         visible_alias = "delete",
@@ -97,28 +107,28 @@ enum ClientCommands {
     )]
     Remove(RemoveArgs),
 
-    // 移动、重命名、或为文件重建映射
+    // Move, rename, or remap file
     #[command(
         visible_alias = "mv",
         visible_alias = "rename"
     )]
     Move(MoveArgs),
 
-    // 移动、重命名、或为文件重建映射
+    // Rollback file version
     #[command(
         visible_alias = "rb",
         visible_alias = "restore"
     )]
     Rollback(RollbackArgs),
 
-    // 拿到文件的锁
+    // Acquire file lock
     #[command(
         visible_alias = "g",
         visible_alias = "lock"
     )]
     Get(GetArgs),
 
-    // 丢掉文件的锁
+    // Release file lock
     #[command(
         visible_alias = "t",
         visible_alias = "unlock",
@@ -126,7 +136,7 @@ enum ClientCommands {
     )]
     Throw(SearchArgs),
 
-    // 下载并查看文件
+    // Download and view file
     #[command(
         visible_alias = "v",
         visible_alias = "download",
@@ -134,13 +144,13 @@ enum ClientCommands {
     )]
     View(ViewArgs),
 
-    // 查询文档
+    // Query documentation
     Doc(DocArgs),
 
     // ---------------------------
-    // 其他操作
+    // Other operations
 
-    // 操作参数
+    // Manage parameters
     #[command(
         visible_alias = "set"
     )]
@@ -150,18 +160,18 @@ enum ClientCommands {
     Glock
 }
 
-// 客户端查询命令
+// Client query commands
 #[derive(Subcommand, Debug)]
 pub enum ClientQueryCommands {
 
-    // 列出某个目录下的结构
+    // List directory structure
     #[command(
         visible_alias = "list",
         visible_alias = "ll"
     )]
     ListDirectory(ListDirectoryArgs),
 
-    // 查询虚拟文件的 Uuid
+    // Query virtual file Uuid
     #[command(
         visible_alias = "uuid",
         visible_alias = "uid",
@@ -171,7 +181,7 @@ pub enum ClientQueryCommands {
     )]
     FileUuid(StringArgs),
 
-    // 查询虚拟文件的版本
+    // Query virtual file version
     #[command(
         visible_alias = "version",
         visible_alias = "vsn",
@@ -179,93 +189,91 @@ pub enum ClientQueryCommands {
     )]
     FileVersion(StringArgs),
 
-    // 查询虚拟文件的路径
+    // Query virtual file path
     #[command(
         visible_alias = "path",
         visible_alias = "fp",
         visible_alias = "p",
-        )]
+    )]
     FilePath(StringArgs),
 
-    // 查询虚拟文件的名称
+    // Query virtual file name
     #[command(
         visible_alias = "name",
         visible_alias = "fn",
         visible_alias = "n",
-        )]
+    )]
     FileName(StringArgs),
 
-    // 查询虚拟文件的锁定状态
+    // Query virtual file lock status
     #[command(
         visible_alias = "lock-status",
         visible_alias = "ls",
-        )]
+    )]
     FileLockStatus(StringArgs),
 
-    // 查询自己的 Uuid
+    // Query self Uuid
     #[command(
         visible_alias = "me",
-        )]
+    )]
     SelfUuid,
 
-    // 查询目标工作区地址
+    // Query target workspace address
     #[command(
         visible_alias = "target-addr",
         visible_alias = "addr",
         visible_alias = "target",
         visible_alias = "t",
-        )]
+    )]
     TargetAddress,
 
-    // 查询目标工作区名称
+    // Query target workspace name
     #[command(
         visible_alias = "ws",
         visible_alias = "w",
-        )]
+    )]
     Workspace,
 
-    // 查询虚拟文件是否在本地
+    // Check if virtual file exists locally
     #[command(
         visible_alias = "cl",
-        )]
+    )]
     ContainLocal(StringArgs),
 
-    // 查询本地文件映射的虚拟文件
+    // Map local file to virtual file
     #[command(
         visible_alias = "ltr",
-        )]
+    )]
     LocalToRemote(StringArgs),
 
-    // 查询虚拟文件映射的本地文件
+    // Map virtual file to local file
     #[command(
         visible_alias = "rtl",
-        )]
+    )]
     RemoteToLocal(StringArgs),
 
-    // 查询本地文件是否被更改
+    // Check if local file has changed
     #[command(
         visible_alias = "change",
         visible_alias = "c",
-        )]
+    )]
     Changed(StringArgs),
 
-    // 查询本地文件的版本号
+    // Query local file version
     #[command(
         visible_alias = "lv",
-        )]
+    )]
     LocalVersion(StringArgs)
 }
 
 #[derive(Args, Debug)]
 pub struct StringArgs {
-
     #[arg(default_value = "")]
     pub value: String,
 }
 
 #[derive(Args, Debug)]
 pub struct ListDirectoryArgs {
-
     #[arg(default_value = "")]
     pub value: String,
 
@@ -273,194 +281,198 @@ pub struct ListDirectoryArgs {
     pub completion_mode: bool
 }
 
-/// 新建目录
+/// Create new directory
 #[derive(Args, Debug)]
 pub struct NewArgs {
-
-    // 目录
+    // Directory path
     pub path: String,
 
-    // 尝试拿到锁定
+    // Attempt to acquire lock
     #[arg(long, short = 'g', alias = "lock", alias = "l")]
     pub get: bool
 }
 
-/// 移除参数
+/// Remove parameters
 #[derive(Args, Debug)]
 pub struct RemoveArgs {
-
-    // 搜索
+    // Search term
     pub from_search: String,
 
-    // 尝试拿到锁定
+    // Attempt to acquire lock
     #[arg(long, short = 'g', alias = "lock", alias = "l")]
     pub get: bool
 }
 
-/// 搜索 (Path or Uuid) 参数
+/// Search (Path or Uuid) parameters
 #[derive(Args, Debug)]
 pub struct SearchArgs {
-
-    // 搜索
+    // Search term
     pub search: String
 }
 
 #[derive(Args, Debug)]
 pub struct ViewArgs {
-
-    // 搜索
+    // Search term
     pub from_search: String,
 
-    // 指定查看的版本
+    // Specific version to view
     #[arg(short, long)]
     pub version: Option<u32>,
 
-    // 尝试拿到锁定
+    // Attempt to acquire lock
     #[arg(long, short = 'g', alias = "lock", alias = "l")]
     pub get: bool
 }
 
 #[derive(Args, Debug)]
 pub struct DocArgs {
-
-    // 文档名称
+    // Documentation name
     pub doc_name: String
 }
 
 #[derive(Args, Debug)]
 pub struct GetArgs {
-
-    // 搜索
+    // Search term
     pub from_search: String,
 
-    // 是否为长期锁
+    // Long-term lock
     #[arg(short = 'l', long = "longer")]
     pub longer: bool
 }
 
-/// 搜索 (Path or Uuid) 参数
+/// Search (Path or Uuid) parameters
 #[derive(Args, Debug)]
 pub struct MoveArgs {
-
-    // 搜索
+    // Search term
     pub from_search: String,
 
-    // 移动到
+    // Destination
     pub to_search: String,
 
-    // 尝试拿到锁定
+    // Attempt to acquire lock
     #[arg(long, short = 'g', alias = "lock")]
     pub get: bool,
 
-    // 仅移动本地文件
+    // Only move local file
     #[arg(long, short = 'l')]
     pub local: bool
 }
 
-/// 回滚参数
+/// Rollback parameters
 #[derive(Args, Debug)]
 pub struct RollbackArgs {
-
-    // 搜索
+    // Search term
     pub from_search: String,
 
-    // 回滚的版本
+    // Version to rollback to
     pub to_version: u32,
 
-    // 尝试拿到锁定
+    // Attempt to acquire lock
     #[arg(long, short = 'g', alias = "lock")]
     pub get: bool,
 
-    // 完成后将该文件回滚到老版本
+    // Download file after rollback
     #[arg(long, short = 'b')]
     pub back: bool,
 }
 
 #[derive(Args, Debug)]
-pub struct CommitArgs {
+pub struct CompleteArgs {
+    // Search term
+    pub from_search: String,
 
-    // 日志
+    // Commit message
     pub info: Option<String>
 }
 
 #[derive(Args, Debug)]
 pub struct ParamArgs {
-
-    // 键
+    // Key
     pub key: Option<String>,
 
-    // 值
+    // Value
     pub value: Option<String>
 }
 
 #[derive(Args, Debug)]
 pub struct StructArgs {
-
-    // 显示本地文件
+    // Show local files
     #[arg(long)]
     pub local: bool,
 
-    // 显示远程文件
+    // Show remote files
     #[arg(long)]
     pub remote: bool,
 
-    // -- 仅远程
+    // -- Remote only
 
-    // 显示空文件
+    // Show empty files
     #[arg(long = "zero", short = 'z', alias = "empty", alias = "new")]
     pub remote_zero: bool,
 
-    // 显示更新的文件
+    // Show updated files
     #[arg(long = "updated", short = 'u')]
     pub remote_updated: bool,
 
-    // 显示持有的文件
+    // Show held files
     #[arg(long = "held", short = 'h')]
     pub remote_held: bool,
 
-    // 显示锁定的文件
+    // Show locked files
     #[arg(long = "lock", short = 'g')]
     pub remote_locked: bool,
 
-    // 显示其他文件
+    // Show other files
     #[arg(long = "other", short = 'e')]
     pub remote_other: bool,
 
-    // -- 仅本地
+    // -- Local only
 
-    // 显示删除(但本地仍存在)的文件
+    // Show removed (but still existing locally) files
     #[arg(long = "removed", short = 'd')]
     pub local_removed: bool,
 
-    // 显示删除的文件
+    // Show untracked files
     #[arg(long = "untracked", short = 'n')]
     pub local_untracked: bool,
 
-    // -- 通用
+    // Show untracked files
+    #[arg(long = "completed", short = 'c')]
+    pub local_completed: bool,
 
-    // 显示移动的文件 (根据 remote 和 local 的开关选择显示侧)
+    // -- General
+
+    // Show moved files (based on remote/local switches)
     #[arg(long = "moved", short = 'm')]
     pub moved: bool,
 }
 
 #[derive(Args, Debug)]
 pub struct RedirectArgs {
-
-    // 用户登录口令，用于识别身份
+    // User login code for authentication
     #[arg(short, long = "code")]
     pub login_code: Option<String>,
 
-    // 目标地址 (直接指定)
+    // Target address (direct specification)
     #[arg(short, long)]
     pub target: Option<String>,
 
-    // 工作区名称 (由网络发现获取目标地址)
+    // Workspace name (discover target address via network)
     #[arg(short, long)]
     pub workspace: Option<String>,
 }
 
-pub async fn client_workspace_main() {
+#[derive(Args, Debug)]
+pub struct UpdateArgs {
 
+    #[arg(short = 's', long = "struct")]
+    pub file_struct : bool,
+
+    #[arg(short = 'd', long = "database", alias = "db", default_value = "true")]
+    pub database : bool,
+}
+
+pub async fn client_workspace_main() {
     if args().count() <= 1 {
         client_print_helps();
         return;
@@ -469,71 +481,57 @@ pub async fn client_workspace_main() {
     let cmd = ClientWorkspaceEntry::parse();
 
     match cmd.command {
-
-        // 帮助
         ClientCommands::Help => client_print_helps(),
 
-        // 查询
         ClientCommands::Query(command) => client_query(command).await,
 
-        // 重定向至工作区
+        // Redirect to workspace
         ClientCommands::Redirect(args) => client_redirect(args).await,
 
-        // 更新
-        ClientCommands::Update => client_update().await,
+        ClientCommands::Update(args) => client_update(args).await,
 
-        // 提交
-        ClientCommands::Commit(args) => client_commit(args).await,
+        ClientCommands::Complete(args) => client_complete(args).await,
 
-        // 列出结构
+        ClientCommands::Commit => client_commit().await,
+
         ClientCommands::Struct(args) => client_struct(args).await,
 
-        // 归档
         ClientCommands::Archive => client_archive().await,
 
-        // 添加文件
         ClientCommands::Add(args) => client_add(args).await,
 
-        // 移除文件
         ClientCommands::Remove(args) => client_remove(args).await,
 
-        // 移动文件
         ClientCommands::Move(args) => client_move(args).await,
 
-        // 回滚文件
         ClientCommands::Rollback(args) => client_rollback(args).await,
 
-        // 获得锁
         ClientCommands::Get(args) => client_get(args).await,
 
-        // 丢掉锁
         ClientCommands::Throw(args) => client_throw(args).await,
 
-        // 查看锁
         ClientCommands::View(args) => client_view(args).await,
 
-        // 参数
         ClientCommands::Param(args) => client_param(args).await,
 
-        // 文档
         ClientCommands::Doc(args) => client_doc(args).await,
 
-        // 格洛克？？？
+        // Glock???
         ClientCommands::Glock => print_glock_xd(),
     }
 }
 
-/// 打印客户端帮助
+/// Print client help
 fn client_print_helps() {
     println!("{}", get_help_docs("client_help"));
 }
 
-/// 客户端运行命令
+/// Execute client command
 pub async fn exec(args: Vec<String>) -> Option<ClientResult> {
     execute(args).await
 }
 
-/// 打印客户端结果
+/// Print client result
 pub fn print_client_result(result : Option<ClientResult>) {
     if let Some(result) = result {
         result.end_print()

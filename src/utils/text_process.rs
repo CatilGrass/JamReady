@@ -3,7 +3,7 @@ use std::vec;
 use colored::Colorize;
 use regex::Regex;
 
-/// 处理文本
+/// Process text
 pub fn process_text(input: String) -> String {
     let s = input.trim();
     let mut result = String::new();
@@ -19,7 +19,7 @@ pub fn process_text(input: String) -> String {
     result.chars().collect()
 }
 
-/// 处理 ID 文本
+/// Process ID text
 pub fn process_id_text(input: String) -> String {
     let s = input.trim().to_lowercase();
     let mut result = String::new();
@@ -50,7 +50,7 @@ pub fn process_id_text_not_to_lower(input: String) -> String {
         .collect()
 }
 
-/// 处理目录文本
+/// Process path text
 pub fn process_path_text(path: String) -> String {
     let mut result = String::with_capacity(path.len());
     let mut chars = path.chars();
@@ -92,7 +92,7 @@ fn process_iterator<I: Iterator<Item = char>>(chars: I, mut result: String) -> S
     cleaned
 }
 
-/// 分割目录文本
+/// Split path text
 pub fn split_path_text(path: &str) -> (String, String) {
     if path.is_empty() {
         return ("".to_string(), "".to_string());
@@ -109,7 +109,7 @@ pub fn split_path_text(path: &str) -> (String, String) {
     }
 }
 
-/// 处理彩色文本
+/// Parse colored text
 pub fn parse_colored_text(text: &str) -> String {
     let re = Regex::new(r"\[(red|green|blue|yellow|magenta|cyan|white|gray)](.*?)\[/]").unwrap();
 
@@ -141,7 +141,7 @@ pub fn parse_colored_text(text: &str) -> String {
     result
 }
 
-/// 显示文件树
+/// Display file tree
 pub fn show_tree(paths: Vec<String>) -> String {
     #[derive(Default)]
     struct Node {
@@ -167,9 +167,9 @@ pub fn show_tree(paths: Vec<String>) -> String {
         }
     }
 
-    // 生成树形结构的文本
+    // Generate tree structure text
     fn generate_tree_lines(children: &BTreeMap<String, Node>, prefix: &str) -> Vec<String> {
-        // 将子节点分组，目录在前，文件在后，每组按名称排序
+        // Group children: directories first, then files, each sorted by name
         let mut dirs = Vec::new();
         let mut files = Vec::new();
 
@@ -181,7 +181,7 @@ pub fn show_tree(paths: Vec<String>) -> String {
             }
         }
 
-        // 分别按名称排序
+        // Sort by name
         dirs.sort_by_key(|(name, _)| *name);
         files.sort_by_key(|(name, _)| *name);
         let child_nodes = dirs.into_iter().chain(files.into_iter()).collect::<Vec<_>>();

@@ -7,33 +7,43 @@ use std::collections::HashMap;
 use std::env::current_dir;
 use std::path::PathBuf;
 
-/// 本地文件映射
+/// Local file mapping
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct LocalFileMap {
-
-    /// Uuid 和本地路径的映射
-    #[serde(rename = "Files")]
+    /// Uuid to local path mapping
+    #[serde(rename = "files")]
     pub file_paths: HashMap<String, LocalFile>,
 
-    /// 路径 和 Uuid 的映射
-    #[serde(rename = "UuidMappings")]
+    /// Path to Uuid mapping
+    #[serde(rename = "uuids")]
     pub file_uuids: HashMap<String, String>
 }
 
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct LocalFile {
-
-    /// 本地路径
-    #[serde(rename = "Path")]
+    /// Local path
+    #[serde(rename = "path")]
     pub local_path: String,
 
-    /// 本地持有的版本
-    #[serde(rename = "Version")]
+    /// Local version
+    #[serde(rename = "version")]
     pub local_version: u32,
 
-    /// 本地文件摘要
-    #[serde(rename = "Digest")]
+    /// File digest
+    #[serde(rename = "digest")]
     pub local_digest: String,
+
+    /// Is the file completed
+    #[serde(rename = "cmpl")]
+    pub completed: bool,
+
+    /// Summary information when the file is completed
+    #[serde(rename = "cmpl_digest")]
+    pub completed_digest: String,
+
+    /// File commit information
+    #[serde(rename = "cmpl_commit")]
+    pub completed_commit: String,
 }
 
 impl LocalArchive for LocalFileMap {
@@ -45,38 +55,35 @@ impl LocalArchive for LocalFileMap {
 }
 
 impl LocalFileMap {
-
-    /// 从数据库的搜索中获得本地文件的 LocalFile
+    /// Get LocalFile from database search
     pub fn search_to_local(&self, database: &Database, search: String) -> Option<&LocalFile> {
-
-        // 尝试拿到 VirtualFile
+        // Try to get VirtualFile
         let file = database.search_file(search);
         if file.is_none() { return None; }
         let file = file.unwrap();
 
-        // 从 VirtualFile 中拿到 LocalFile
+        // Get LocalFile from VirtualFile
         if let Some(uuid) = database.uuid_of_path(file.path()) {
             return self.file_paths.get(&uuid);
         }
         None
     }
 
-    /// 从数据库的搜索中获得本地文件的 LocalFile (可变)
+    /// Get mutable LocalFile from database search
     pub fn search_to_local_mut(&mut self, database: &Database, search: String) -> Option<&mut LocalFile> {
-
-        // 尝试拿到 VirtualFile
+        // Try to get VirtualFile
         let file = database.search_file(search);
         if file.is_none() { return None; }
         let file = file.unwrap();
 
-        // 从 VirtualFile 中拿到 LocalFile
+        // Get LocalFile from VirtualFile
         if let Some(uuid) = database.uuid_of_path(file.path()) {
             return self.file_paths.get_mut(&uuid);
         }
         None
     }
 
-    /// 从数据库的搜索中获得本地文件的 PathBuf
+    /// Get PathBuf from database search
     pub fn search_to_path(&self, database: &Database, search: String) -> Option<PathBuf> {
         let result = self.search_to_local(database, search);
         if let Some(local_file) = result {
@@ -90,7 +97,7 @@ impl LocalFileMap {
         }
     }
 
-    /// 从 VirtualFile 获得本地文件的 PathBuf
+    /// Get PathBuf from VirtualFile
     pub fn file_to_path(&self, database: &Database, file: &VirtualFile) -> Option<PathBuf> {
         let local_file = self.search_to_path(&database, file.path());
         let mut client_path = None;
@@ -104,7 +111,7 @@ impl LocalFileMap {
         client_path
     }
 
-    /// 从数据库的搜索中获得本地文件的 PathBuf (相对路径)
+    /// Get relative PathBuf from database search
     pub fn search_to_path_relative(&self, database: &Database, search: String) -> Option<PathBuf> {
         let result = self.search_to_local(database, search);
         if let Some(local_file) = result {
@@ -115,7 +122,7 @@ impl LocalFileMap {
         }
     }
 
-    /// 从本地文件的 相对路径 中获得 Uuid
+    /// Get Uuid from relative local path
     pub fn local_path_to_uuid(&self, path: String) -> Option<&String> {
         let path = process_path_text(path);
         self.file_uuids.get(&path)

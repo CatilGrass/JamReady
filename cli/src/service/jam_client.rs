@@ -12,18 +12,16 @@ use crate::service::messages::ClientMessage::{Command, Verify};
 use crate::service::messages::ServerMessage::Uuid;
 use crate::service::service_utils::{read_msg, send_msg};
 
-/// 执行命令
+/// Execute command
 pub async fn execute(command_input: Vec<String>) -> Option<ClientResult> {
-
     let mut workspace = Workspace::read().await;
     let mut result = None;
 
     if let Some(client) = &mut workspace.client {
-
-        // 尝试使用目标地址连接
+        // Try to connect using target address
         let addr = client.target_addr;
 
-        // 连接、验证并取得流
+        // Connect, verify and get stream
         let stream = try_verify_connection(addr, client).await;
 
         let mut args_input = Vec::new();
@@ -33,13 +31,12 @@ pub async fn execute(command_input: Vec<String>) -> Option<ClientResult> {
 
         let args = args_input.iter().map(String::as_str).collect::<Vec<&str>>();
 
-        // 若成功取得流，进入正式操作
+        // If stream obtained successfully, proceed with operation
         if let Some(mut stream) = stream {
-
-            // 发送命令
+            // Send command
             send_msg(&mut stream, &Command(args_input.clone())).await;
 
-            // 进入命令
+            // Execute command
             result = execute_local_command(&registry(), &mut stream, args).await;
         }
     }
@@ -50,17 +47,15 @@ pub async fn execute(command_input: Vec<String>) -> Option<ClientResult> {
 
 async fn try_verify_connection(addr: SocketAddr, client: &mut ClientWorkspace) -> Option<TcpStream> {
     connect_once!(addr, |stream| {
-
-        // 发送 登录代码 尝试验证
+        // Send login code for verification
         send_msg(&mut stream, &Verify(client.login_code.clone())).await;
 
-        // 接收消息
+        // Receive response
         let message: ServerMessage = read_msg(&mut stream).await;
 
-        // 判断接收的消息
+        // Process received message
         match message {
-
-            // 收到 Uuid 表示验证成功
+            // UUID received means verification succeeded
             Uuid(uuid) => {
                 client.uuid = uuid;
                 Some(stream)
@@ -79,7 +74,7 @@ async fn try_verify_connection(addr: SocketAddr, client: &mut ClientWorkspace) -
 const DISCOVERY_PORT: u16 = 54000;
 const MAX_BUFFER_SIZE: usize = 1024;
 
-// 网络发现一次
+/// Discover workspace on local network
 pub async fn search_workspace_lan(workspace_name: String) -> Result<SocketAddr, Box<dyn std::error::Error>> {
     let socket = UdpSocket::bind("0.0.0.0:0").await?;
     socket.set_broadcast(true)?;
@@ -94,6 +89,7 @@ pub async fn search_workspace_lan(workspace_name: String) -> Result<SocketAddr, 
     parse_socket_addr(response)
 }
 
+/// Parse socket address from string
 fn parse_socket_addr(addr_str: &str) -> Result<SocketAddr, Box<dyn std::error::Error>> {
     let parts: Vec<&str> = addr_str.split(':').collect();
     if parts.len() != 2 {
@@ -109,6 +105,7 @@ fn parse_socket_addr(addr_str: &str) -> Result<SocketAddr, Box<dyn std::error::E
     Ok(SocketAddr::new(IpAddr::V4(ip), port))
 }
 
+/// Get broadcast address for current network
 fn get_broadcast_address() -> Ipv4Addr {
     let local_address =
         Ipv4Addr::from_str(

@@ -33,23 +33,22 @@ pub fn hide_folder(path: &PathBuf) -> io::Result<()> {
 
 #[cfg(windows)]
 fn hide_folder_impl(path: &PathBuf) -> io::Result<()> {
-
-    // 转换为Windows宽字符串格式
+    // Convert to Windows wide string format
     let path_str: Vec<u16> = path.as_os_str()
         .encode_wide()
         .chain(Some(0))
         .collect();
 
-    // 获取现有属性
+    // Get current attributes
     let attrs = unsafe { GetFileAttributesW(path_str.as_ptr()) };
     if attrs == INVALID_FILE_ATTRIBUTES {
         return Err(io::Error::last_os_error());
     }
 
-    // 添加隐藏属性标志位
+    // Add hidden attribute flag
     let new_attrs = attrs | winapi::um::winnt::FILE_ATTRIBUTE_HIDDEN;
 
-    // 设置新属性
+    // Set new attributes
     let success = unsafe { SetFileAttributesW(path_str.as_ptr(), new_attrs) };
     if success == 0 {
         return Err(io::Error::last_os_error());

@@ -13,15 +13,14 @@ pub type CommandRegistry = HashMap<&'static str, Arc<dyn Command + Send + Sync>>
 
 #[async_trait]
 pub trait Command {
-
-    /// 客户端上的操作
+    /// Client-side operation
     async fn local(&self, stream: &mut TcpStream, args: Vec<&str>) -> Option<ClientResult>;
 
-    /// 服务器上的操作 (返回是否修改过数据库)
+    /// Server-side operation (returns whether database was modified)
     async fn remote(&self, stream: &mut TcpStream, args: Vec<&str>, member: (String, &Member), database: Arc<Mutex<Database>>);
 }
 
-/// 执行本地命令
+/// Execute local command
 pub async fn execute_local_command(
     registry: &CommandRegistry,
     stream: &mut TcpStream,
@@ -30,8 +29,7 @@ pub async fn execute_local_command(
     if let Some(command_name) = args.get(0) {
         let command_name = command_name.trim().to_lowercase();
         if let Some(command) = registry.get(command_name.as_str()) {
-
-            // 执行命令
+            // Execute command
             return command.local(stream, args).await;
         } else {
             eprintln!("Unknown command: {}", command_name);
@@ -40,27 +38,28 @@ pub async fn execute_local_command(
     None
 }
 
-/// 执行远程命令
+/// Execute remote command
 pub async fn execute_remote_command(
     registry: &CommandRegistry,
     stream: &mut TcpStream,
     args: Vec<&str>,
     (uuid, member): (String, &Member),
     database: Arc<Mutex<Database>>
-){
-    info!("{}: {}", &member.member_name.yellow(), display_args(&args));
+) {
+    if args.len() > 1 && args[0] != "struct" {
+        info!("{} {}", &member.member_name.yellow(), display_args(&args));
+    }
 
     if let Some(command_name) = args.get(0) {
         let command_name = command_name.trim().to_lowercase();
         if let Some(command) = registry.get(command_name.as_str()) {
-            // 执行命令
+            // Execute command
             command.remote(stream, args, (uuid, member), database.clone()).await;
-        } else {
-            eprintln!("Unknown command: {}", command_name);
         }
     }
 }
 
+/// Format command arguments for display
 fn display_args(args: &Vec<&str>) -> ColoredString {
     let mut result = String::default();
 

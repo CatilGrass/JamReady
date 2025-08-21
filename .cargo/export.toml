@@ -1,12 +1,12 @@
-# 从 “项目文件夹” 导出到 “打包文件夹”
+# Export from "project_root" to "target_folder"
 [release.root]
 
-# GUI 部分打包
-gui_executable_files = { raw = "./app/JamReadyApp/JamReadyWorkspace/bin/Release/net9.0/", target = "./", files = [
-    "publish/"
-] }
+# GUI packaging
+# gui_executable_files = { raw = "./app/JamReadyApp/JamReadyWorkspace/bin/Release/net9.0/", target = "./", files = [
+#     "publish/"
+# ] }
 
-# 安装脚本 (Windows)
+# Installation scripts (Windows)
 installation_scripts_win = { raw = "./.cargo/scripts/installation/", target = "./scripts/win/", files = [
 
     "_INSTALL_WIN.ps1",
@@ -17,7 +17,7 @@ installation_scripts_win = { raw = "./.cargo/scripts/installation/", target = ".
     "install_cli.ps1"
 ] }
 
-# 安装脚本 (Linux)
+# Installation scripts (Linux)
 installation_scripts_linux = { raw = "./.cargo/scripts/installation/", target = "./scripts/linux/", files = [
 
     # Linux
@@ -26,17 +26,10 @@ installation_scripts_linux = { raw = "./.cargo/scripts/installation/", target = 
     "uninstall_completions.sh",
 ] }
 
-# 调试脚本 (Windows)
-debug_scripts = { raw = "./.cargo/scripts/debug/", target = "./scripts/win/", files = [
-
-    "debug_deploy.ps1",
-    "debug_test.ps1"
-] }
-
-# 从 “编译文件夹” 导出到 “打包文件夹”
+# Export from "build_folder" to "target_folder"
 [release.deps]
 
-# 可执行文件
+# Executable files
 executable_files = { raw = "./", target = "./bin/", files = [
 
     # Windows
@@ -46,20 +39,18 @@ executable_files = { raw = "./", target = "./bin/", files = [
     "jam"
 ] }
 
-# 从 “项目文件夹” 部署到 “项目文件夹”
+# Deploy from "project_root" to "target_folder"
 [release.deploy_root]
 
-# 从 “编译文件夹” 部署到 “项目文件夹”
+# Deploy from "build_folder" to "target_folder"
 [release.deploy_deps]
 
-# 可执行文件
-deploy_executable_files = { raw = "./", target = "./app/JamReadyApp/JamReadyAppUtils/bin/Debug/net9.0/Binaries/", files = [
-
-    # Windows
-    "jam.exe",
-
-    # Linux / Unix
-    "jam"
-] }
-
-
+# Executable files
+# deploy_executable_files = { raw = "./", target = "./app/JamReadyApp/JamReadyAppUtils/bin/Debug/net9.0/Binaries/", files = [
+#
+#     # Windows
+#     "jam.exe",
+#
+#     # Linux / Unix
+#     "jam"
+# ] }

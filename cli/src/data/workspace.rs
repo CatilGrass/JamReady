@@ -6,90 +6,87 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use jam_ready::utils::local_archive::LocalArchive;
 
-/// Workspace - 工作区
-/// 工作区是 服务端、客户端 都会存在的目录
-/// 它是用来确认当前目录的信息的
+/// Workspace - Working Environment
+/// The workspace exists for both server and client instances
+/// It contains information about the current working directory
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct Workspace {
-
-    /// 工作区类型
-    #[serde(rename = "Type")]
+    /// Workspace type
+    #[serde(rename = "type")]
     pub workspace_type: WorkspaceType,
 
-    /// 成员工作区
-    #[serde(rename = "Client")]
+    /// Client workspace configuration
+    #[serde(rename = "client")]
     pub client: Option<ClientWorkspace>,
 
-    /// 服务器工作区
-    #[serde(rename = "Server")]
+    /// Server workspace configuration
+    #[serde(rename = "server")]
     pub server: Option<ServerWorkspace>,
 }
 
-/// 工作区类型
+/// Workspace type classification
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub enum WorkspaceType {
-
-    /// 未知
+    /// Unknown workspace type
     Unknown,
 
-    /// 服务器
+    /// Server workspace
     Server,
 
-    /// 成员
-    Client
+    /// Client workspace
+    Client,
 }
 
+/// Client workspace configuration
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct ClientWorkspace {
-
-    /// 连接到的工作区名称 (无法连接会尝试网络发现)
-    #[serde(rename = "Workspace")]
+    /// Target workspace name (will attempt network discovery if connection fails)
+    #[serde(rename = "workspace")]
     pub workspace_name: String,
 
-    /// 成员连接到的地址
-    #[serde(rename = "Address")]
+    /// Server address to connect to
+    #[serde(rename = "addr")]
     pub target_addr: SocketAddr,
 
-    /// 登录口令
-    #[serde(rename = "LoginCode")]
+    /// Authentication token
+    #[serde(rename = "login_code")]
     pub login_code: String,
 
-    /// 成员自身的 Uuid
-    #[serde(rename = "SelfUuid")]
+    /// Client's unique identifier
+    #[serde(rename = "member_uuid")]
     pub uuid: String,
 
-    /// 调试输出
-    #[serde(rename = "Debug")]
+    /// Debug output flag
+    #[serde(rename = "debug")]
     pub debug: bool,
 }
 
+/// Server workspace configuration
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct ServerWorkspace {
-
-    /// 工作区名称 (用于网络发现)
-    #[serde(rename = "Name")]
+    /// Workspace name (used for network discovery)
+    #[serde(rename = "workspace")]
     pub workspace_name: String,
 
-    /// 成员表
-    #[serde(rename = "Members")]
+    /// Member registry
+    #[serde(rename = "members")]
     pub members: HashMap<String, Member>,
 
-    /// 成员 ID 和 UUID 映射
-    #[serde(rename = "MemUuids")]
+    /// Mapping between member IDs and UUIDs
+    #[serde(rename = "uuids")]
     pub member_uuids: HashMap<String, String>,
 
-    /// 登录代码映射
-    #[serde(rename = "LoginCodes")]
+    /// Authentication token mapping
+    #[serde(rename = "login_code")]
     pub login_code_map: HashMap<String, String>,
 
-    /// 是否启用 Debug 级别 Logger
-    #[serde(rename = "Debug")]
+    /// Debug logging flag
+    #[serde(rename = "debug")]
     pub enable_debug_logger: bool,
 }
 
 impl Default for Workspace {
-
-    /// 初始化工作区
+    /// Initialize a new workspace
     fn default() -> Self {
         Self {
             workspace_type: Unknown,
@@ -99,7 +96,7 @@ impl Default for Workspace {
     }
 }
 
-/// 加载和更新功能
+/// Loading and updating functionality
 impl LocalArchive for Workspace {
     type DataType = Workspace;
 

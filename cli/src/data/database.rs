@@ -10,68 +10,64 @@ use crate::data::database::VirtualFileState::{Available, Lock};
 use crate::data::member::Member;
 use crate::data::workspace::Workspace;
 
-/// # Database - 文件数据库
-/// 数据库是 Jam Ready 中的文件存储站
+/// # Database - File Database
+/// The database is the file storage station in Jam Ready
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct Database {
-
-    /// 所有文件 (Uid, 文件)
-    #[serde(rename = "Files")]
+    /// All files (Uid, File)
+    #[serde(rename = "files")]
     virtual_files: HashMap<String, VirtualFile>,
 
-    /// 文件目录和 Uid 的映射 (目录, Uuid)
-    #[serde(rename = "Uuids")]
+    /// File path to Uuid mapping (Path, Uuid)
+    #[serde(rename = "uuids")]
     virtual_uuids: HashMap<String, String>
 }
 
-/// 虚拟文件
-/// 它用于映射工作区内的一个确定位置，并记录其版本、描述、动态等信息
+/// Virtual File
+/// Used to map a specific location in the workspace and record its version, description, status etc.
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct VirtualFile {
-
-    /// 目录
-    #[serde(rename = "Path")]
+    /// Path
+    #[serde(rename = "path")]
     path: String,
 
-    /// 映射到的本地文件
-    #[serde(rename = "Real")]
+    /// Mapped local file
+    #[serde(rename = "real")]
     real: String,
 
-    /// 该文件的版本号
-    #[serde(rename = "Version")]
+    /// File version
+    #[serde(rename = "version")]
     version: u32,
 
-    /// 该文件的修改历史
-    #[serde(rename = "History")]
+    /// File change history
+    #[serde(rename = "changes")]
     change_histories: HashMap<u32, String>,
 
-    /// 该文件的历史版本映射
-    #[serde(rename = "Real_History")]
+    /// File version history mapping
+    #[serde(rename = "history_real")]
     real_histories: HashMap<u32, String>,
 
-    /// 文件状态
-    #[serde(rename = "Status")]
+    /// File status
+    #[serde(rename = "status")]
     state: VirtualFileState,
 
-    /// 锁是否长期持有
-    #[serde(rename = "LongTerm")]
+    /// Whether the lock is long-term
+    #[serde(rename = "long")]
     longer_lock: bool
 }
 
-/// 虚拟文件状态
+/// Virtual File Status
 #[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub enum VirtualFileState {
-
-    /// 空闲的 (表示可读写)
+    /// Available (read-write allowed)
     Available,
 
-    /// 正在被编辑 (参数为成员的 Uid，表示持有者可读写，其他人只读)
+    /// Being edited (parameter is member Uuid, indicating holder can read-write, others read-only)
     Lock(String)
 }
 
-/// 构造数据库
+/// Database constructor
 impl Default for Database {
-
     fn default() -> Self {
         Self {
             virtual_files: HashMap::new(),
@@ -80,7 +76,7 @@ impl Default for Database {
     }
 }
 
-/// 加载和更新功能
+/// Loading and updating functionality
 impl LocalArchive for Database {
     type DataType = Database;
 
@@ -90,26 +86,25 @@ impl LocalArchive for Database {
 }
 
 impl Database {
-
-    /// 目录是否存在 (是否有目录映射)
+    /// Check if path exists (has path mapping)
     pub fn contains_path(&self, path: &str) -> bool {
         self.virtual_uuids.contains_key(&process_path_text(path.to_string()))
     }
 
-    /// 移除某个目录的映射使其无法通过目录找到
+    /// Remove a path mapping to make it inaccessible via path
     pub fn remove_file_map(&mut self, path: String) -> Result<String, ()> {
         let path = process_path_text(path);
-        // 拿到需要移除的 Uuid
+        // Get Uuid to remove
         let uuid = self.virtual_uuids.get(path.as_str());
-        // 需要移除的目录已经映射了 Uuid
+        // Path to remove has Uuid mapping
         if let Some(uuid) = uuid {
-            // 通过 Uuid 确实能找到文件
+            // File can be found via Uuid
             let file = self.virtual_files.get_mut(uuid);
             if let Some(file) = file {
-                // 强制丢掉文件的锁
+                // Force release file lock
                 file.throw_locker();
 
-                // 移除文件的目录映射
+                // Remove file path mapping
                 file.path = "".to_string();
                 if let Some(uuid) = self.virtual_uuids.remove(path.as_str()) {
                     return Ok(uuid)
@@ -119,18 +114,18 @@ impl Database {
         Err(())
     }
 
-    /// 为某个 Uuid 重建目录映射
+    /// Rebuild path mapping for a Uuid
     pub fn rebuild_path_to_uuid(&mut self, uuid: String, path: String) -> Result<(), ()> {
         let path = process_path_text(path);
-        // 需要重建的目录不存在
+        // Target path doesn't exist
         if ! self.contains_path(path.as_str()) {
-            // 该 Uuid 存在
+            // Uuid exists
             if let Some(file) = self.virtual_files.get_mut(&uuid) {
-                // 该文件未绑定目录
+                // File has no path binding
                 if file.path.is_empty() {
-                    // 为文件指定目录
+                    // Assign path to file
                     file.path = path.clone();
-                    // 建立目录映射
+                    // Create path mapping
                     self.virtual_uuids.insert(uuid, path);
                     return Ok(())
                 }
@@ -139,12 +134,11 @@ impl Database {
         Err(())
     }
 
-    /// 获得所有文件的引用
+    /// Get references to all files
     pub fn files(&self) -> Vec<&VirtualFile> {
         let mut file_list = Vec::new();
         for (_uuid, file) in self.virtual_files.iter() {
-
-            // 存在目录才会被列出
+            // Only list files with paths
             if !file.path.trim().is_empty() {
                 file_list.push(file);
             }
@@ -152,7 +146,7 @@ impl Database {
         file_list
     }
 
-    /// 获得所有文件的引用 (可变)
+    /// Get mutable references to all files
     pub fn files_mut(&mut self) -> Vec<&mut VirtualFile> {
         let mut file_list = Vec::new();
         for (_uuid, file) in self.virtual_files.iter_mut() {
@@ -161,17 +155,16 @@ impl Database {
         file_list
     }
 
-    /// 插入虚拟文件
-    /// 失败则将构建的数据还回去
+    /// Insert virtual file
+    /// Returns the file back if failed
     pub fn insert_virtual_file(&mut self, file: VirtualFile) -> Result<bool, VirtualFile> {
-
-        // 判断是否有相同路径的虚拟文件
+        // Check if path already exists
         if self.contains_path(file.path.as_str().trim()) {
-            // 有，则插入失败
+            // Exists, insertion failed
             return Err(file);
         }
 
-        // 无，则建立 Uid，修改数据库
+        // Doesn't exist, create Uuid and modify database
         let uuid = Uuid::new_v4();
         self.virtual_files.insert(uuid.to_string(), file.clone());
         self.virtual_uuids.insert(file.path, uuid.to_string());
@@ -179,12 +172,12 @@ impl Database {
         Ok(true)
     }
 
-    /// 通过 Uuid 获得虚拟文件
+    /// Get virtual file by Uuid
     pub fn file_with_uuid(&self, uuid: String) -> Option<&VirtualFile> {
         self.virtual_files.get(&uuid)
     }
 
-    /// 通过目录获得虚拟文件
+    /// Get virtual file by path
     pub fn file(&self, path: String) -> Option<&VirtualFile> {
         let uuid = self.virtual_uuids.get(path.as_str());
         if let Some(uuid) = uuid {
@@ -194,7 +187,7 @@ impl Database {
         }
     }
 
-    /// 搜索文件
+    /// Search for file
     pub fn search_file(&self, search: String) -> Option<&VirtualFile> {
         if let Some(file) = self.file_with_uuid(search.trim().to_string()) {
             return Some(file);
@@ -204,7 +197,7 @@ impl Database {
         None
     }
 
-    /// 搜索文件 (可变)
+    /// Search for file (mutable)
     pub fn search_file_mut(&mut self, search: String) -> Option<&mut VirtualFile> {
         if let Some(_) = self.file_with_uuid(search.trim().to_string()) {
             return self.file_mut_with_uuid(search);
@@ -214,12 +207,12 @@ impl Database {
         None
     }
 
-    /// 通过 Uuid 获得虚拟文件 (可变)
+    /// Get virtual file by Uuid (mutable)
     pub fn file_mut_with_uuid(&mut self, uuid: String) -> Option<&mut VirtualFile> {
         self.virtual_files.get_mut(&uuid)
     }
 
-    /// 通过目录获得虚拟文件 (可变)
+    /// Get virtual file by path (mutable)
     pub fn file_mut(&mut self, path: String) -> Option<&mut VirtualFile> {
         let uuid = self.virtual_uuids.get(path.as_str());
         if let Some(uuid) = uuid {
@@ -229,7 +222,7 @@ impl Database {
         }
     }
 
-    /// 修改文件路径
+    /// Change file path
     pub fn move_file(&mut self, old_path: String, new_path: String) -> Result<(), ()> {
         let uuid = self.virtual_uuids.get(&process_path_text(old_path));
         if let Some(uuid) = uuid {
@@ -239,28 +232,26 @@ impl Database {
         }
     }
 
-    /// 通过 Uuid 修改路径
+    /// Change path by Uuid
     pub fn move_file_with_uuid(&mut self, uuid: String, new_path: String) -> Result<(), ()> {
-        // 处理新目录字符串
+        // Process new path string
         let new_path = process_path_text(new_path);
 
-        // 新目录不存在时执行
+        // Execute if new path doesn't exist
         if ! self.contains_path(new_path.as_str()) {
-
-            // 获得文件
+            // Get file
             let file = self.virtual_files.get_mut(&uuid);
             if let Some(file) = file {
-
-                // 移除目录映射
+                // Remove path mapping
                 self.virtual_uuids.remove(file.path.as_str());
 
-                // 修改自身目录
+                // Update own path
                 file.path = new_path.clone();
 
-                // 重建目录映射
+                // Rebuild path mapping
                 self.virtual_uuids.insert(new_path, uuid);
 
-                // 若不是长期锁，则直接丢弃
+                // Release lock if not long-term
                 if !file.is_longer_lock_unchecked() {
                     file.throw_locker();
                 }
@@ -273,7 +264,7 @@ impl Database {
         }
     }
 
-    /// 清理历史版本
+    /// Clean version history
     pub fn clean_histories(&mut self) {
         for (_uuid, file) in self.virtual_files.iter_mut() {
             file.change_histories = HashMap::new();
@@ -281,7 +272,7 @@ impl Database {
         }
     }
 
-    /// 获得某个目录的 Uuid
+    /// Get Uuid of a path
     pub fn uuid_of_path(&self, path: String) -> Option<String> {
         if let Some(uuid) = self.virtual_uuids.get(path.as_str()) {
             return Some(uuid.to_string());
@@ -291,8 +282,7 @@ impl Database {
 }
 
 impl VirtualFile {
-
-    /// 通过目录新建
+    /// Create new by path
     pub fn new(path: String) -> Self {
         let mut new = Self {
             path: process_path_text(path),
@@ -304,14 +294,14 @@ impl VirtualFile {
             longer_lock: false
         };
 
-        // 添加第零版本数据
+        // Add version 0 data
         new.change_histories.insert(0, "First Version".to_string());
         new.real_histories.insert(0, "".to_string());
 
         new
     }
 
-    /// 获得文件的名称
+    /// Get file name
     pub fn name(&self) -> Option<String> {
         if let Some(name) = self.path.split('/').last() {
             return Some(name.to_string())
@@ -319,22 +309,22 @@ impl VirtualFile {
         None
     }
 
-    /// 获得文件的目录
+    /// Get file path
     pub fn path(&self) -> String {
         self.path.clone()
     }
 
-    /// 获得文件的真实目录
+    /// Get real file path
     pub fn real_path(&self) -> String {
         self.real.clone()
     }
 
-    /// 获得文件的真实目录
+    /// Get file version
     pub fn version(&self) -> u32 {
         self.version
     }
 
-    /// 尝试获得对应的客户端文件
+    /// Try to get corresponding client file path
     pub fn client_path(&self) -> Option<PathBuf> {
         match current_dir() {
             Ok(current) => {
@@ -345,7 +335,7 @@ impl VirtualFile {
         }
     }
 
-    /// 获得对应的服务端文件
+    /// Get corresponding server file path
     pub fn server_path(&self) -> Option<PathBuf> {
         match current_dir() {
             Ok(current) => {
@@ -356,7 +346,7 @@ impl VirtualFile {
         }
     }
 
-    /// 获得对应的服务端文件
+    /// Get corresponding server file path for specific version
     pub fn server_path_version(&self, version: u32) -> Option<PathBuf> {
         match current_dir() {
             Ok(current) => {
@@ -370,7 +360,7 @@ impl VirtualFile {
         }
     }
 
-    /// 获得对应的服务端文件
+    /// Get corresponding server file path for temp file
     pub fn server_path_temp(&self, temp_real: String) -> Option<PathBuf> {
         match current_dir() {
             Ok(current) => {
@@ -381,27 +371,26 @@ impl VirtualFile {
         }
     }
 
-    /// 更新实际地址
+    /// Update real path
     pub fn update(&mut self, new_real_path: String, changes_info: String) {
-
-        // 版本号前进一位
+        // Increment version
         self.version += 1;
 
-        // 添加现版本数据
+        // Add current version data
         self.change_histories.insert(self.version, changes_info);
         self.real_histories.insert(self.version, new_real_path.clone());
 
-        // 更新当前实际目录
+        // Update current real path
         self.real = new_real_path;
     }
 
-    /// 回滚至指定版本
+    /// Rollback to specific version
     pub fn rollback_to_version(&mut self, version: u32) -> bool {
         if let Some(old_real) = self.real_histories.get(&version) {
             self.version = version;
             self.real = old_real.clone();
 
-            // 若不是长期锁，则直接丢弃
+            // Release lock if not long-term
             if !self.is_longer_lock_unchecked() {
                 self.throw_locker();
             }
@@ -411,25 +400,21 @@ impl VirtualFile {
         false
     }
 
-    /// 尝试给成员获得锁 (通过 Uuid)
+    /// Try to acquire lock for member (by Uuid)
     pub async fn give_uuid_locker(&mut self, member_uuid: String, longer: bool) -> bool {
         let workspace = Workspace::read().await;
         if let Some(server) = workspace.server {
-
-            // 自身为空闲
+            // Self is available
             if self.state == Available {
-
-                // 存在该成员
+                // Member exists
                 if server.members.contains_key(&member_uuid) {
-
-                    // 锁定
+                    // Lock
                     self.state = Lock(member_uuid);
                     self.longer_lock = longer;
                     return true;
                 }
             } else if let Lock(guid) = &self.state {
-
-                // 或者该成员已持有锁
+                // Or member already holds lock
                 if guid == &member_uuid.trim() {
                     return true;
                 }
@@ -438,30 +423,25 @@ impl VirtualFile {
         false
     }
 
-    /// 尝试给成员获得锁 (通过 Uuid)
+    /// Try to acquire lock for member (by Uuid)
     pub async fn give_locker(&mut self, member: &Member, longer: bool) -> bool {
         let workspace = Workspace::read().await;
         if let Some(server) = workspace.server {
-
-            // 自身为空闲
+            // Self is available
             if self.state == Available {
-
-                // 获得 Uuid
+                // Get Uuid
                 let uuid = server.member_uuids.get(&member.member_name);
                 if let Some(uuid) = uuid {
-                    // 锁定
+                    // Lock
                     self.state = Lock(uuid.clone());
                     self.longer_lock = longer;
                     return true;
                 }
-
             } else if let Lock(locker_owner) = &self.state {
-
-                // 获得 Uuid
+                // Get Uuid
                 let uuid = server.member_uuids.get(&member.member_name);
                 if let Some(member_uuid) = uuid {
-
-                    // 或者该成员已持有锁
+                    // Or member already holds lock
                     if locker_owner == member_uuid {
                         return true;
                     }
@@ -471,13 +451,13 @@ impl VirtualFile {
         false
     }
 
-    /// 丢掉自身的锁
+    /// Release own lock
     pub fn throw_locker(&mut self) {
         self.state = Available;
         self.longer_lock = false;
     }
 
-    /// 获得锁的主人
+    /// Get lock owner
     pub async fn get_locker_owner(&self) -> Option<(String, Member)> {
         if let Lock(uuid) = &self.state {
             let workspace = Workspace::read().await;
@@ -490,7 +470,7 @@ impl VirtualFile {
         None
     }
 
-    /// 获得锁的主人 (适用于客户端环境)
+    /// Get lock owner (for client environment)
     pub fn get_locker_owner_uuid(&self) -> Option<String> {
         if let Lock(uuid) = &self.state {
             return Some(uuid.clone());
@@ -498,7 +478,7 @@ impl VirtualFile {
         None
     }
 
-    /// 判断锁是否为长期锁
+    /// Check if lock is long-term
     pub fn is_longer_lock(&self) -> Option<bool> {
         if let Lock(_) = &self.state {
             return Some(self.longer_lock);
@@ -506,7 +486,7 @@ impl VirtualFile {
         None
     }
 
-    /// 判断锁是否为长期锁
+    /// Check if lock is long-term (unchecked)
     pub fn is_longer_lock_unchecked(&self) -> bool {
         self.longer_lock
     }

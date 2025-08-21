@@ -8,7 +8,7 @@ async fn main() {
     cli_entry().await;
 }
 
-/// 尝试纠正当前目录
+/// Attempt to correct the current directory
 fn try_correct_current_dir() {
     let current = current_dir().unwrap();
     if current.join(env!("PATH_WORKSPACE_ROOT")).exists() {

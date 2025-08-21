@@ -8,68 +8,64 @@ use crate::data::client_result::ClientResultType::Fail;
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct ClientResult {
+    // All messages
 
-    // 所有消息
-
-    /// 错误信息
+    /// Error messages
     #[serde(rename = "ErrMsg")]
     err_msg: Vec<String>,
 
-    /// 警告消息
+    /// Warning messages
     #[serde(rename = "WarnMsg")]
     warn_msg: Vec<String>,
 
-    /// 消息
+    /// Information messages
     #[serde(rename = "InfoMsg")]
     info_msg: Vec<String>,
 
-    /// 元数据
+    /// Metadata
     #[serde(rename = "Metadata")]
     metadata: HashMap<String, String>,
 
-    /// 错误类型
+    /// Error type
     #[serde(rename = "ResultType")]
     result_type: ClientResultType,
 
-    /// 原始消息处理函数 (原始内容，剩余数量) -> 输出内容
+    /// Raw message processing function (raw content, remaining count) -> output content
     #[serde(skip_serializing)]
     query_process: fn(raw: String, remaining: i32) -> String,
 
-    /// 调试输出
+    /// Debug output
     #[serde(skip_serializing)]
     debug: bool
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum ClientResultType {
-
-    /// 查询
+    /// Query
     #[serde(rename = "Query")]
     Query,
 
-    /// 失败
+    /// Failure
     #[serde(rename = "Fail")]
     Fail,
 
-    /// 成功
+    /// Success
     #[serde(rename = "Success")]
     Success
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct QueryResult {
-
-    /// 查询
+    /// Query
     #[serde(rename = "Query")]
     query: Vec<String>,
 
-    /// 元数据
+    /// Metadata
     #[serde(rename = "Metadata")]
     metadata: HashMap<String, String>,
 }
 
 impl ClientResult {
-
     pub async fn debug_mode() -> bool {
         let workspace = Workspace::read().await;
         if let Some(client) = workspace.client {
@@ -150,8 +146,7 @@ impl ClientResult {
     }
 
     pub fn end_print(self) {
-
-        // 调试输出，直接序列化
+        // Debug output, serialize directly
         if self.debug {
             if self.result_type == ClientResultType::Query {
                 let result = serde_json::to_string(&QueryResult::from(self)).unwrap_or("{}".to_string());
@@ -161,10 +156,10 @@ impl ClientResult {
                 println!("result:{}", &result);
             }
         } else {
-            // 否则，根据条件输出
+            // Otherwise, output based on conditions
             match self.result_type {
                 ClientResultType::Query => {
-                    // 处理所有 info
+                    // Process all info messages
                     let infos = self.info_msg;
                     let mut result = String::new();
                     let mut remain : i32 = infos.len() as i32 - 1;
@@ -202,8 +197,7 @@ impl ClientResult {
     }
 
     pub fn combine(&mut self, other: ClientResult) -> Result<(), ()> {
-
-        // 类型为 查询 时，无法合并
+        // Cannot combine when type is Query
         if self.result_type == ClientResultType::Query || other.result_type == ClientResultType::Query {
             return Err(());
         }
@@ -224,7 +218,7 @@ impl ClientResult {
             self.err_msg.push(err);
         }
 
-        // 元数据以新的为主
+        // Metadata takes precedence from the new one
         for metadata_kvp in other.metadata {
             self.metadata.insert(metadata_kvp.0, metadata_kvp.1);
         }
@@ -245,7 +239,6 @@ impl ClientResult {
 
 pub struct ClientResultQueryProcess;
 impl ClientResultQueryProcess {
-
     pub fn line_by_line_compressed (raw: String, remaining: i32) -> String {
         if remaining == 0 {
             format!("{}", process_text(raw.to_string()))

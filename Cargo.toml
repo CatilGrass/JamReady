@@ -16,21 +16,21 @@ chrono = "0.4"
 colored = "3.0.0"
 regex = "1.11.1"
 
-# 序列化&存储
+# Serialization & Storage
 serde = { version = "1.0.219", features = ["derive"] }
-serde_yaml = "0.9.34"
+ron = "0.10.1"
 toml = "0.9.0"
 md5 = "0.8.0"
 
-# 异步&网络
+# Async & Networking
 tokio = { version = "1.46.1", features = ["full"] }
 async-trait = "0.1.88"
 
-# 日志
+# Logging
 log = "0.4.27"
 env_logger = "0.10.2"
 
-# Windows 接口
+# Windows API
 winapi = { version = "0.3.9", features = ["fileapi", "winbase", "winnt"] }
 
 [workspace]

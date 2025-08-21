@@ -1,7 +1,8 @@
+use std::borrow::Cow;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
-use tokio::io::{AsyncReadExt};
+use tokio::io::AsyncReadExt;
 use std::env::current_dir;
 
 #[async_trait]
@@ -10,7 +11,6 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
 
     fn relative_path() -> String;
 
-    /// 加载
     async fn read() -> Self::DataType
     where
         Self: Sized + Send + Sync,
@@ -24,27 +24,29 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
     {
         let file_path = current_dir().unwrap().join(&path);
 
-        // 检查文件是否存在
+        // Check if file exists
         match fs::metadata(&file_path).await {
             Ok(_) => {
-                // 打开文件
+                // Open file
                 let mut file = fs::File::open(&file_path).await.unwrap();
                 let mut contents = String::new();
 
-                // 读取内容
+                // Read contents
                 file.read_to_string(&mut contents).await.unwrap();
 
-                // 反序列化
-                serde_yaml::from_str(&contents).unwrap_or_default()
+                // Deserialize from RON
+                ron::from_str(&contents).unwrap_or_else(|e| {
+                    eprintln!("Failed to parse RON file {}: {}", path, e);
+                    Self::DataType::default()
+                })
             }
             Err(_) => {
-                // 文件不存在时返回默认值
+                // Return default value when file doesn't exist
                 Self::DataType::default()
             }
         }
     }
 
-    /// 更新
     async fn update(val: &Self::DataType)
     where
         Self: Sized + Send + Sync,
@@ -56,23 +58,37 @@ pub trait LocalArchive: Serialize + for<'a> Deserialize<'a> + Default {
     where
         Self: Sized + Send + Sync,
     {
-        // 确保目录存在
+        // Ensure directory exists
         create_paths().await;
 
         let file_path = current_dir().unwrap().join(&path);
-        let contents = serde_yaml::to_string(val).unwrap();
 
-        // 写入文件
-        fs::write(&file_path, contents).await.unwrap();
+        let mut pretty_config = ron::ser::PrettyConfig::new();
+        pretty_config.new_line = Cow::from("\n");
+        pretty_config.indentor = Cow::from("  ");
+
+        let contents = ron::ser::to_string_pretty(val, pretty_config)
+            .unwrap_or_else(|e| {
+                eprintln!("Failed to serialize to RON: {}", e);
+                ron::to_string(val).unwrap_or_else(|e| {
+                    eprintln!("Failed to serialize to RON (basic): {}", e);
+                    String::new()
+                })
+            });
+
+        // Write to file
+        fs::write(&file_path, contents).await.unwrap_or_else(|e| {
+            eprintln!("Failed to write RON file {}: {}", path, e);
+        });
     }
 }
 
-/// 创建目录
 async fn create_paths() {
     let paths = vec![
         env!("PATH_WORKSPACE_ROOT"),
         env!("PATH_PARAMETERS"),
         env!("PATH_DATABASE_CONFIG_ARCHIVE"),
+        env!("PATH_CACHE"),
     ];
 
     for path in paths {

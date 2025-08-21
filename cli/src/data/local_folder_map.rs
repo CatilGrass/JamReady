@@ -5,34 +5,33 @@ use jam_ready::utils::text_process::split_path_text;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
-/// 本地文件映射
+/// Local folder mapping
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub struct LocalFolderMap {
-
-    /// 目录完整路径和其中的文件信息映射
-    #[serde(rename = "Mapping")]
+    /// Complete directory path to file info mapping
+    #[serde(rename = "tree")]
     pub folder_files: HashMap<String, Vec<Node>>,
 
-    /// 简化的文件搜索
-    #[serde(rename = "Short")]
+    /// Simplified file search
+    #[serde(rename = "short_names")]
     pub short_file_map: HashMap<String, String>,
 }
 
-/// 节点
+/// Node type
 #[derive(Default, Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq)]
 pub enum Node {
-
     #[default]
     Unknown,
 
-    /// 跳转 (目录完整路径 Folder/)
+    /// Jump to directory (complete path Folder/)
     Jump(String),
 
-    /// 父级跳转
+    /// Parent directory navigation
     Parent(String),
 
-    /// 文件 (完整路径 Folder/file.txt)
-    /// 为什么不包含 Uuid? 该数据仅为提高客户端界面查询文件结构速度而存在，真正的数据存储在 database.yaml 中
+    /// File (complete path Folder/file.txt)
+    /// Why no Uuid? This data exists only to improve client UI file structure query speed,
+    /// the real data is stored in database.yaml
     File(String)
 }
 
@@ -45,22 +44,21 @@ impl LocalArchive for LocalFolderMap {
 }
 
 impl From<&Database> for LocalFolderMap {
-
     fn from(database: &Database) -> Self {
         let mut folder_files: HashMap<String, Vec<Node>> = HashMap::new();
         let mut all_dirs = HashSet::new();
 
-        // 处理所有文件并收集所有目录
+        // Process all files and collect all directories
         for file in database.files() {
             let file_path = file.path();
             let (dir_path, _) = split_path_text(&file_path);
 
-            // 添加文件到对应目录
+            // Add file to corresponding directory
             folder_files.entry(dir_path.clone())
                 .or_default()
                 .push(Node::File(file_path.clone()));
 
-            // 收集所有目录路径
+            // Collect all directory paths
             let mut current_dir = dir_path.clone();
             while !current_dir.is_empty() {
                 all_dirs.insert(current_dir.clone());
@@ -68,16 +66,15 @@ impl From<&Database> for LocalFolderMap {
             }
         }
 
-        // 添加根目录
+        // Add root directory
         all_dirs.insert("".to_string());
 
-        // 构建目录结构
+        // Build directory structure
         for dir_path in &all_dirs {
-
-            // 确保目录在映射中存在
+            // Ensure directory exists in mapping
             let entry = folder_files.entry(dir_path.clone()).or_default();
 
-            // 添加 Parent 节点
+            // Add Parent node
             if !dir_path.is_empty() {
                 if let Some(parent_dir) = get_parent_dir(dir_path) {
                     let parent_node = Node::Parent(parent_dir);
@@ -87,7 +84,7 @@ impl From<&Database> for LocalFolderMap {
                 }
             }
 
-            // 获取所有直接的子目录
+            // Get all direct subdirectories
             let sub_dirs: Vec<_> = all_dirs.iter()
                 .filter(|d| d.starts_with(dir_path) && *d != dir_path)
                 .filter(|d| {
@@ -97,7 +94,7 @@ impl From<&Database> for LocalFolderMap {
                 .cloned()
                 .collect();
 
-            // 添加 Jump 节点到子目录
+            // Add Jump nodes to subdirectories
             for sub_dir in sub_dirs {
                 if let Some(nodes) = folder_files.get_mut(dir_path) {
                     if !nodes.contains(&Node::Jump(sub_dir.clone())) {
@@ -109,37 +106,38 @@ impl From<&Database> for LocalFolderMap {
 
         Self {
             folder_files,
-            short_file_map: generation(database.files().iter().map(|f| f.path()).collect()),
+            short_file_map: generate_short_mapping(database.files().iter().map(|f| f.path()).collect()),
         }
     }
 }
 
-// 获取父目录路径
+/// Get parent directory path
 fn get_parent_dir(dir_path: &str) -> Option<String> {
     if dir_path.is_empty() {
         return None;
     }
 
-    // 去掉结尾的斜杠
+    // Remove trailing slash
     let trimmed = dir_path.trim_end_matches('/');
 
     if let Some(last_idx) = trimmed.rfind('/') {
-        // 返回父目录路径
+        // Return parent directory path
         Some(trimmed[..=last_idx].to_string())
     } else {
-        // 顶级目录的父目录是根目录
+        // Parent of top-level directory is root
         Some("".to_string())
     }
 }
 
-fn generation(virtual_file_paths: Vec<String>) -> HashMap<String, String> {
-    // 构建后缀频率的映射表
+/// Generate short path mappings
+fn generate_short_mapping(virtual_file_paths: Vec<String>) -> HashMap<String, String> {
+    // Build frequency map for suffixes
     let mut freq_map = HashMap::new();
     for path in &virtual_file_paths {
         let comps: Vec<_> = path.split('/').collect();
         let mut suffix = String::new();
 
-        // 生成所有可能存在的后缀
+        // Generate all possible suffixes
         for i in (0..comps.len()).rev() {
             suffix = if suffix.is_empty() {
                 comps[i].to_string()
@@ -150,13 +148,13 @@ fn generation(virtual_file_paths: Vec<String>) -> HashMap<String, String> {
         }
     }
 
-    // 为每个路径找到唯一的最短后缀
+    // Find unique shortest suffix for each path
     let mut result = HashMap::new();
     for path in virtual_file_paths {
         let comps: Vec<_> = path.split('/').collect();
         let mut suffix = String::new();
 
-        // 生成后缀列表
+        // Generate suffix list
         let mut suffixes = Vec::new();
         for i in (0..comps.len()).rev() {
             suffix = if suffix.is_empty() {
@@ -169,7 +167,7 @@ fn generation(virtual_file_paths: Vec<String>) -> HashMap<String, String> {
 
         for candidate in &suffixes {
             if freq_map.get(candidate).copied() == Some(1) {
-                // 若键值相同，则跳过
+                // Skip if key equals value
                 if candidate != &path {
                     result.insert(format!("{}", candidate.clone()), path.clone());
                 }

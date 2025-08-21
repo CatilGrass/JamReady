@@ -9,16 +9,15 @@ use tokio::net::TcpStream;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 
-/// 发送消息 - 使用 JSON 序列化
+/// Send message using JSON serialization
 pub async fn send_msg<Message>(
     stream: &mut TcpStream,
     msg: &Message
 ) where Message: Serialize + Debug {
-    // 序列化
+    // Serialize message
     match serde_json::to_string(msg) {
         Ok(json_str) => {
-
-            // 转换为字节
+            // Convert to bytes and write to stream
             let bytes = json_str.as_bytes();
             match stream.write_all(bytes).await {
                 Ok(_) => {
@@ -35,7 +34,7 @@ pub async fn send_msg<Message>(
     }
 }
 
-/// 读取消息 - 使用 JSON 反序列化
+/// Read message using JSON deserialization
 pub async fn read_msg<Message>(
     stream: &mut TcpStream
 ) -> Message
@@ -45,19 +44,19 @@ where
     let mut buffer = Vec::new();
     let mut temp_buf = [0u8; 128];
 
-    // 读取
+    // Read data in chunks
     while let Ok(n) = stream.read(&mut temp_buf).await {
-        if n == 0 { break; } // 连接关闭
+        if n == 0 { break; } // Connection closed
         buffer.extend_from_slice(&temp_buf[..n]);
 
-        // 反序列化接收到的数据
+        // Attempt to deserialize received data
         match serde_json::from_slice::<Message>(&buffer) {
             Ok(decoded) => {
                 trace!("Received JSON {:?} from {}", decoded, get_target_address(stream));
                 return decoded;
             }
             Err(err) if err.is_eof() || err.is_data() => {
-                // 数据不完整则继续
+                // Incomplete data, continue reading
                 continue;
             }
             Err(err) => {
@@ -71,7 +70,7 @@ where
     Message::default()
 }
 
-/// 发送大消息
+/// Send large message with progress tracking
 pub async fn send_large_msg<Message>(
     stream: &mut TcpStream,
     msg: &Message,
@@ -97,7 +96,7 @@ where for<'a> Message: Serialize + Deserialize<'a> + Default + Debug
     }
 }
 
-/// 读取大消息
+/// Read large message with progress tracking
 pub async fn read_large_msg<Message>(
     stream: &mut TcpStream,
     progress_bar: Option<ProgressBar>
@@ -123,29 +122,29 @@ where
     }
 }
 
-/// 发送大文本
+/// Send large text with chunked transfer and progress tracking
 pub async fn send_large_text(
     stream: &mut TcpStream,
     text: &str,
     progress_bar: Option<ProgressBar>,
 ) -> io::Result<()> {
-
-    // 大小限制
-    const MAX_TEXT_SIZE: usize = 100 * 1024 * 1024;
+    const MAX_TEXT_SIZE: usize = 100 * 1024 * 1024; // 100MB limit
+    const CHUNK_SIZE: usize = 16 * 1024; // 16KB chunks
 
     let text_bytes = text.as_bytes();
     let total_size = text_bytes.len();
 
+    // Validate size limit
     if total_size > MAX_TEXT_SIZE {
         return Err(io::Error::new(
             ErrorKind::InvalidData,
-            format!("Failed to send: Message too large, {:.1}Mb exceeds the {:.1}Mb limit",
+            format!("Message too large: {:.1}MB exceeds {:.1}MB limit",
                     total_size as f32 / (1024.0 * 1024.0),
                     MAX_TEXT_SIZE as f32 / (1024.0 * 1024.0))
         ));
     }
 
-    // 设置进度条
+    // Setup progress bar if provided
     if let Some(bar) = &progress_bar {
         bar.set_length(total_size as u64);
         bar.set_style(
@@ -156,17 +155,15 @@ pub async fn send_large_text(
         );
     }
 
-    // 发送文本长度
+    // Send size header (8 bytes)
     let size_header = (total_size as u64).to_be_bytes();
     stream.write_all(&size_header).await?;
     if let Some(bar) = &progress_bar {
         bar.inc(8);
     }
 
-    // 发送文本内容
-    const CHUNK_SIZE: usize = 16 * 1024;
+    // Send content in chunks
     let mut bytes_sent = 0;
-
     while bytes_sent < total_size {
         let end = (bytes_sent + CHUNK_SIZE).min(total_size);
         let chunk = &text_bytes[bytes_sent..end];
@@ -181,38 +178,38 @@ pub async fn send_large_text(
     }
     stream.flush().await?;
 
-    // 完成
+    // Finish progress
     if let Some(bar) = &progress_bar {
         bar.finish_with_message("Done");
     }
     Ok(())
 }
 
-/// 读取大文本
+/// Read large text with chunked transfer and progress tracking
 pub async fn read_large_text(
     stream: &mut TcpStream,
     progress_bar: Option<ProgressBar>,
 ) -> io::Result<String> {
-
-    // 大小限制
-    const MAX_TEXT_SIZE: usize = 100 * 1024 * 1024;
+    const MAX_TEXT_SIZE: usize = 100 * 1024 * 1024; // 100MB
     const HEADER_SIZE: usize = 8;
+    const CHUNK_SIZE: usize = 16 * 1024;
 
-    // 文本长度
+    // Read size header
     let mut size_buf = [0u8; HEADER_SIZE];
     stream.read_exact(&mut size_buf).await?;
     let total_size = u64::from_be_bytes(size_buf) as usize;
 
+    // Validate size limit
     if total_size > MAX_TEXT_SIZE {
         return Err(io::Error::new(
             ErrorKind::InvalidData,
-            format!("Failed to send: Message too large, {:.1}Mb exceeds the {:.1}Mb limit",
+            format!("Message too large: {:.1}MB exceeds {:.1}MB limit",
                     total_size as f32 / (1024.0 * 1024.0),
                     MAX_TEXT_SIZE as f32 / (1024.0 * 1024.0))
         ));
     }
 
-    // 进度条
+    // Setup progress bar if provided
     if let Some(bar) = &progress_bar {
         bar.set_length(total_size as u64);
         bar.set_style(
@@ -223,34 +220,29 @@ pub async fn read_large_text(
         );
     }
 
-    // 读取内容
+    // Read content in chunks
     let mut buffer = Vec::with_capacity(total_size);
     let mut bytes_read = 0;
-    const CHUNK_SIZE: usize = 16 * 1024;
 
     while bytes_read < total_size {
-        // 当前块大小
         let chunk_size = CHUNK_SIZE.min(total_size - bytes_read);
-
-        // 调整缓冲区大小
         buffer.resize(bytes_read + chunk_size, 0);
 
-        // 读取数据块
         let chunk = &mut buffer[bytes_read..bytes_read + chunk_size];
         stream.read_exact(chunk).await?;
 
-        // 更新状态
         bytes_read += chunk_size;
         if let Some(bar) = &progress_bar {
             bar.inc(chunk_size as u64);
         }
     }
 
+    // Finish progress
     if let Some(bar) = &progress_bar {
         bar.finish_with_message("Done");
     }
 
-    // 转换为 UTF-8
+    // Convert to UTF-8
     String::from_utf8(buffer).map_err(|e| {
         if let Some(bar) = &progress_bar {
             bar.abandon_with_message("");
@@ -262,27 +254,22 @@ pub async fn read_large_text(
     })
 }
 
-/// 获得目标地址
+/// Get peer address from TCP stream
 pub fn get_target_address(stream: &TcpStream) -> String {
-    let peer = stream.peer_addr();
-    if peer.is_ok() {
-        peer.unwrap().to_string()
-    } else {
-        "Unknown".to_string()
-    }
+    stream.peer_addr()
+        .map(|addr| addr.to_string())
+        .unwrap_or_else(|_| "Unknown".to_string())
 }
 
-/// 获得本机地址
+/// Get local address with default port
 pub fn get_self_address() -> String {
     let port_str = env!("DEFAULT_SERVER_PORT");
     get_self_address_with_port_str(port_str)
 }
 
-/// 获得本机地址
+/// Get local address with specified port
 pub fn get_self_address_with_port_str(port: &str) -> String {
-    let mut address: String = format!("127.0.0.1:{}", &port);
-    if let Some(ip) = local_ipaddress::get() {
-        address = format!("{}:{}", ip, &port);
-    }
-    address
+    local_ipaddress::get()
+        .map(|ip| format!("{}:{}", ip, port))
+        .unwrap_or_else(|| format!("127.0.0.1:{}", port))
 }

@@ -14,7 +14,7 @@ use std::env::{args, current_dir};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use crate::help::help_docs::get_help_docs;
 
-/// 建立工作区入口
+/// Workspace setup entry point
 #[derive(Parser, Debug)]
 #[command(
     disable_help_flag = true,
@@ -27,52 +27,48 @@ struct WorkspaceSetup {
     command: WorkspaceSetupCommands,
 }
 
-/// 建立工作区用指令
+/// Workspace setup commands
 #[derive(Subcommand, Debug)]
 enum WorkspaceSetupCommands {
-
-    // 登录到工作区
+    // Login to workspace
     Login(ClientSetupArgs),
 
-    // 建立新的工作区
+    // Create new workspace
     Setup(ServerSetupArgs),
 }
 
-/// 客户端建立参数
+/// Client setup arguments
 #[derive(Args, Debug)]
 struct ClientSetupArgs {
-
-    // 用户登录口令，用于识别身份
+    // User login code for identity verification
     login_code: String,
 
-    // 目标地址 (直接指定)
+    // Target address (direct specification)
     #[arg(short, long)]
     target: Option<String>,
 
-    // 工作区名称 (由网络发现获取目标地址)
+    // Workspace name (discover target address via network)
     #[arg(short, long)]
     workspace: Option<String>,
 
-    // 启用调试模式
+    // Enable debug mode
     #[arg(long)]
     debug: bool
 }
 
-/// 服务端建立参数
+/// Server setup arguments
 #[derive(Args, Debug)]
 struct ServerSetupArgs {
-
-    // 工作区名称，服务端必填
+    // Workspace name (required for server)
     workspace: String,
 
-    // 端口设定，可选
+    // Port setting (optional)
     #[arg(short, long)]
     port: Option<u16>
 }
 
-/// 建立工作区
+/// Setup workspace
 async fn setup_workspace_main(workspace: Workspace) {
-
     if args().len() <= 1 {
         setup_print_help();
         return;
@@ -80,11 +76,10 @@ async fn setup_workspace_main(workspace: Workspace) {
 
     let cmd = WorkspaceSetup::parse();
     match cmd.command {
-
-        // 建立客户端工作区
+        // Setup client workspace
         WorkspaceSetupCommands::Login(args) => setup_client_workspace(args, workspace).await,
 
-        // 建立服务端工作区
+        // Setup server workspace
         WorkspaceSetupCommands::Setup(args) => setup_server_workspace(args, workspace).await,
     }
 }
@@ -96,42 +91,38 @@ fn setup_print_help() {
 async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace) {
     workspace.workspace_type = Client;
 
-    // 如果 目标地址 不存在，且 工作区 也没有指定，则无法创建工作区
+    // If target address is not specified and workspace name is also not specified, cannot create workspace
     if args.target.is_none() && args.workspace.is_none() {
         eprintln!("You need to specify a target or workspace");
         eprintln!("\"--workspace <NAME>\" or \"--target <ADDRESS>\"");
         return;
     }
 
-    // 工作区名称
+    // Workspace name
     let workspace_name =
         process_id_text_not_to_lower(args.workspace.unwrap_or("Workspace".to_string()));
 
     let client = ClientWorkspace {
-
-        // 工作区名称
+        // Workspace name
         workspace_name: workspace_name.clone(),
 
-        // 目标地址
+        // Target address
         target_addr: if let Some(addr) = args.target {
-
-            // 知道地址，通过 DNS 解析具体地址
+            // Known address, resolve via DNS
             parse_address_v4_str(addr).await
                 .unwrap_or(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 5011))
         } else {
-
-            // 未知, 尝试网络发现
+            // Unknown, try network discovery
             let addr = search_workspace_lan(workspace_name).await;
             if let Ok(addr) = addr {
                 addr
             } else {
-
-                // 返回默认地址
+                // Fallback to default address
                 SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 5011)
             }
         },
 
-        // 登录口令
+        // Login code
         login_code: args.login_code.trim().to_string(),
 
         uuid: "".to_string(),
@@ -142,13 +133,13 @@ async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace)
 
     println!("Client workspace has been established");
 
-    // 写入
+    // Write configuration
     Workspace::update(&mut workspace).await;
 
-    // 开始构建本地映射表
+    // Initialize local file mapping
     LocalFileMap::update(&LocalFileMap::read().await).await;
 
-    // 隐藏 .jam 文件夹
+    // Hide .jam folder
     let jam_folder = current_dir().unwrap().join(env!("PATH_WORKSPACE_ROOT"));
     let _ = hide_folder(&jam_folder);
 }
@@ -156,8 +147,7 @@ async fn setup_client_workspace(args: ClientSetupArgs, mut workspace: Workspace)
 async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace) {
     workspace.workspace_type = Server;
     let server = ServerWorkspace {
-
-        // 工作区名称
+        // Workspace name
         workspace_name: args.workspace,
 
         members: HashMap::new(),
@@ -169,24 +159,23 @@ async fn setup_server_workspace(args: ServerSetupArgs, mut workspace: Workspace)
 
     println!("Server workspace has been established");
 
-    // 写入
+    // Write configuration
     Workspace::update(&mut workspace).await;
 
-    // 隐藏 .jam 文件夹
+    // Hide .jam folder
     let jam_folder = current_dir().unwrap().join(env!("PATH_WORKSPACE_ROOT"));
     let _ = hide_folder(&jam_folder);
 }
 
 pub async fn cli_entry() {
-
-    // 加载工作区
+    // Load workspace
     let workspace = Workspace::read().await;
 
-    // 初始化颜色库
+    // Initialize color library (Windows only)
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
 
-    // 若未初始化工作区，则引导用户初始化
+    // If workspace is not initialized, guide user through setup
     if workspace.workspace_type == Unknown {
         setup_workspace_main(workspace).await;
     } else if workspace.workspace_type == Client {

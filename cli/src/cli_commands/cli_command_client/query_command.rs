@@ -12,7 +12,7 @@ use crate::data::workspace::Workspace;
 pub async fn client_query(command: ClientQueryCommands) {
     match command {
 
-        // 列出某个目录下的结构
+        // List directory structure
         ClientQueryCommands::ListDirectory(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::line_by_line).await;
             if args.completion_mode { result.set_debug(false); }
@@ -23,7 +23,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                 .trim_start_matches("./")
                 .trim_start_matches("/");
 
-            // 本地文件
+            // Local files
             if let Ok(current_dir) = current_dir() {
                 let current_folder = current_dir.join(current);
                 if current_folder.exists() {
@@ -52,7 +52,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                 }
             }
 
-            // 远程文件
+            // Remote files
             let list = folder_map.folder_files.get(current);
             if let Some(list) = list {
                 for item in list {
@@ -71,7 +71,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                 }
             }
 
-            // 短名称
+            // Short names
             if args.completion_mode {
                 for (k, _v) in folder_map.short_file_map {
                     result.log(format!(":{}", k).as_str());
@@ -81,7 +81,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             result.end_print();
         }
 
-        // 查询虚拟文件的Uuid
+        // Query virtual file's Uuid
         ClientQueryCommands::FileUuid(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -93,7 +93,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             }
         }
 
-        // 查询虚拟文件的版本
+        // Query virtual file's version
         ClientQueryCommands::FileVersion(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -103,7 +103,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             }
         }
 
-        // 查询虚拟文件的路径
+        // Query virtual file's path
         ClientQueryCommands::FilePath(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -113,7 +113,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             }
         }
 
-        // 查询虚拟文件的名称
+        // Query virtual file's name
         ClientQueryCommands::FileName(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -123,7 +123,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             }
         }
 
-        // 查询虚拟文件的锁定状态
+        // Query virtual file's lock status
         ClientQueryCommands::FileLockStatus(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -150,28 +150,28 @@ pub async fn client_query(command: ClientQueryCommands) {
             result.end_print();
         }
 
-        // 查询自己的Uuid
+        // Query self Uuid
         ClientQueryCommands::SelfUuid => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             result.log(format!("{}", Workspace::read().await.client.unwrap().uuid).as_str());
             result.end_print();
         }
 
-        // 查询目标工作区地址
+        // Query target workspace address
         ClientQueryCommands::TargetAddress => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             result.log(format!("{}", Workspace::read().await.client.unwrap().target_addr).as_str());
             result.end_print();
         }
 
-        // 查询目标工作区名称
+        // Query target workspace name
         ClientQueryCommands::Workspace => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             result.log(format!("{}", Workspace::read().await.client.unwrap().workspace_name).as_str());
             result.end_print();
         }
 
-        // 查询虚拟文件是否在本地
+        // Check if virtual file exists locally
         ClientQueryCommands::ContainLocal(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -188,7 +188,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             result.end_print();
         }
 
-        // 查询本地文件映射的虚拟文件
+        // Query virtual file mapped from local file
         ClientQueryCommands::LocalToRemote(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -205,7 +205,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             result.end_print();
         }
 
-        // 查询虚拟文件映射的本地文件
+        // Query local file mapped from virtual file
         ClientQueryCommands::RemoteToLocal(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -218,7 +218,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             result.end_print();
         }
 
-        // 查询本地文件是否被更改
+        // Check if local file has been modified
         ClientQueryCommands::Changed(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
@@ -247,7 +247,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             result.end_print();
         }
 
-        // 查询本地文件的版本号
+        // Query local file version
         ClientQueryCommands::LocalVersion(args) => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             let database = Database::read().await;
