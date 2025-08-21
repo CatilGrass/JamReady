@@ -1,6 +1,6 @@
-use env_logger::Builder;
 use env_logger::fmt::Color;
-use env_logger::fmt::Color::{Cyan, Green, Red, White, Yellow};
+use env_logger::fmt::Color::{Cyan, Red, White, Yellow};
+use env_logger::Builder;
 use log::{Level, LevelFilter};
 
 pub fn logger_build(level: LevelFilter) {
@@ -17,24 +17,24 @@ fn build_full(level: LevelFilter) {
             let mut gray = buf.style();
             gray.set_color(Color::Rgb(105, 105, 105)).set_bold(true);
 
-            let mut level = buf.style();
-            level.set_color(
-                match record.level() {
-                    Level::Error => { Red }
-                    Level::Warn => { Yellow }
-                    Level::Info => { Green }
-                    Level::Debug => { Green }
-                    Level::Trace => { Cyan }
-                }
-            ).set_bold(
-                match record.level() {
-                    Level::Error => { true }
-                    Level::Warn => { false }
-                    Level::Info => { false }
-                    Level::Debug => { false }
-                    Level::Trace => { false }
-                }
-            );
+            // let mut level = buf.style();
+            // level.set_color(
+            //     match record.level() {
+            //         Level::Error => { Red }
+            //         Level::Warn => { Yellow }
+            //         Level::Info => { Green }
+            //         Level::Debug => { Green }
+            //         Level::Trace => { Cyan }
+            //     }
+            // ).set_bold(
+            //     match record.level() {
+            //         Level::Error => { true }
+            //         Level::Warn => { false }
+            //         Level::Info => { false }
+            //         Level::Debug => { false }
+            //         Level::Trace => { false }
+            //     }
+            // );
 
             let mut output = buf.style();
             output.set_color(
@@ -57,10 +57,9 @@ fn build_full(level: LevelFilter) {
 
             writeln!(
                 buf,
-                "{} {} : {}",
+                "{} {}",
                 gray.value(now.format("%H:%M:%S")),
                 // gray.value(record.module_path().unwrap_or("")),
-                level.value(record.level()),
                 output.value(record.args())
             )
 
