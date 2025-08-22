@@ -7,3 +7,6 @@
 
 /.shared/
 /.shared/*
+
+# JamReady.sln.DotSettings.user
+/JamReady.sln.DotSettings.user
