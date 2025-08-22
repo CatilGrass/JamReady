@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="450"
+        Width="400" Height="450"
+        x:Class="JamReadyGui.Views.DebugWindow"
+        Title="JAM READY DEBUG">
+        
+        <ScrollViewer>
+                <StackPanel>
+                        <Button Content="Show MainWindow" HorizontalAlignment="Stretch" Click="Show_MainWindow"/>
+                </StackPanel>
+        </ScrollViewer>
+        
+</Window>
