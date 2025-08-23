@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use crate::data::client_result::ClientResultType::Fail;
 
-#[derive(Serialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Clone, Debug)]
 pub struct ClientResult {
     // All messages
 
