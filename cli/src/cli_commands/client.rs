@@ -263,13 +263,27 @@ pub enum ClientQueryCommands {
     #[command(
         visible_alias = "lv",
     )]
-    LocalVersion(StringArgs)
+    LocalVersion(StringArgs),
+
+    #[command(
+        visible_alias = "S",
+    )]
+    Search(SearchTestArgs)
 }
 
 #[derive(Args, Debug)]
 pub struct StringArgs {
     #[arg(default_value = "")]
     pub value: String,
+}
+
+#[derive(Args, Debug)]
+pub struct SearchTestArgs {
+    #[arg(default_value = "")]
+    pub from_search: String,
+
+    #[arg(default_value = "")]
+    pub to_search: Option<String>,
 }
 
 #[derive(Args, Debug)]
