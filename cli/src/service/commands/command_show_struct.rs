@@ -155,12 +155,6 @@ fn build_remote_file_info(
             }
         }
     }
-    // Local file doesn't exist
-    else {
-        if show_other {
-            should_display = true;
-        }
-    }
 
     // File lock status
     if let Some(locker_uuid) = file.get_locker_owner_uuid() {
@@ -199,6 +193,10 @@ fn build_remote_file_info(
                 should_display = true;
             }
         }
+    }
+
+    if show_other {
+        should_display = true;
     }
 
     if should_display { Some(info) } else { None }
