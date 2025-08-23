@@ -47,7 +47,14 @@ pub fn main() {
     let export_version_dir =
         export_root.join(&version);
 
-    let branch = if version.eq("dev") { "debug" } else { "release" };
+    let dev_mode;
+    let branch = if version.eq("dev") {
+        dev_mode = true;
+        "debug"
+    } else {
+        dev_mode = false;
+        "release"
+    };
 
     let target_dir =
         root.join(".shared").join("target").join(branch);
@@ -88,13 +95,15 @@ pub fn main() {
 
     let elapsed = start_time.elapsed();
 
-    if let Ok(()) = open_in_explorer(export_version_dir.clone()) {
-        println!("{} {}", "    Finished".green().bold(),
-                 format!("released {} profile(s) in {:.2}s", count, elapsed.as_secs_f64()));
-        if let Some(path_text) = export_version_dir.to_str() {
-            println!("{} {:?}", "      Output".green().bold(),
-                     process_path_text(path_text.to_string()).trim_matches('"'));
-        }
+    if !dev_mode{
+        let _ = open_in_explorer(export_version_dir.clone());
+    }
+
+    println!("{} {}", "    Finished".green().bold(),
+             format!("released {} profile(s) in {:.2}s", count, elapsed.as_secs_f64()));
+    if let Some(path_text) = export_version_dir.to_str() {
+        println!("{} {:?}", "      Output".green().bold(),
+                 process_path_text(path_text.to_string()).trim_matches('"'));
     }
 }
 
