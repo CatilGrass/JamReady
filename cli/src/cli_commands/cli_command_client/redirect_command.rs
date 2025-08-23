@@ -7,7 +7,11 @@ use crate::service::jam_client::search_workspace_lan;
 
 /// Redirect
 pub async fn client_redirect(args: RedirectArgs) {
+
+    // Create result struct
     let mut result = ClientResult::result().await;
+
+    // Read workspace info
     let mut workspace = Workspace::read().await;
 
     if let Some(client) = &mut workspace.client {

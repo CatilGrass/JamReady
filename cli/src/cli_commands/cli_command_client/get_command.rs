@@ -5,16 +5,22 @@ use crate::data::client_result::ClientResult;
 
 pub async fn client_get (args: GetArgs) {
 
+    // Create result struct
     let mut result = ClientResult::result().await;
 
+    // Create compile config
     let config = CompConfig::read().await;
+
+    // Compile FROM input
     let from = comp_param_from(&config, CompContext::input(&args.from_search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
         return;
     };
 
+    // Combine result returned
     result.combine_unchecked(
+        // Exec get command and ↑
         exec(
             vec![
                 "file".to_string(),

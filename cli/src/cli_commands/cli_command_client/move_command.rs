@@ -10,17 +10,21 @@ use crate::cli_commands::cli_command_client::param_comp::comp::{comp_param_from,
 use crate::cli_commands::cli_command_client::param_comp::data::{CompConfig, CompContext};
 
 pub async fn client_move(args: MoveArgs) {
+
+    // Create result struct
     let mut result = ClientResult::result().await;
+
+    // Create compile config
     let config = CompConfig::read().await;
 
-    // Compile source path
+    // Compile FROM input
     let from = comp_param_from(&config, CompContext::input(&args.from_search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
         return;
     };
 
-    // Compile destination path
+    // Compile TO input
     let to = comp_param_to(&config, from.clone().next_with_string(args.to_search.clone()));
     let Ok(to) = to else {
         result.err_and_end(format!("{}", to.err().unwrap()).as_str());
