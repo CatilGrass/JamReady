@@ -61,9 +61,6 @@ pub fn comp_context_path_tag(mut context: CompContext) -> Result<CompContext, Co
         // Modify input
         context.input = full.clone();
 
-        // Modify context
-        context.ctx = get_path(&context.input.clone());
-
         return Ok(context);
     }
     Ok(raw)
@@ -86,9 +83,11 @@ pub fn comp_extract_multi_results(config: &CompConfig, mut context: CompContext)
 
     let mut output = Vec::new();
     for final_path in context.final_paths.clone() {
+
         // Extract relative path from context
         let relative_path = final_path.strip_prefix(get_path(&context.ctx).as_str());
         if let Some(relative_path) = relative_path {
+
             // Append relative path to current address
             let current = format!("{}{}", context.input, relative_path);
             output.push(current);
