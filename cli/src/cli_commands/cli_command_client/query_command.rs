@@ -2,6 +2,8 @@ use std::env::current_dir;
 use std::ops::Add;
 use jam_ready::utils::file_digest::md5_digest;
 use jam_ready::utils::local_archive::LocalArchive;
+use crate::cli_commands::cli_command_client::param_comp::comp::{comp_param_from, comp_param_to};
+use crate::cli_commands::cli_command_client::param_comp::data::{CompConfig, CompContext};
 use crate::cli_commands::client::ClientQueryCommands;
 use crate::data::client_result::{ClientResult, ClientResultQueryProcess};
 use crate::data::database::Database;
@@ -255,6 +257,40 @@ pub async fn client_query(command: ClientQueryCommands) {
             if let Some(local_file) = local.search_to_local(&database, args.value.trim().to_string()) {
                 result.log(format!("{}", local_file.local_version).as_str());
             }
+            result.end_print();
+        }
+
+        // Search Test
+        ClientQueryCommands::Search(args) => {
+            let mut result = ClientResult::result().await;
+            let config = CompConfig::read().await;
+
+            // Compile FROM input
+            let from = comp_param_from(&config, CompContext::input(&args.from_search));
+            let Ok(from) = from else {
+                result.err_and_end(format!("{}", from.err().unwrap()).as_str());
+                return;
+            };
+
+            result.log("FROM RESULTS: ");
+            for final_path in from.final_paths.clone() {
+                result.log(final_path.as_str());
+            }
+
+            // Compile TO input
+            if let Some(to_search) = args.to_search {
+                let to = comp_param_to(&config, from.clone().next_with_string(to_search));
+                let Ok(to) = to else {
+                    result.err_and_end(format!("{}", to.err().unwrap()).as_str());
+                    return;
+                };
+
+                result.log("  TO RESULTS: ");
+                for final_path in to.final_paths {
+                    result.log(final_path.as_str());
+                }
+            }
+
             result.end_print();
         }
     }
