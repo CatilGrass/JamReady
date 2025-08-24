@@ -2,14 +2,19 @@ use crate::cli_commands::client::ParamArgs;
 use crate::data::client_result::{ClientResult, ClientResultQueryProcess};
 use crate::data::parameters::{erase_parameter, parameters, read_parameter, write_parameter};
 
-pub async fn client_param(args: ParamArgs) {
+pub async fn client_param(args: ParamArgs) -> Option<ClientResult> {
     if let Some(key) = args.key {
         match args.value {
-            None => client_query_param(key),
+            None => {
+                client_query_param(key);
+                None
+            },
             Some(content) => if content.trim() == "null" || content.trim() == "none" {
-                erase_parameter(key)
+                erase_parameter(key);
+                None
             } else {
-                write_parameter(key, content)
+                write_parameter(key, content);
+                None
             }
         }
     } else {
@@ -29,7 +34,7 @@ pub async fn client_param(args: ParamArgs) {
                                    .replace("\r", "\\r")
             ).as_str());
         }
-        result.end_print();
+        Some(result)
     }
 }
 

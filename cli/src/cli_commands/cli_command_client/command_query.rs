@@ -11,8 +11,8 @@ use crate::data::local_file_map::LocalFileMap;
 use crate::data::local_folder_map::{LocalFolderMap, Node};
 use crate::data::workspace::Workspace;
 
-pub async fn client_query(command: ClientQueryCommands) {
-    match command {
+pub async fn client_query(command: ClientQueryCommands) -> Option<ClientResult> {
+    return match command {
 
         // List directory structure
         ClientQueryCommands::ListDirectory(args) => {
@@ -80,7 +80,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                 }
             }
 
-            result.end_print();
+            Some(result)
         }
 
         // Query virtual file's Uuid
@@ -90,9 +90,10 @@ pub async fn client_query(command: ClientQueryCommands) {
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 if let Some(uuid) = database.uuid_of_path(file.path()) {
                     result.log(uuid.as_str());
-                    result.end_print();
+                    return Some(result)
                 }
             }
+            None
         }
 
         // Query virtual file's version
@@ -101,8 +102,9 @@ pub async fn client_query(command: ClientQueryCommands) {
             let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 result.log(format!("{}", file.version()).as_str());
-                result.end_print();
+                return Some(result)
             }
+            None
         }
 
         // Query virtual file's path
@@ -111,8 +113,9 @@ pub async fn client_query(command: ClientQueryCommands) {
             let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 result.log(format!("{}", file.path()).as_str());
-                result.end_print();
+                return Some(result)
             }
+            None
         }
 
         // Query virtual file's name
@@ -121,8 +124,9 @@ pub async fn client_query(command: ClientQueryCommands) {
             let database = Database::read().await;
             if let Some(file) = database.search_file(args.value.trim().to_string()) {
                 result.log(format!("{}", process_path(file.path().as_str())).as_str());
-                result.end_print();
+                return Some(result)
             }
+            None
         }
 
         // Query virtual file's lock status
@@ -149,28 +153,28 @@ pub async fn client_query(command: ClientQueryCommands) {
                     result.log("Available")
                 }
             }
-            result.end_print();
+            return Some(result)
         }
 
         // Query self Uuid
         ClientQueryCommands::SelfUuid => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             result.log(format!("{}", Workspace::read().await.client.unwrap().uuid).as_str());
-            result.end_print();
+            return Some(result)
         }
 
         // Query target workspace address
         ClientQueryCommands::TargetAddress => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             result.log(format!("{}", Workspace::read().await.client.unwrap().target_addr).as_str());
-            result.end_print();
+            return Some(result)
         }
 
         // Query target workspace name
         ClientQueryCommands::Workspace => {
             let mut result = ClientResult::query(ClientResultQueryProcess::direct).await;
             result.log(format!("{}", Workspace::read().await.client.unwrap().workspace_name).as_str());
-            result.end_print();
+            return Some(result)
         }
 
         // Check if virtual file exists locally
@@ -187,7 +191,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                     }
                 }
             }
-            result.end_print();
+            return Some(result)
         }
 
         // Query virtual file mapped from local file
@@ -204,7 +208,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                     }
                 }
             }
-            result.end_print();
+            return Some(result)
         }
 
         // Query local file mapped from virtual file
@@ -217,7 +221,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                     result.log(format!("{}", local_file.local_path).as_str());
                 }
             }
-            result.end_print();
+            return Some(result)
         }
 
         // Check if local file has been modified
@@ -246,7 +250,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                     }
                 }
             }
-            result.end_print();
+            return Some(result)
         }
 
         // Query local file version
@@ -257,7 +261,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             if let Some(local_file) = local.search_to_local(&database, args.value.trim().to_string()) {
                 result.log(format!("{}", local_file.local_version).as_str());
             }
-            result.end_print();
+            return Some(result)
         }
 
         // Search Test
@@ -269,7 +273,7 @@ pub async fn client_query(command: ClientQueryCommands) {
             let from = comp_param_from(&config, CompContext::input(&args.from_search));
             let Ok(from) = from else {
                 result.err_and_end(format!("{}", from.err().unwrap()).as_str());
-                return;
+                return None;
             };
 
             result.log("FROM RESULTS: ");
@@ -282,7 +286,7 @@ pub async fn client_query(command: ClientQueryCommands) {
                 let to = comp_param_to(&config, from.clone().next_with_string(to_search));
                 let Ok(to) = to else {
                     result.err_and_end(format!("{}", to.err().unwrap()).as_str());
-                    return;
+                    return None;
                 };
 
                 result.log("  TO RESULTS: ");
@@ -291,9 +295,9 @@ pub async fn client_query(command: ClientQueryCommands) {
                 }
             }
 
-            result.end_print();
+            return Some(result)
         }
-    }
+    };
 
     fn process_path(input: &str) -> String {
         let binding = input.to_string();

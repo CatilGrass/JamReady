@@ -6,7 +6,7 @@ use crate::data::workspace::Workspace;
 use crate::service::jam_client::search_workspace_lan;
 
 /// Redirect
-pub async fn client_redirect(args: RedirectArgs) {
+pub async fn client_redirect(args: RedirectArgs) -> Option<ClientResult> {
 
     // Create result struct
     let mut result = ClientResult::result().await;
@@ -33,7 +33,7 @@ pub async fn client_redirect(args: RedirectArgs) {
 
                 // And save workspace info
                 Workspace::update(&workspace).await;
-                return;
+                return None;
             }
             // If failed, continue with workspace search
         }
@@ -53,9 +53,9 @@ pub async fn client_redirect(args: RedirectArgs) {
 
             // And save workspace info
             Workspace::update(&workspace).await;
-            return;
+            return None;
         }
     }
     result.err("Redirect failed.");
-    result.end_print();
+    Some(result)
 }

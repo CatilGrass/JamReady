@@ -1,7 +1,7 @@
 use crate::cli_commands::client::{exec, NewArgs};
 use crate::data::client_result::ClientResult;
 
-pub async fn client_add(args: NewArgs) {
+pub async fn client_add(args: NewArgs) -> Option<ClientResult> {
     
     // Create result struct
     let mut result = ClientResult::result().await;
@@ -14,5 +14,5 @@ pub async fn client_add(args: NewArgs) {
         result.combine_unchecked(exec(vec!["file".to_string(), "get".to_string(), args.path]).await);
     }
 
-    result.end_print();
+    Some(result)
 }

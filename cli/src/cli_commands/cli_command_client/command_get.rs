@@ -3,7 +3,7 @@ use crate::cli_commands::cli_command_client::param_comp::data::{CompConfig, Comp
 use crate::cli_commands::client::{exec, GetArgs};
 use crate::data::client_result::ClientResult;
 
-pub async fn client_get (args: GetArgs) {
+pub async fn client_get (args: GetArgs) -> Option<ClientResult> {
 
     // Create result struct
     let mut result = ClientResult::result().await;
@@ -15,7 +15,7 @@ pub async fn client_get (args: GetArgs) {
     let from = comp_param_from(&config, CompContext::input(&args.from_search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
-        return;
+        return None;
     };
 
     // Combine result returned
@@ -35,5 +35,5 @@ pub async fn client_get (args: GetArgs) {
     );
 
     // No results
-    result.end_print();
+    Some(result)
 }

@@ -9,7 +9,7 @@ use std::env::current_dir;
 use crate::cli_commands::cli_command_client::param_comp::comp::{comp_param_from, comp_param_to};
 use crate::cli_commands::cli_command_client::param_comp::data::{CompConfig, CompContext};
 
-pub async fn client_move(args: MoveArgs) {
+pub async fn client_move(args: MoveArgs) -> Option<ClientResult> {
 
     // Create result struct
     let mut result = ClientResult::result().await;
@@ -21,14 +21,14 @@ pub async fn client_move(args: MoveArgs) {
     let from = comp_param_from(&config, CompContext::input(&args.from_search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
-        return;
+        return None;
     };
 
     // Compile TO input
     let to = comp_param_to(&config, from.clone().next_with_string(args.to_search.clone()));
     let Ok(to) = to else {
         result.err_and_end(format!("{}", to.err().unwrap()).as_str());
-        return;
+        return None;
     };
 
     // Acquire file lock if requested
@@ -46,11 +46,12 @@ pub async fn client_move(args: MoveArgs) {
         result.combine_unchecked(exec(vec!["file".to_string(), "move".to_string(), from.to_string(), to.to_string()]).await);
     }
 
-    // Handle results
+    // No results
     if result.has_result() {
-        result.end_print();
+        Some(result)
     } else {
-        result.err_and_end("No result");
+        result.log("No result");
+        Some(result)
     }
 }
 

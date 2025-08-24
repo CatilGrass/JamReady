@@ -1,6 +1,7 @@
-use crate::cli_commands::client::{exec, print_client_result, StructArgs};
+use crate::cli_commands::client::{exec, StructArgs};
+use crate::data::client_result::ClientResult;
 
-pub async fn client_struct(args: StructArgs) {
+pub async fn client_struct(args: StructArgs) -> Option<ClientResult> {
 
     let mut env_flags = String::new();
     let mut flags = String::new();
@@ -24,5 +25,5 @@ pub async fn client_struct(args: StructArgs) {
         flags = "zhundecmg".to_string();
     }
 
-    print_client_result(exec(vec!["struct".to_string(), env_flags, flags]).await);
+    exec(vec!["struct".to_string(), env_flags, flags]).await
 }

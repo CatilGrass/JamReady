@@ -7,7 +7,7 @@ use crate::data::client_result::ClientResult;
 use crate::data::database::Database;
 use crate::data::local_file_map::LocalFileMap;
 
-pub async fn client_complete(args: CompleteArgs) {
+pub async fn client_complete(args: CompleteArgs) -> Option<ClientResult> {
 
     // Create result struct
     let mut result = ClientResult::result().await;
@@ -19,7 +19,7 @@ pub async fn client_complete(args: CompleteArgs) {
     let from = comp_param_from(&config, CompContext::input(&args.from_search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
-        return;
+        return None;
     };
 
     // Read local, remote database
@@ -46,8 +46,9 @@ pub async fn client_complete(args: CompleteArgs) {
 
     // No results
     if result.has_result() {
-        result.end_print();
+        Some(result)
     } else {
-        result.err_and_end("No result");
+        result.log("No result");
+        Some(result)
     }
 }

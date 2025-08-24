@@ -10,7 +10,7 @@ use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-pub async fn client_update(args: UpdateArgs) {
+pub async fn client_update(args: UpdateArgs) -> Option<ClientResult> {
 
     let mut result = ClientResult::result().await;
 
@@ -32,6 +32,8 @@ pub async fn client_update(args: UpdateArgs) {
         }
         result.log("Ok");
     }
+
+    Some(result)
 }
 
 /// Sync local file structure with remote

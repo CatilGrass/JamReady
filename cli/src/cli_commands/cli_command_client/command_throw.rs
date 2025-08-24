@@ -3,7 +3,7 @@ use crate::cli_commands::cli_command_client::param_comp::data::{CompConfig, Comp
 use crate::cli_commands::client::{exec, SearchArgs};
 use crate::data::client_result::ClientResult;
 
-pub async fn client_throw(args: SearchArgs) {
+pub async fn client_throw(args: SearchArgs) -> Option<ClientResult> {
 
     // Create result struct
     let mut result = ClientResult::result().await;
@@ -15,12 +15,12 @@ pub async fn client_throw(args: SearchArgs) {
     let from = comp_param_from(&config, CompContext::input(&args.search));
     let Ok(from) = from else {
         result.err_and_end(format!("{}", from.err().unwrap()).as_str());
-        return;
+        return None;
     };
 
     // Exec throw command
     result.combine_unchecked(exec(vec!["file".to_string(), "throw".to_string(), from.to_string()]).await);
 
     // No results
-    result.end_print();
+    Some(result)
 }
