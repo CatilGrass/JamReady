@@ -1,7 +1,7 @@
 using System;
-using JamReadyGui.Data.Base;
+using JamReadyGui.Models.Base;
 
-namespace JamReadyGui.Data;
+namespace JamReadyGui.Models;
 
 public class AppConfig : DataFile<AppConfig>
 {

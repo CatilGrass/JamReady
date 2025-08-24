@@ -15,4 +15,9 @@ public partial class DebugWindow : Window
     {
         SingleWindow.GetInstance<WorkspaceWindow>().Show();
     }
+
+    private void Show_LinkerTestWindow(object? sender, RoutedEventArgs e)
+    {
+        SingleWindow.GetInstance<LinkerTestWindow>().Show();
+    }
 }

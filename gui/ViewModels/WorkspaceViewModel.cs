@@ -1,5 +1,4 @@
-using System;
-using JamReadyGui.Data;
+using JamReadyGui.Models;
 using ReactiveUI;
 
 namespace JamReadyGui.ViewModels;

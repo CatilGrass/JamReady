@@ -4,7 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-        <ApplicationManifest>Manifest/AppManifest.manifest</ApplicationManifest>
+        <ApplicationManifest>_Manifest/AppManifest.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <RootNamespace>JamReadyGui</RootNamespace>
     </PropertyGroup>

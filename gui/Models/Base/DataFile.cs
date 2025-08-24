@@ -3,7 +3,7 @@ using System.Text;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace JamReadyGui.Data.Base;
+namespace JamReadyGui.Models.Base;
 
 public class DataFile<TData> : DataFileBase where TData : DataFileBase, new()
 {

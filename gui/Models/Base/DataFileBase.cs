@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using YamlDotNet.Serialization;
 
-namespace JamReadyGui.Data.Base;
+namespace JamReadyGui.Models.Base;
 
 public abstract class DataFileBase
 {
