@@ -5,13 +5,13 @@
 ### Build
 
 ```bash
-> cargo build_release
+cargo build_release
 ```
 
 ### Release (ALL)
 
 ```bash
-> cargo release
+cargo release
 ```
 
 
@@ -20,18 +20,18 @@
 
 ### Build
 
-```
-> dotnet build
+```bash
+dotnet build
 ```
 
 ### Release
 
 ```bash
-> dotnet publish gui/JamReadyGui.csproj
+dotnet publish gui/JamReadyGui.csproj
 ```
 
 ### Run
 
 ```bash
-> dotnet run --project gui/JamReadyGui.csproj
+dotnet run --project gui/JamReadyGui.csproj
 ```
