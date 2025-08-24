@@ -12,8 +12,8 @@ r = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin",
 
 # Dev (default)
 # Usage:
-# LINUX   > cargo build_dev && cargo dev
-# WINDOWS > cargo build_dev ;  cargo dev
+# LINUX   > cargo clippy && cargo build_dev && cargo dev
+# WINDOWS > cargo clippy ;  cargo build_dev ;  cargo dev
 build_dev = [ "build", "--workspace", "--profile", "dev" ]
 dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_project", "dev" ]
 
