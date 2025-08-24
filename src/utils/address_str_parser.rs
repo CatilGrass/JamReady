@@ -32,10 +32,10 @@ pub async fn parse_address_v4_str(address: String) -> std::io::Result<SocketAddr
         .unwrap_or(default_port);
 
     // Async hostname resolution
-    let socket_iter = lookup_host((host, 0)).await?;
+    let mut socket_iter = lookup_host((host, 0)).await?;
 
     // Find first IPv4 address
-    if let Some(addr) = socket_iter.filter(|addr| addr.is_ipv4()).next() {
+    if let Some(addr) = socket_iter.find(|addr| addr.is_ipv4()) {
         return Ok(SocketAddr::new(addr.ip(), port));
     }
 
