@@ -87,7 +87,10 @@ fn process_iterator<I: Iterator<Item = char>>(chars: I, mut result: String) -> S
         cleaned.pop();
     }
 
-    cleaned = cleaned.trim_start_matches("./").to_string();
+    cleaned = cleaned
+        .trim_start_matches("/")
+        .trim_start_matches("./")
+        .to_string();
 
     cleaned
 }
@@ -107,6 +110,42 @@ pub fn split_path_text(path: &str) -> (String, String) {
     } else {
         ("".to_string(), normalized_path.to_string())
     }
+}
+
+pub fn split_to_args(input: String) -> Vec<String> {
+    let mut args = Vec::new();
+    let mut current_arg = String::new();
+    let mut in_quote = None;
+    let chars = input.chars().peekable();
+
+    for c in chars {
+        match c {
+            '\'' | '"' if in_quote.is_none() => {
+                in_quote = Some(c);
+            }
+            '\'' | '"' if in_quote == Some(c) => {
+                in_quote = None;
+            }
+            // 处理非引号模式下的空格
+            ' ' if in_quote.is_none() => {
+                if !current_arg.is_empty() {
+                    args.push(current_arg);
+                    current_arg = String::new();
+                }
+            }
+            '\r' | '\n' => {}
+            _ => {
+                current_arg.push(c);
+            }
+        }
+    }
+
+    // 添加最后一个参数（如果有）
+    if !current_arg.is_empty() {
+        args.push(current_arg);
+    }
+
+    args
 }
 
 /// Parse colored text
@@ -184,7 +223,7 @@ pub fn show_tree(paths: Vec<String>) -> String {
         // Sort by name
         dirs.sort_by_key(|(name, _)| *name);
         files.sort_by_key(|(name, _)| *name);
-        let child_nodes = dirs.into_iter().chain(files.into_iter()).collect::<Vec<_>>();
+        let child_nodes = dirs.into_iter().chain(files).collect::<Vec<_>>();
 
         let mut lines = Vec::new();
         let last_index = child_nodes.len().saturating_sub(1);

@@ -1,5 +1,6 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
+use serde::ser::StdError;
 use tokio::net::{TcpStream, UdpSocket};
 use jam_ready::connect_once;
 use jam_ready::utils::local_archive::LocalArchive;
@@ -75,7 +76,7 @@ const DISCOVERY_PORT: u16 = 54000;
 const MAX_BUFFER_SIZE: usize = 1024;
 
 /// Discover workspace on local network
-pub async fn search_workspace_lan(workspace_name: String) -> Result<SocketAddr, Box<dyn std::error::Error>> {
+pub async fn search_workspace_lan(workspace_name: String) -> Result<SocketAddr, Box<dyn StdError + Send + Sync>> {
     let socket = UdpSocket::bind("0.0.0.0:0").await?;
     socket.set_broadcast(true)?;
 
@@ -90,7 +91,7 @@ pub async fn search_workspace_lan(workspace_name: String) -> Result<SocketAddr, 
 }
 
 /// Parse socket address from string
-fn parse_socket_addr(addr_str: &str) -> Result<SocketAddr, Box<dyn std::error::Error>> {
+fn parse_socket_addr(addr_str: &str) -> Result<SocketAddr, Box<dyn StdError + Send + Sync>> {
     let parts: Vec<&str> = addr_str.split(':').collect();
     if parts.len() != 2 {
         return Err(format!("Invalid address format: {}", addr_str).into());

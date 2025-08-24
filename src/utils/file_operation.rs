@@ -27,7 +27,7 @@ pub fn move_file(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
     }
 
     // Perform file move operation
-    fs::rename(&from, &to)?;
+    fs::rename(from, to)?;
 
     Ok(())
 }

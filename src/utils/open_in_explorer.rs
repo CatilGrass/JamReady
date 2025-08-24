@@ -27,7 +27,7 @@ pub fn open_in_explorer(path: PathBuf) -> Result<(), Error> {
                 ))?;
 
             Command::new("explorer")
-                .args(&["/select,", absolute_path.to_str().unwrap()])
+                .args(["/select,", absolute_path.to_str().unwrap()])
                 .spawn()?;
         } else {
             Command::new("explorer")
@@ -37,7 +37,7 @@ pub fn open_in_explorer(path: PathBuf) -> Result<(), Error> {
     } else if cfg!(target_os = "macos") {
         if absolute_path.is_file() {
             Command::new("open")
-                .args(&["-R", absolute_path.to_str().unwrap()])
+                .args(["-R", absolute_path.to_str().unwrap()])
                 .spawn()?;
         } else {
             Command::new("open")
