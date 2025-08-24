@@ -324,15 +324,15 @@ impl Command for FileOperationCommand {
 
         // Process result message
         if fail > 0 || success < 1 {
-            send_msg(stream, &Deny(format!("Operate {} files (success {}, fail {})", total, success, fail))).await;
+            send_msg(stream, &Deny(format!("{} files (success {}, fail {})", total, success, fail))).await;
             entry_mutex_async!(database, |guard| {
                 sync_remote(stream, guard).await;
-            })
+            });
         } else {
-            send_msg(stream, &Text(format!("Operate {} files", success))).await;
+            send_msg(stream, &Text(format!("{} files", success))).await;
             entry_mutex_async!(database, |guard| {
                 sync_remote(stream, guard).await;
-            })
+            });
         }
 
         // Save if any operation succeeded
