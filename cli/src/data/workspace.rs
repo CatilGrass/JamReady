@@ -104,3 +104,13 @@ impl LocalArchive for Workspace {
         env!("FILE_WORKSPACE_SERVER_DATA").to_string()
     }
 }
+
+pub async fn debug_mode(debug: bool) {
+    let mut workspace = Workspace::read().await;
+    let Some(mut client) = workspace.client.clone() else {
+        return;
+    };
+    client.debug = debug;
+    workspace.client = Some(client);
+    Workspace::update(&workspace).await;
+}

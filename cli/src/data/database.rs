@@ -371,6 +371,15 @@ impl VirtualFile {
         }
     }
 
+    /// Get real path for specific version
+    pub fn real_path_version(&self, version: u32) -> Option<PathBuf> {
+        if let Some(real) = self.real_histories.get(&version) {
+            let current = PathBuf::from(real);
+            return Some(current)
+        }
+        None
+    }
+
     /// Update real path
     pub fn update(&mut self, new_real_path: String, changes_info: String) {
         // Increment version
