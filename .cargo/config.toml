@@ -3,42 +3,47 @@ target-dir = "./.shared/target"
 
 [alias]
 
+# Build Custom Target
+# Usage:
+# LINUX   > t="TARGET" && cargo b "$t" && cargo r "$t"
+# WINDOWS > $t="TARGET" ; cargo b $t ; cargo r $t
+b = [ "build", "--workspace", "--profile", "release", "--target" ]
+r = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project" ]
+
 # Dev (default)
 # Usage:
-# > cargo build_dev && cargo build_release
+# LINUX   > cargo build_dev && cargo dev
+# WINDOWS > cargo build_dev ;  cargo dev
 build_dev = [ "build", "--workspace", "--profile", "dev" ]
 dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_project", "dev" ]
 
 # Release (default)
 # Usage:
-# > cargo build_release && cargo release
+# LINUX   > cargo build_release && cargo release
+# WINDOWS > cargo build_release ;  cargo release
 build_release = [ "build", "--workspace", "--profile", "release" ]
 release = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project" ]
 
 # Windows
 # Usage:
-# > cargo build_win_msvc && cargo release_win_msvc
+# LINUX   > cargo build_win_msvc && cargo release_win_msvc
+# WINDOWS > cargo build_win_msvc ;  cargo release_win_msvc
 build_win_msvc = [ "build", "--workspace", "--profile", "release", "--target", "x86_64-pc-windows-msvc" ]
 release_win_msvc = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project", "x86_64-pc-windows-msvc" ]
 
 # Linux GNU
 # Usage:
-# > cargo build_linux_gnu && cargo release_linux_gnu
+# LINUX   > cargo build_linux_gnu && cargo release_linux_gnu
+# WINDOWS > cargo build_linux_gnu ;  cargo release_linux_gnu
 build_linux_gnu = [ "build", "--workspace", "--profile", "release", "--target", "x86_64-unknown-linux-gnu" ]
 release_linux_gnu = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project", "x86_64-unknown-linux-gnu" ]
 
 # Linux MUSL
 # Usage:
-# > cargo build_linux_musl && cargo release_linux_musl
+# LINUX   > cargo build_linux_musl && cargo release_linux_musl
+# WINDOWS > cargo build_linux_musl ;  cargo release_linux_musl
 build_linux_musl = [ "build", "--workspace", "--profile", "release", "--target", "x86_64-unknown-linux-musl" ]
 release_linux_musl = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project", "x86_64-unknown-linux-musl" ]
-
-# Custom Target
-# Usage:
-# LINUX   > t="TARGET"; cargo b "$t" | cargo r "$t"
-# WINDOWS > set t='TARGET' & cargo b %t% | cargo r %t%
-b = [ "build", "--workspace", "--profile", "release", "--target" ]
-r = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project" ]
 
 [env]
 # ------ Project Settings ------
