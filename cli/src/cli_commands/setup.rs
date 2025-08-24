@@ -94,7 +94,7 @@ struct PortValueArgs {
 
 #[derive(Args, Debug)]
 struct SleepTimeArgs {
-    pub minutes: i64
+    pub minutes: f64
 }
 
 /// Setup workspace
@@ -123,8 +123,7 @@ async fn setup_workspace_main(workspace: Workspace) {
                     let _ = set_current_dir(&args.directory);
                     match try_correct_current_dir() {
                         Ok(_) => {
-                            println!("Copy that! listening ...");
-                            let _ = jam_linker_entry().await;
+                            let _ = jam_linker_entry(linker_config.clone()).await;
                         }
                         Err(e) => {
                             eprintln!("{}", e);
@@ -134,13 +133,14 @@ async fn setup_workspace_main(workspace: Workspace) {
                 LinkerCommands::Port(args) => {
                     linker_config.port = args.port;
                     println!("Ok! port change to {} (default: {})", args.port, env!("DEFAULT_LINKER_PORT"));
+                    LinkerConfig::update(&linker_config).await;
                 }
                 LinkerCommands::SleepMinutes(args) => {
                     linker_config.sleep_minutes = args.minutes;
                     println!("Ok! The linker will enter sleep mode after {} minutes of inactivity.", args.minutes);
+                    LinkerConfig::update(&linker_config).await;
                 }
             }
-            LinkerConfig::update(&linker_config).await;
         }
     }
 }
@@ -240,7 +240,12 @@ pub async fn cli_entry() {
     if workspace.workspace_type == Unknown {
         setup_workspace_main(workspace).await;
     } else if workspace.workspace_type == Client {
-        client_workspace_main().await;
+        match client_workspace_main(args()).await {
+            None => {}
+            Some(result) => {
+                result.end_print();
+            }
+        }
     } else if workspace.workspace_type == Server {
         server_workspace_main().await;
     }

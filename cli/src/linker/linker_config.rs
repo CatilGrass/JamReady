@@ -6,14 +6,14 @@ use jam_ready::utils::local_archive::LocalArchive;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct LinkerConfig {
     pub port: u16,
-    pub sleep_minutes: i64
+    pub sleep_minutes: f64
 }
 
 impl Default for LinkerConfig {
     fn default() -> Self {
         Self {
-            port: u16::from_str(env!("DEFAULT_SERVER_PORT")).unwrap(),
-            sleep_minutes: 15,
+            port: u16::from_str(env!("DEFAULT_LINKER_PORT")).unwrap(),
+            sleep_minutes: 15.0,
         }
     }
 }
