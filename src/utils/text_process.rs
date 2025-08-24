@@ -116,9 +116,9 @@ pub fn split_to_args(input: String) -> Vec<String> {
     let mut args = Vec::new();
     let mut current_arg = String::new();
     let mut in_quote = None;
-    let mut chars = input.chars().peekable();
+    let chars = input.chars().peekable();
 
-    while let Some(c) = chars.next() {
+    for c in chars {
         match c {
             '\'' | '"' if in_quote.is_none() => {
                 in_quote = Some(c);
