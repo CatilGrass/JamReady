@@ -1,26 +1,27 @@
 use crate::cli_commands::cli_command_client::{
-    add_command::client_add,
-    archive_command::client_archive,
-    complete_command::client_complete,
-    commit_command::client_commit,
-    get_command::client_get,
-    move_command::client_move,
-    param_command::client_param,
-    query_command::client_query,
-    redirect_command::client_redirect,
-    remove_command::client_remove,
-    rollback_command::client_rollback,
-    struct_command::client_struct,
-    throw_command::client_throw,
-    update_command::client_update,
-    view_command::client_view,
-    doc_command::client_doc,
+    command_add::client_add,
+    command_archive::client_archive,
+    command_complete::client_complete,
+    command_commit::client_commit,
+    command_get::client_get,
+    command_move::client_move,
+    command_param::client_param,
+    command_query::client_query,
+    command_redirect::client_redirect,
+    command_remove::client_remove,
+    command_rollback::client_rollback,
+    command_struct::client_struct,
+    command_throw::client_throw,
+    command_update::client_update,
+    command_view::client_view,
+    command_doc::client_doc,
 };
 use crate::data::client_result::ClientResult;
 use crate::help::help_docs::get_help_docs;
 use crate::service::jam_client::execute;
 use clap::{Args, Parser, Subcommand};
 use std::env::args;
+use std::ffi::OsString;
 
 /// Client command line interface
 #[derive(Parser, Debug)]
@@ -154,10 +155,7 @@ enum ClientCommands {
     #[command(
         visible_alias = "set"
     )]
-    Param(ParamArgs),
-
-    #[command(hide = true)]
-    Glock
+    Param(ParamArgs)
 }
 
 // Client query commands
@@ -486,13 +484,18 @@ pub struct UpdateArgs {
     pub database : bool,
 }
 
-pub async fn client_workspace_main() {
+pub async fn client_workspace_main<I, T>(itr: I) -> Option<ClientResult>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone {
     if args().count() <= 1 {
         client_print_helps();
-        return;
+        return None;
     }
 
-    let cmd = ClientWorkspaceEntry::parse();
+    let Ok(cmd) = ClientWorkspaceEntry::try_parse_from(itr) else {
+        return None;
+    };
 
     match cmd.command {
         ClientCommands::Help => client_print_helps(),
@@ -529,15 +532,13 @@ pub async fn client_workspace_main() {
         ClientCommands::Param(args) => client_param(args).await,
 
         ClientCommands::Doc(args) => client_doc(args).await,
-
-        // Glock???
-        ClientCommands::Glock => print_glock_xd(),
     }
 }
 
 /// Print client help
-fn client_print_helps() {
+fn client_print_helps() -> Option<ClientResult> {
     println!("{}", get_help_docs("client_help"));
+    None
 }
 
 /// Execute client command
@@ -548,33 +549,6 @@ pub async fn exec(args: Vec<String>) -> Option<ClientResult> {
 /// Print client result
 pub fn print_client_result(result : Option<ClientResult>) {
     if let Some(result) = result {
-        result.end_print()
+        result.end_print();
     }
-}
-
-fn print_glock_xd() {
-    println!("{}", "\
-It's a glock :)
-    ▄▬▬█▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬█▬▄
-   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▐
-   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▐
-   ▌▓▌▌▌▌▌▌▌▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▌
-  ▄█▬▬▬▬▬▄▄▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▐
-    █▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄▬▀
-     █▒▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▌
-      █▒▓▓▓▓▓▓█▬▄▬▬▬▬▬▬▄▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▀
-      █▒▓▓▓▓▓▓▓▓█  ▐      ▌
-     █▒▓▓▓▓▓▓▓▓█ ▌  ▌     ▌
-     █▒▓▓▓▓▓▓▓▓█  ▬▬      ▐
-     █▒▓▓▓▓▓▓▓▓█▀▬▬▬▬▬▬▬▬▬▀
-    █▒▓▓▓▓▓▓▓▓█
-    █▒▓▓▓▓▓▓▓▓█
-   █▒▓▓▓▓▓▓▓▓█
-   █▒▓▓▓▓▓▓▓▓█
-   █▒▓▓▓▓▓▓▓▓█
-  █▒▓▓▓▓▓▓▓▓█
-  ▀▬▄▬▬▬▬▬▬▄█
-    ▀▬▬▬▬▬▬▀
-    ");
 }
