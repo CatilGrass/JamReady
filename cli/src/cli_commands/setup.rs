@@ -3,16 +3,19 @@ use crate::cli_commands::server::server_workspace_main;
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::workspace::WorkspaceType::{Client, Server, Unknown};
 use crate::data::workspace::{ClientWorkspace, ServerWorkspace, Workspace};
+use crate::help::help_docs::get_help_docs;
+use crate::linker::linker::jam_linker_entry;
+use crate::linker::linker_config::LinkerConfig;
 use crate::service::jam_client::search_workspace_lan;
+use crate::try_correct_current_dir;
 use clap::{Args, Parser, Subcommand};
 use jam_ready::utils::address_str_parser::parse_address_v4_str;
 use jam_ready::utils::hide_folder::hide_folder;
 use jam_ready::utils::local_archive::LocalArchive;
-use jam_ready::utils::text_process::{process_id_text_not_to_lower};
+use jam_ready::utils::text_process::process_id_text_not_to_lower;
 use std::collections::HashMap;
-use std::env::{args, current_dir};
+use std::env::{args, current_dir, current_exe, set_current_dir};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use crate::help::help_docs::get_help_docs;
 
 /// Workspace setup entry point
 #[derive(Parser, Debug)]
@@ -35,6 +38,10 @@ enum WorkspaceSetupCommands {
 
     // Create new workspace
     Setup(ServerSetupArgs),
+
+    // Use linker
+    #[command(subcommand)]
+    Linker(LinkerCommands)
 }
 
 /// Client setup arguments
@@ -67,6 +74,29 @@ struct ServerSetupArgs {
     port: Option<u16>
 }
 
+// Jam (Data - View) Linker
+#[derive(Subcommand, Debug)]
+enum LinkerCommands {
+    Listen(ListenArgs),
+    Port(PortValueArgs),
+    SleepMinutes(SleepTimeArgs),
+}
+
+#[derive(Args, Debug)]
+struct ListenArgs {
+    pub directory: String,
+}
+
+#[derive(Args, Debug)]
+struct PortValueArgs {
+    pub port: u16
+}
+
+#[derive(Args, Debug)]
+struct SleepTimeArgs {
+    pub minutes: i64
+}
+
 /// Setup workspace
 async fn setup_workspace_main(workspace: Workspace) {
     if args().len() <= 1 {
@@ -81,6 +111,37 @@ async fn setup_workspace_main(workspace: Workspace) {
 
         // Setup server workspace
         WorkspaceSetupCommands::Setup(args) => setup_server_workspace(args, workspace).await,
+
+        // Linker
+        WorkspaceSetupCommands::Linker(commands) => {
+
+            // Reset current dir
+            let _ = set_current_dir(current_exe().unwrap().parent().unwrap());
+            let mut linker_config = LinkerConfig::read().await;
+            match commands {
+                LinkerCommands::Listen(args) => {
+                    let _ = set_current_dir(&args.directory);
+                    match try_correct_current_dir() {
+                        Ok(_) => {
+                            println!("Copy that! listening ...");
+                            let _ = jam_linker_entry().await;
+                        }
+                        Err(e) => {
+                            eprintln!("{}", e);
+                        }
+                    }
+                }
+                LinkerCommands::Port(args) => {
+                    linker_config.port = args.port;
+                    println!("Ok! port change to {} (default: {})", args.port, env!("DEFAULT_LINKER_PORT"));
+                }
+                LinkerCommands::SleepMinutes(args) => {
+                    linker_config.sleep_minutes = args.minutes;
+                    println!("Ok! The linker will enter sleep mode after {} minutes of inactivity.", args.minutes);
+                }
+            }
+            LinkerConfig::update(&linker_config).await;
+        }
     }
 }
 
