@@ -1,5 +1,5 @@
  COMMANDS: [yellow]get[/]           Attempt to acquire file lock
-           [yellow]throw[/]         Attempt to release file lock
+          [yellow]throw[/]         Attempt to release file lock
 
 ARGUMENTS: [green]<FROM_SEARCH>[/] Files to be locked
 
