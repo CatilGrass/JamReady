@@ -35,9 +35,5 @@ pub async fn client_get (args: GetArgs) {
     );
 
     // No results
-    if result.has_result() {
-        result.end_print();
-    } else {
-        result.err_and_end("No result");
-    }
+    result.end_print();
 }

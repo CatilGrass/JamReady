@@ -50,11 +50,15 @@ pub fn main() {
     let dev_mode;
     let branch = if version.eq("dev") {
         dev_mode = true;
-        "debug"
+        "debug".to_string()
+    } else if version.eq(env!("PROJECT_VERSION")) {
+        dev_mode = false;
+        "release".to_string()
     } else {
         dev_mode = false;
-        "release"
+        format!("{}/release", version)
     };
+    println!("{}", branch);
 
     let target_dir =
         root.join(".shared").join("target").join(branch);

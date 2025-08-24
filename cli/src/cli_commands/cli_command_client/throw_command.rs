@@ -18,12 +18,9 @@ pub async fn client_throw(args: SearchArgs) {
         return;
     };
 
+    // Exec throw command
     result.combine_unchecked(exec(vec!["file".to_string(), "throw".to_string(), from.to_string()]).await);
 
     // No results
-    if result.has_result() {
-        result.end_print();
-    } else {
-        result.err_and_end("No result");
-    }
+    result.end_print();
 }
