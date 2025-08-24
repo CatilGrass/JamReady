@@ -1,12 +1,12 @@
-use std::path::PathBuf;
 use std::io;
+use std::path::Path;
 
 #[cfg(windows)]
 use std::os::windows::ffi::OsStrExt;
 #[cfg(windows)]
 use winapi::um::fileapi::{GetFileAttributesW, SetFileAttributesW, INVALID_FILE_ATTRIBUTES};
 
-pub fn hide_folder(path: &PathBuf) -> io::Result<()> {
+pub fn hide_folder(path: &Path) -> io::Result<()> {
     if !path.is_dir() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -32,7 +32,7 @@ pub fn hide_folder(path: &PathBuf) -> io::Result<()> {
 }
 
 #[cfg(windows)]
-fn hide_folder_impl(path: &PathBuf) -> io::Result<()> {
+fn hide_folder_impl(path: &Path) -> io::Result<()> {
     // Convert to Windows wide string format
     let path_str: Vec<u16> = path.as_os_str()
         .encode_wide()
@@ -58,12 +58,12 @@ fn hide_folder_impl(path: &PathBuf) -> io::Result<()> {
 }
 
 #[cfg(unix)]
-fn hide_folder_impl(_path: &PathBuf) -> io::Result<()> {
+fn hide_folder_impl(_path: &Path) -> io::Result<()> {
     Ok(())
 }
 
 #[cfg(not(any(windows, unix)))]
-fn hide_folder_impl(_path: &PathBuf) -> io::Result<()> {
+fn hide_folder_impl(_path: &Path) -> io::Result<()> {
     Err(io::Error::new(
         io::ErrorKind::Unsupported,
         "Unsupported operating system",

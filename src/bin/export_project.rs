@@ -58,7 +58,6 @@ pub fn main() {
         dev_mode = false;
         format!("{}/release", version)
     };
-    println!("{}", branch);
 
     let target_dir =
         root.join(".shared").join("target").join(branch);
@@ -104,14 +103,14 @@ pub fn main() {
     }
 
     println!("{} {}", "    Finished".green().bold(),
-             format!("released {} profile(s) in {:.2}s", count, elapsed.as_secs_f64()));
+             format_args!("released {} profile(s) in {:.2}s", count, elapsed.as_secs_f64()));
     if let Some(path_text) = export_version_dir.to_str() {
         println!("{} {:?}", "      Output".green().bold(),
                  process_path_text(path_text.to_string()).trim_matches('"'));
     }
 }
 
-fn copy_files(raw: &PathBuf, target: &PathBuf, file_names: Vec<String>) {
+fn copy_files(raw: &Path, target: &Path, file_names: Vec<String>) {
     create_dir_all(target).unwrap();
 
     for file in file_names {
