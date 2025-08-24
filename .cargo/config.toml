@@ -55,6 +55,7 @@ PROJECT_VERSION = { value = "0.1.3" }
 
 # Default port
 DEFAULT_SERVER_PORT = { value = "5011" }
+DEFAULT_LINKER_PORT = { value = "5012" }
 
 # ------ Path Settings ------
 
@@ -73,6 +74,8 @@ FILE_DATABASE = { value = ".jam/db_remote.ron" }
 FILE_LOCAL_FILE_MAP = { value = ".jam/db_local.ron" }
 FILE_LOCAL_FOLDER_MAP = { value = ".jam/.struct_cache.ron" }
 FILE_WORKSPACE_SERVER_DATA = { value = ".jam/workspace.ron" }
+
+FILE_LINKER_CONFIG = { value = "config.ron" }
 
 # ----- Workspace Settings -----
 
