@@ -34,11 +34,9 @@ executable_files = { raw = "./", target = "./bin/", files = [
 
     # Windows
     "jam.exe",
-    "jamlinker.exe",
 
     # Linux / Unix
     "jam",
-    "jamlinker"
 ] }
 
 # Deploy from "project_root" to "target_folder"
