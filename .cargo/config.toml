@@ -3,13 +3,42 @@ target-dir = "./.shared/target"
 
 [alias]
 
-# Build related
-build_dev = ["build", "--workspace", "--profile", "dev"]
-build_release = ["build", "--workspace", "--profile", "release"]
-
-# Packaging related
+# Dev (default)
+# Usage:
+# > cargo build_dev && cargo build_release
+build_dev = [ "build", "--workspace", "--profile", "dev" ]
 dev = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "dev", "--bin", "export_project", "dev" ]
+
+# Release (default)
+# Usage:
+# > cargo build_release && cargo release
+build_release = [ "build", "--workspace", "--profile", "release" ]
 release = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project" ]
+
+# Windows
+# Usage:
+# > cargo build_win_msvc && cargo release_win_msvc
+build_win_msvc = [ "build", "--workspace", "--profile", "release", "--target", "x86_64-pc-windows-msvc" ]
+release_win_msvc = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project", "x86_64-pc-windows-msvc" ]
+
+# Linux GNU
+# Usage:
+# > cargo build_linux_gnu && cargo release_linux_gnu
+build_linux_gnu = [ "build", "--workspace", "--profile", "release", "--target", "x86_64-unknown-linux-gnu" ]
+release_linux_gnu = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project", "x86_64-unknown-linux-gnu" ]
+
+# Linux MUSL
+# Usage:
+# > cargo build_linux_musl && cargo release_linux_musl
+build_linux_musl = [ "build", "--workspace", "--profile", "release", "--target", "x86_64-unknown-linux-musl" ]
+release_linux_musl = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project", "x86_64-unknown-linux-musl" ]
+
+# Custom Target
+# Usage:
+# LINUX   > t="TARGET"; cargo b "$t" | cargo r "$t"
+# WINDOWS > set t='TARGET' & cargo b %t% | cargo r %t%
+b = [ "build", "--workspace", "--profile", "release", "--target" ]
+r = [ "run", "--manifest-path", "./Cargo.toml", "--profile", "release", "--bin", "export_project" ]
 
 [env]
 # ------ Project Settings ------
