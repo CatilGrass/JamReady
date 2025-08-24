@@ -1,20 +1,20 @@
-mod database_sync;
-mod duty_verifier;
-mod file_transmitter;
+mod utils_database_sync;
+mod utils_duty_verifier;
+mod utils_file_transmitter;
 
-mod command_archive;
-mod command_commit;
-mod command_file;
-mod command_show_struct;
-mod command_update;
-mod command_view;
+mod archive;
+mod commiter;
+mod file_manager;
+mod file_struct_renderer;
+mod workspace_update;
+mod file_viewer;
 
-use crate::service::commands::command_archive::ArchiveCommand;
-use crate::service::commands::command_commit::CommitCommand;
-use crate::service::commands::command_file::FileOperationCommand;
-use crate::service::commands::command_update::UpdateCommand;
-use crate::service::commands::command_show_struct::ShowFileStructCommand;
-use crate::service::commands::command_view::ViewCommand;
+use crate::service::commands::archive::ArchiveCommand;
+use crate::service::commands::commiter::CommitCommand;
+use crate::service::commands::file_manager::FileOperationCommand;
+use crate::service::commands::workspace_update::UpdateCommand;
+use crate::service::commands::file_struct_renderer::ShowFileStructCommand;
+use crate::service::commands::file_viewer::ViewCommand;
 use crate::service::jam_command::CommandRegistry;
 use std::collections::HashMap;
 use std::sync::Arc;

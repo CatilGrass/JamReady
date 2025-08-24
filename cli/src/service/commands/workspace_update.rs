@@ -1,7 +1,7 @@
 use crate::data::client_result::ClientResult;
 use crate::data::database::Database;
 use crate::data::member::Member;
-use crate::service::commands::database_sync::{sync_local, sync_local_with_progress, sync_remote_with_progress};
+use crate::service::commands::utils_database_sync::{sync_local, sync_local_with_progress, sync_remote_with_progress};
 use crate::service::jam_command::Command;
 use async_trait::async_trait;
 use jam_ready::entry_mutex_async;

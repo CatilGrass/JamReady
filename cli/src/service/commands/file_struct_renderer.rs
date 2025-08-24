@@ -14,7 +14,7 @@ use crate::data::database::{Database, VirtualFile};
 use crate::data::local_file_map::LocalFileMap;
 use crate::data::member::Member;
 use crate::data::workspace::{ClientWorkspace, Workspace};
-use crate::service::commands::database_sync::{sync_local, sync_remote};
+use crate::service::commands::utils_database_sync::{sync_local, sync_remote};
 use crate::service::jam_command::Command;
 
 const REMOTE_ENV_FLAG: char = 'r';

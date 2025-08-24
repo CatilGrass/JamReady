@@ -2,8 +2,8 @@ use crate::data::client_result::ClientResult;
 use crate::data::database::{Database, VirtualFile};
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::data::member::Member;
-use crate::service::commands::database_sync::{sync_local, sync_remote};
-use crate::service::commands::file_transmitter::{read_file, send_file};
+use crate::service::commands::utils_database_sync::{sync_local, sync_remote};
+use crate::service::commands::utils_file_transmitter::{read_file, send_file};
 use crate::service::jam_command::Command;
 use crate::service::messages::{ClientMessage, ServerMessage};
 use crate::service::service_utils::{read_msg, send_msg};
@@ -68,29 +68,31 @@ impl Command for ViewCommand {
                     }
 
                     // Check local cache files
-                    if let Some(cache_file) = local_cache_file(file) {
-                        if cache_file.exists() {
-                            match copy_file(&cache_file, &client_path.clone()) {
-                                Ok(_) => {
-                                    print_msg = "Restored from cache successfully".to_string();
-                                    success = true;
-                                    ready = false;
+                    if ready {
+                        if let Some(cache_file) = local_cache_file(file, view_version) {
+                            if cache_file.exists() {
+                                match copy_file(&cache_file, &client_path.clone()) {
+                                    Ok(_) => {
+                                        print_msg = "File download completed! (from local cache)".to_string();
+                                        success = true;
+                                        ready = false;
 
-                                    let uuid = database.uuid_of_path(file.path()).unwrap_or("".to_string());
-                                    let local_path_str = if let Some(local_file) = local.search_to_local(&database, file.path()) {
-                                        local_file.local_path.clone()
-                                    } else {
-                                        file.path()
-                                    };
+                                        let uuid = database.uuid_of_path(file.path()).unwrap_or("".to_string());
+                                        let local_path_str = if let Some(local_file) = local.search_to_local(&database, file.path()) {
+                                            local_file.local_path.clone()
+                                        } else {
+                                            file.path()
+                                        };
 
-                                    generate_local_file_map_info(&mut local, file, client_path.clone(), local_path_str, uuid, view_version);
+                                        generate_local_file_map_info(&mut local, file, client_path.clone(), local_path_str, uuid, view_version);
 
-                                    send_msg(stream, &ClientMessage::NotReady).await;
-                                }
-                                Err(_) => {
-                                    success = false;
-                                    ready = true;
-                                    // Not ready, trying to download
+                                        send_msg(stream, &ClientMessage::NotReady).await;
+                                    }
+                                    Err(_) => {
+                                        success = false;
+                                        ready = true;
+                                        // Not ready, trying to download
+                                    }
                                 }
                             }
                         }
@@ -110,11 +112,11 @@ impl Command for ViewCommand {
                                 if let Some(uuid) = database.uuid_of_path(file.path()) {
                                     generate_local_file_map_info(&mut local, file, client_path.clone(), local_path_str, uuid, view_version);
                                 }
-                                print_msg = "File download completed".to_string();
+                                print_msg = "File download completed!".to_string();
                                 success = true;
 
                                 // Attempting to establish cache
-                                if let Some(path) = local_cache_file(file) {
+                                if let Some(path) = local_cache_file(file, view_version) {
                                     if ! path.exists() {
                                         let _ = copy_file(&client_path.clone(), &path);
                                     }
@@ -130,12 +132,12 @@ impl Command for ViewCommand {
 
             // Handle timeout or server response
             select! {
-                _ = sleep(Duration::from_secs(2)) => {
+                _ = sleep(Duration::from_secs(15)) => {
                     print_msg = "Timeout".to_string();
                 }
                 result = read_msg::<ServerMessage>(stream) => {
                     if let ServerMessage::Deny(err) = result {
-                        print_msg = format!("{}. {}", print_msg, err);
+                        print_msg = format!("{} {}", print_msg, err);
                     }
                 }
             }
@@ -208,9 +210,13 @@ impl Command for ViewCommand {
     }
 }
 
-fn local_cache_file(virtual_path: &VirtualFile) -> Option<PathBuf> {
+fn local_cache_file(virtual_path: &VirtualFile, version_str: &str) -> Option<PathBuf> {
     let Ok(current_dir) = current_dir() else { return None };
-    Some(current_dir.join(env!("PATH_CACHE")).join(virtual_path.real_path()))
+    let Ok(version) = u32::from_str(version_str) else { return None };
+    if let Some(path) = virtual_path.real_path_version(version) {
+        return Some(current_dir.join(env!("PATH_CACHE")).join(path))
+    }
+    None
 }
 
 fn generate_local_file_map_info(

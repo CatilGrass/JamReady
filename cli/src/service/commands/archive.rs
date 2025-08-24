@@ -1,7 +1,7 @@
 use crate::data::database::Database;
 use crate::data::member::Member;
 use crate::data::member::MemberDuty::Leader;
-use crate::service::commands::duty_verifier::{verify, verify_duty};
+use crate::service::commands::utils_duty_verifier::{verify, verify_duty};
 use crate::service::jam_command::Command;
 use async_trait::async_trait;
 use jam_ready::utils::local_archive::LocalArchive;

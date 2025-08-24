@@ -1,7 +1,7 @@
 use crate::data::database::{Database, VirtualFile};
 use crate::data::local_file_map::{LocalFile, LocalFileMap};
 use crate::data::member::Member;
-use crate::service::commands::database_sync::{sync_local, sync_remote};
+use crate::service::commands::utils_database_sync::{sync_local, sync_remote};
 use crate::service::jam_command::Command;
 use crate::service::messages::ServerMessage::{Deny, Text};
 use crate::service::service_utils::{read_msg, send_msg};
@@ -41,7 +41,7 @@ impl Command for FileOperationCommand {
             }
             Deny(msg) => {
                 sync_local(stream).await;
-                command_result.warn(format!("{} {}", format!("[ {} ]", cmd_name).cyan(), msg.as_str()).as_str());
+                command_result.err(format!("{} {}", format!("[ {} ]", cmd_name).cyan(), msg.as_str()).as_str());
                 return Some(command_result);
             }
             _ => {
@@ -59,7 +59,7 @@ impl Command for FileOperationCommand {
             let search = args[2];
 
             if let Ok(current) = current_dir() {
-                let local_file_path_buf = current.join(search);
+                let local_file_path_buf = current.join(process_path_text(search.to_string()));
 
                 // Handle case where local file exists
                 if local_file_path_buf.exists() {
@@ -106,7 +106,10 @@ impl Command for FileOperationCommand {
         }
 
         let operation = args[1].to_lowercase();
-        let inputs = args[2].split("|");
+        let inputs = args[2]
+            .split("|")
+            .map(|s| process_path_text(s.to_string()))
+            .collect::<Vec<String>>();
 
         let mut total = 0;
         let mut success = 0;
@@ -174,8 +177,11 @@ impl Command for FileOperationCommand {
                     return;
                 }
 
-                let from = inputs.map(|s| s.to_string()).collect::<Vec<String>>();
-                let to = args[3].split("|").map(|s| s.to_string()).collect::<Vec<String>>();
+                let from = inputs;
+                let to = args[3]
+                    .split("|")
+                    .map(|s| process_path_text(s.to_string()))
+                    .collect::<Vec<String>>();
                 let from_count = from.len();
                 let to_count = to.len();
 
